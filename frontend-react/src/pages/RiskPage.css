@@ -1,0 +1,52 @@
+.risk-scores {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin: 20px 0;
+}
+.risk-scores div {
+  border: 1px solid var(--border-glass);
+  padding: 16px;
+  border-radius: var(--radius-md);
+}
+.risk-scores dd {
+  font-size: 1.5rem;
+  color: var(--primary-emerald);
+  margin-top: 6px;
+}
+.risk-preset {
+  margin: 20px 0;
+  padding: 16px;
+  border: 1px solid var(--border-glass);
+  border-radius: var(--radius-md);
+}
+.risk-preset label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 600;
+}
+.risk-preset select {
+  width: 100%;
+  padding: 10px;
+  background: var(--bg-input);
+  color: var(--text-primary);
+  border: 1px solid var(--border-glass);
+}
+.risk-preset select:focus-visible {
+  outline: 3px solid #06b6d4;
+  outline-offset: 2px;
+}
+.risk-preset p {
+  font-size: 0.85rem;
+  margin-top: 10px;
+}
+.s1-journey progress {
+  width: 100%;
+  accent-color: var(--primary-emerald);
+  margin: 12px 0;
+}
+@media (max-width: 600px) {
+  .risk-scores {
+    grid-template-columns: 1fr;
+  }
+}

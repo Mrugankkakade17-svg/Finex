@@ -1,0 +1,13 @@
+venv/
+.env
+__pycache__/
+.pytest_cache/
+*.pyc
+
+# Synthetic local runtime data and sidecars are never source/evidence.
+.local/
+*.sqlite3
+*.sqlite3-*
+*.db
+*.db-*
+*.backup

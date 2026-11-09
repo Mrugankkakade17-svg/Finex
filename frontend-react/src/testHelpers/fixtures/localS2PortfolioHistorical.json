@@ -1,0 +1,917 @@
+{
+  "schema_version": "finex.local_s2.portfolio_corpus.v1",
+  "scope": "local_educational_application",
+  "contract_version": "local.v1",
+  "provenance": {
+    "kind": "native_tcp_capture",
+    "source": "owned_loopback_uvicorn",
+    "command": "python verify_s2_manual_portfolio.py",
+    "tested_commit": "abf5956a35fc5cf01afce58753bdbeb045a87851",
+    "tested_tree": "99c08f21b9f00a8877449cca824da9a70f7cca2d"
+  },
+  "source_hashes": [
+    {
+      "path": "ai/risk/contract.py",
+      "sha256": "19525d7041d24f9e07311dcab0bac45f04ec378f23b65671cd2bfb5ebb63a878"
+    },
+    {
+      "path": "ai/risk/scoring.py",
+      "sha256": "80a23892a5bfed16e0bcf57d43f4a500399028202e2001c5969ea6d70065749a"
+    },
+    {
+      "path": "backend/app/__init__.py",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "backend/app/adapters/__init__.py",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "backend/app/adapters/market_data_adapter.py",
+      "sha256": "45a13ba9496ce4a4299885aa59c7c22e98d6145f147ee18ea6d6636efac043b1"
+    },
+    {
+      "path": "backend/app/adapters/yfinance_adapter.py",
+      "sha256": "ed7624a58f4676c611f723df0fecf2e3039adac75a45c8969e32963877645540"
+    },
+    {
+      "path": "backend/app/api/v1/c1.py",
+      "sha256": "54f9f7ef8909468315552a6d0f67ce6165b6a028c1619b44b38fe85ea22a100b"
+    },
+    {
+      "path": "backend/app/auth/__init__.py",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "backend/app/auth/dependencies.py",
+      "sha256": "458d477c3a989e00b7e7a86d3e125c6e3b64b73caf2fb805417f53b0065a46f0"
+    },
+    {
+      "path": "backend/app/auth/jwt.py",
+      "sha256": "2aef0a00624e09692acbbc7d5e55748530c85630c28a88bcfb2b271471ab90e6"
+    },
+    {
+      "path": "backend/app/auth/jwt_handler.py",
+      "sha256": "f5bd6ae2c5aa80180d0b740b987e4f59ba69be785af1877450cdc51dae3986e6"
+    },
+    {
+      "path": "backend/app/auth/local_boundary.py",
+      "sha256": "97cb29f99e1a208bde94d8d9312fb1614b33e3eda59125fa2a3a18f1b8a578d9"
+    },
+    {
+      "path": "backend/app/auth/password.py",
+      "sha256": "b2906658a5fc18e18761ff264822ccacaa49433890ccf9fa3ffd8c35828cf215"
+    },
+    {
+      "path": "backend/app/auth/schemas.py",
+      "sha256": "6e550ce184948eef23f14ee9bad73c4dfb1f89fbd2c400500a2b6e1db05c1264"
+    },
+    {
+      "path": "backend/app/auth/security.py",
+      "sha256": "12405b6b5bb5d9337e8b0f82a9d772f36b8b5a7936acd89e71af93a032ebc1ec"
+    },
+    {
+      "path": "backend/app/auth/token_store.py",
+      "sha256": "34659335f8c509839dd324f38ef4c5f0230aab8d3b2fa1005aeaaa9af7aa9ab9"
+    },
+    {
+      "path": "backend/app/config/__init__.py",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "backend/app/config/cors.py",
+      "sha256": "aa1c154f215f5054d69d2abbf6c88d598efaf39fa1a54caade516282c913e195"
+    },
+    {
+      "path": "backend/app/config/database.py",
+      "sha256": "1be056b202052f8747ec8693415a415d5f986f7186c5b6c0415051b056a9ec7e"
+    },
+    {
+      "path": "backend/app/config/logging.py",
+      "sha256": "32b2b9f22cbe38a026b3cf7c04f2f829e716e5753aa038a8e1af68e06c97f067"
+    },
+    {
+      "path": "backend/app/config/settings.py",
+      "sha256": "2dddfbf9423f6bd9366e0e921d661571beb0cce0be5a76beff8f0c371042ea90"
+    },
+    {
+      "path": "backend/app/core/__init__.py",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "backend/app/core/exceptions.py",
+      "sha256": "c9cfc40b63f0d930a3ead98d104715956b6fd1b46c44c1e7e62f85977c5f75a0"
+    },
+    {
+      "path": "backend/app/core/handlers.py",
+      "sha256": "5688e69f497919940e0c080e990c1ab2e25a33eb66e5cd92e3f517fc1acaed44"
+    },
+    {
+      "path": "backend/app/core/middleware.py",
+      "sha256": "d1e9300a62264e6e80bfa9530b8a185e4b12e41b7a2e30d3b23767e54f3e2b21"
+    },
+    {
+      "path": "backend/app/core/responses.py",
+      "sha256": "f598258ad5cc83cc4b52ed5ad02c63f8d3dd2437a8dd46b8d859fe45f2bb01c3"
+    },
+    {
+      "path": "backend/app/domain/__init__.py",
+      "sha256": "755909754adc8821b9b848a23f13c4befaf266144aa3f5744b86e6c872aacd05"
+    },
+    {
+      "path": "backend/app/domain/local_application.py",
+      "sha256": "ce46fec28a364ade730a5c0277dcce89f5d781928980900bd5f025c346b1ea8d"
+    },
+    {
+      "path": "backend/app/domain/local_portfolio.py",
+      "sha256": "56a4f7bd0a602c4fc020f62955e319ab3118462d09e7aa4bfb03b4fbd3b0f2c6"
+    },
+    {
+      "path": "backend/app/domain/local_risk.py",
+      "sha256": "028a46ab33dbb0517d00c3e886227fb8ed5e9a858e0501185e53b0f8baab9aab"
+    },
+    {
+      "path": "backend/app/exceptions/__init__.py",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "backend/app/exceptions/custom_exceptions.py",
+      "sha256": "56e50901c611128ddeba9c0e038dfb165d6a238166ad9f4dde31b3787cf285e2"
+    },
+    {
+      "path": "backend/app/exceptions/handlers.py",
+      "sha256": "dfb10c2cff026564dee253724c5fd6ddd948f28d7b9dd64ffc11bfff3828f4d1"
+    },
+    {
+      "path": "backend/app/fixtures/__init__.py",
+      "sha256": "bfcbfe2ccccb57617c6cc5266432cd00f23b03075d823971af5ce6cf7c963862"
+    },
+    {
+      "path": "backend/app/fixtures/s1_dat_01.py",
+      "sha256": "3196e7573011adbb8bece1efb40d1cd87204d4c41a472bf3419388eb67a3e320"
+    },
+    {
+      "path": "backend/app/fixtures/s2_dat_01.py",
+      "sha256": "aea30f9fef67ef8fbe6f8bbb3230ee77b7751687e83299720d08f885a04a8074"
+    },
+    {
+      "path": "backend/app/main.py",
+      "sha256": "568c92da242b8c9db3d4d44c70326ceef8aa760a6a55f61da5fb3d5b341ed47f"
+    },
+    {
+      "path": "backend/app/models/__init__.py",
+      "sha256": "4f4cdbc06895d7166ffc3f736c49ffd2c5a7ba7076ab79e4d2293d6cf3d20584"
+    },
+    {
+      "path": "backend/app/models/dat02_models.py",
+      "sha256": "61f8eb691154ecfa38d08824f17d571ca2f5cdb1619b6a84e70a85b117311601"
+    },
+    {
+      "path": "backend/app/models/risk_questionnaire.py",
+      "sha256": "d511e81aef53e3de9670d356b20f06711bf2040f1d02a0158c826e283159c5aa"
+    },
+    {
+      "path": "backend/app/models/user.py",
+      "sha256": "bb39f6d2b88949ea9ff03aab3b7e706f02226d6f36df2b1b95bfe222e8b7c1b6"
+    },
+    {
+      "path": "backend/app/ports/__init__.py",
+      "sha256": "f0b9d8eb7b340419b36e9821ba22a3fff17144ff2b30a4fa05cea4d161f2106d"
+    },
+    {
+      "path": "backend/app/ports/adapters/lakebase.py",
+      "sha256": "975bd3dfbb9e36b7780eba64900e2b714804f6ecc899322b01f9ce4d94354e6d"
+    },
+    {
+      "path": "backend/app/ports/adapters/mock_google_verifier.py",
+      "sha256": "dc22e04e186c710b099a1a07da1929426361818f5c92df20f2bbe7f4208d91af"
+    },
+    {
+      "path": "backend/app/ports/adapters/sqlite_local_application.py",
+      "sha256": "4c0cfc9747f01859f12b00c34667e08608f239b7082934d06440e19abb3438fa"
+    },
+    {
+      "path": "backend/app/ports/adapters/sqlite_local_portfolio_store.py",
+      "sha256": "ea39d40967eb9aae8c06badab104183cbbaed6cc60e728d770e2dbf99194fce6"
+    },
+    {
+      "path": "backend/app/ports/adapters/sqlite_local_risk.py",
+      "sha256": "2f27a4e8eeaa94dbd9192674c09af06de4bb01bfd0f00dfe25bf1eaf7d925584"
+    },
+    {
+      "path": "backend/app/ports/adapters/sqlite_local_schema.py",
+      "sha256": "43f48fa308f7bd252595c8dfa9bcb3572ff93664885b21efb659e2946a016f6e"
+    },
+    {
+      "path": "backend/app/ports/adapters/sqlite_local_store.py",
+      "sha256": "c9c76387407259be1630dd35ffcc82c4f0766e608c2772573636aed31fc53d37"
+    },
+    {
+      "path": "backend/app/ports/adapters/synthetic_local_portfolio.py",
+      "sha256": "0123960e064410acadfeff7d20333760f97f82ff6801346d917a56dff87e1bba"
+    },
+    {
+      "path": "backend/app/ports/analytics_store.py",
+      "sha256": "0674bf071d928cb494dc18a81b5b55a0df92a5f973ae1a79f8482b4290cb1f70"
+    },
+    {
+      "path": "backend/app/ports/assessment_fixture_store.py",
+      "sha256": "454ccfa4e51363e4da849f34cc428204f7fbb6fe870938f6f9b829497811d970"
+    },
+    {
+      "path": "backend/app/ports/assessment_scorer.py",
+      "sha256": "10efdfcd2228dfae490dbd4eb55f9e1eeedeaee5e5ea39b885ca0151dc3f5d72"
+    },
+    {
+      "path": "backend/app/ports/google_oauth_port.py",
+      "sha256": "426ee1fc6b92b72653724eeea777daafe1a74c1be64ad30964e9158cb73cf8f1"
+    },
+    {
+      "path": "backend/app/ports/llm_provider.py",
+      "sha256": "1d112da9c5c7b54974ed2cb71ac5589ccfa240ac50f21bc15314722bf7c0cddf"
+    },
+    {
+      "path": "backend/app/ports/local_application_store.py",
+      "sha256": "a404a300e45b2602b86c1ed18983a52b1470f7ebd6553b807a906289c9615804"
+    },
+    {
+      "path": "backend/app/ports/local_authorization.py",
+      "sha256": "795ed493882d0600eb455067841b536ed833c87f67bdcbc60ccd0d1d463b3f71"
+    },
+    {
+      "path": "backend/app/ports/local_portfolio_quotes.py",
+      "sha256": "7cef9bca5c2cc0bbd7e7715971c27281d1d4cb4cc25ccebe3f0772171dda8552"
+    },
+    {
+      "path": "backend/app/ports/local_portfolio_store.py",
+      "sha256": "af8c05f083aa8179847bad5f959878d338ba03e1faa3287f3c9524d97f038dc2"
+    },
+    {
+      "path": "backend/app/ports/local_risk_store.py",
+      "sha256": "c4a42ed16556e3fa7846688f8f6fbae010f6decc9394c9bc49bdc05cdcfc2065"
+    },
+    {
+      "path": "backend/app/ports/market_data_port.py",
+      "sha256": "1453fcdec25097a5a08471b4722afb336e0fd94ecf938ac8d1c300e147c457a9"
+    },
+    {
+      "path": "backend/app/ports/market_data_provider.py",
+      "sha256": "962c933c9c8ed61e72e39a921a4a2e20c0703913fe42d8d1202449ee39808cea"
+    },
+    {
+      "path": "backend/app/ports/operational_store.py",
+      "sha256": "b19ad26d9761b9d2342ffaebe32618996d5aaff128969795f0e6a354afef1379"
+    },
+    {
+      "path": "backend/app/ports/retriever.py",
+      "sha256": "85e1245bd5fe9cb86ac59343d1312af740cb1193fd70ba78058ce517c218f63f"
+    },
+    {
+      "path": "backend/app/ports/test_ports_smoke.py",
+      "sha256": "0d8fd16f7c454e6c6430392fea841568dd138cdcc78c5e468a102a6af67da691"
+    },
+    {
+      "path": "backend/app/repositories/__init__.py",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "backend/app/repositories/c1_repository.py",
+      "sha256": "6611c3867f6778152c1b7d1cc79c990e6f2f89d769925285a7d74445f567c921"
+    },
+    {
+      "path": "backend/app/repositories/dat02_repository.py",
+      "sha256": "216eda137fe90943960b8d36dbaaed4f115ad6a7a5dc28dc4efac17c0a86ab5f"
+    },
+    {
+      "path": "backend/app/repositories/onboarding_repository.py",
+      "sha256": "8a4ec36391e98091c56cd83e1f981afa5e97efb598672f30a794b16f11c43812"
+    },
+    {
+      "path": "backend/app/repositories/portfolio_repository.py",
+      "sha256": "81b42e2fa4ba14ff14a3cb70678c71df7e0d72a4752806b690a8fc84b978cf83"
+    },
+    {
+      "path": "backend/app/repositories/risk_repository.py",
+      "sha256": "9292083f3d811f71e2388a07457f91be9e0e6bc4def58c8f8246a3348bdc1003"
+    },
+    {
+      "path": "backend/app/repositories/token_repository.py",
+      "sha256": "814d8b1802d7de8cc2530f583fde17875bea4740a7ceb1e62897617e361a0cd6"
+    },
+    {
+      "path": "backend/app/repositories/user_repository.py",
+      "sha256": "91ade257428681682a260406e79c674b514bd94902694da93c2c7e6dc584b74b"
+    },
+    {
+      "path": "backend/app/routers/__init__.py",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "backend/app/routers/auth.py",
+      "sha256": "5324d8a412a107de22d4f520c40d59adef3a47dd7622defd187437475545fca1"
+    },
+    {
+      "path": "backend/app/routers/consent_profile.py",
+      "sha256": "62bf2d78eed8604223079f167b3a0304f110f94679ed6afbc608ff9d84fde9c8"
+    },
+    {
+      "path": "backend/app/routers/demo.py",
+      "sha256": "361d127a475aacb5e73513cc24c42a8f0966b18fe568d7129ab93ff0f3463f58"
+    },
+    {
+      "path": "backend/app/routers/health.py",
+      "sha256": "a8ba2f2d08ef41665134d4a1cbd553f868dfc567abb9d90f124e80b4eb23a69f"
+    },
+    {
+      "path": "backend/app/routers/local_application.py",
+      "sha256": "677099ac520526cf9ee868d147690ab515615efdfc5e05e60afee54002a96ab0"
+    },
+    {
+      "path": "backend/app/routers/local_portfolio.py",
+      "sha256": "48a75a53813de873111b57eb3d5638d443204c2fd53274d3cc330043e7ded6bf"
+    },
+    {
+      "path": "backend/app/routers/local_risk.py",
+      "sha256": "9204212bc698b4948e58c0a901586c0364e355dbe9efa62dff3062ff6e1913bc"
+    },
+    {
+      "path": "backend/app/routers/onboarding.py",
+      "sha256": "a4416ac67e69847ac2df8965d8e74d1ae6f3b8d6673ec935b453a4c078a04f61"
+    },
+    {
+      "path": "backend/app/routers/portfolio.py",
+      "sha256": "c106177a5f174c3a8c81b9ae9fe06c123f23bdd2d9a6ae933e9ba1af0022abed"
+    },
+    {
+      "path": "backend/app/routers/profile.py",
+      "sha256": "4bfe6abbc905e34c9753a1663ef853662d6902c698ba0e37f3a91a4341dc9c6e"
+    },
+    {
+      "path": "backend/app/routers/risk.py",
+      "sha256": "3b8957a0ea270c2018be03ee4a230ae98587d2d103169329ca87e814f0d782b5"
+    },
+    {
+      "path": "backend/app/routers/risk_contract.py",
+      "sha256": "6043ba31071107aa4146fcf414bd337e011075603cc6399ddc0bb968661cfc1c"
+    },
+    {
+      "path": "backend/app/routers/users.py",
+      "sha256": "64fd0e05d11167245d587abf7c3004eb1d3485c1ce2624fdd925af13d0b0c706"
+    },
+    {
+      "path": "backend/app/schemas/__init__.py",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "backend/app/schemas/auth.py",
+      "sha256": "e9693e0122952dc630648b5cd7eee6de4dc8e8bb0d72ca47eac127416d4d6f57"
+    },
+    {
+      "path": "backend/app/schemas/c1.py",
+      "sha256": "13b4e1d011e8a8055db2bf4895623410f7ff9f22dadfdfa882c42104349075b4"
+    },
+    {
+      "path": "backend/app/schemas/common.py",
+      "sha256": "7baef5d3c12bc945a0b5b42a49436744062a1baa46ed8c44e8d3ac77e9b53ae8"
+    },
+    {
+      "path": "backend/app/schemas/consent_profile.py",
+      "sha256": "e264317dc0c07e3144aad9ed991d5cd7233e623f06bc4e79ec1917dd621a2eb0"
+    },
+    {
+      "path": "backend/app/schemas/envelope.py",
+      "sha256": "9a13db544c51b6d484761f442f41a06372161ead98317d0abe51b605e690a276"
+    },
+    {
+      "path": "backend/app/schemas/google_callback.py",
+      "sha256": "dc77fff06162eb4a8d5b6aceee086f95e66c8de3adfc65a3508017bc427f01ad"
+    },
+    {
+      "path": "backend/app/schemas/google_identity.py",
+      "sha256": "de693c336e56ce945a33b1f4e0948fcd92e30288a45d38841f33f62ad4d8409b"
+    },
+    {
+      "path": "backend/app/schemas/health.py",
+      "sha256": "766c54b268917a00505006ba84285d22571f037ab946371ae78d157c28553925"
+    },
+    {
+      "path": "backend/app/schemas/local_application.py",
+      "sha256": "ec9fac36149101d0bd79248f9b2892e66ecab001fa012631f42335ae915e7a11"
+    },
+    {
+      "path": "backend/app/schemas/local_portfolio.py",
+      "sha256": "5b4303ffbe1c326013a44a02cbe49ea7cfad8cf60fd5b119488315ec510f4259"
+    },
+    {
+      "path": "backend/app/schemas/local_risk.py",
+      "sha256": "00441d78f5b8de3f73a9b34ac075d15fb4ffad7cd00d0e4250757129534b045d"
+    },
+    {
+      "path": "backend/app/schemas/onboarding.py",
+      "sha256": "010194a1af37cf39ffbf1a6385661a1d262547dcda2dbd630b7feb4cae80438d"
+    },
+    {
+      "path": "backend/app/schemas/portfolio.py",
+      "sha256": "b929545fb7e2d3bdcaf2ba7a3b93bab4dd5bb9f5f6becfb38a2f7e5e5aee8895"
+    },
+    {
+      "path": "backend/app/schemas/profile.py",
+      "sha256": "065c354846ac4b9ebf954cc7804cd16b7174ed5492eb5fc918e28ae6ceb60bbc"
+    },
+    {
+      "path": "backend/app/schemas/response.py",
+      "sha256": "206d6440d38aa817e6809a81111a9537b936e7f90d5813e03e77b12b7de0b2b7"
+    },
+    {
+      "path": "backend/app/schemas/risk.py",
+      "sha256": "4592beecf1788a419c097b886f756dbcda56a83e7d6d68121f3aa02f3edb95d0"
+    },
+    {
+      "path": "backend/app/schemas/risk_contract.py",
+      "sha256": "b32ae1842c94cf004bda0350d871b2762de752593a427368c7139fc1dd73c1ef"
+    },
+    {
+      "path": "backend/app/schemas/user.py",
+      "sha256": "6fd1bef30ed07d2de4b0cad3cb676107355ddd87af739e7d1c64d123046e7eb7"
+    },
+    {
+      "path": "backend/app/services/__init__.py",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "backend/app/services/auth_service.py",
+      "sha256": "8ade42259e585631ccc50d21ffb68f7e75317f0445bf82c1256f15c1d23cebd2"
+    },
+    {
+      "path": "backend/app/services/c1_service.py",
+      "sha256": "c16f8d4b719590663774d9a06227f5d2504dd261683792beb9a081134734c3da"
+    },
+    {
+      "path": "backend/app/services/consent_profile_service.py",
+      "sha256": "283d3e3410f6f67edd77b274ba0b443fbd72540184731f1e57eaa7f49fcaafd6"
+    },
+    {
+      "path": "backend/app/services/google_auth_service.py",
+      "sha256": "2681c73f93d75c3d539a24904d634869c46b12556525031fed89b51afee8b073"
+    },
+    {
+      "path": "backend/app/services/local_application_service.py",
+      "sha256": "2ca7208e7ebaf0f0dfd04a36fa011d7ba96b8fd1049855188cea996f3e10bfe1"
+    },
+    {
+      "path": "backend/app/services/local_authorization.py",
+      "sha256": "a4fb66521b0b3db7441d7afc146b657927ddcebdbe95081fc669482a065399df"
+    },
+    {
+      "path": "backend/app/services/local_portfolio_math.py",
+      "sha256": "3eaba947985fb12f9baf5d2233c66ccfff88f304e71eba5b375e45b9e66dc5a0"
+    },
+    {
+      "path": "backend/app/services/local_portfolio_service.py",
+      "sha256": "0f3d240eb89baf29f91a61e41717349a7cd232316440fe211c63e256b33071f5"
+    },
+    {
+      "path": "backend/app/services/local_risk_service.py",
+      "sha256": "06a83d88cb361939e7e8c498608143935115d03e20699fbfcbb27d2cc149e111"
+    },
+    {
+      "path": "backend/app/services/onboarding_service.py",
+      "sha256": "62f9b4d9c845abf86628e568387a284b9e4c5d3cbc0977d4ba69b79715cc2848"
+    },
+    {
+      "path": "backend/app/services/portfolio_math.py",
+      "sha256": "443893fab3a9c79c902c39b93c28330bdde7fedc9a757eb6d9e645f963e67ef3"
+    },
+    {
+      "path": "backend/app/services/portfolio_service.py",
+      "sha256": "7fdddcb6aac01098e08a157b46418526787dadf5f3cd71c674cee20410f8262b"
+    },
+    {
+      "path": "backend/app/services/profile_service.py",
+      "sha256": "b73fc20f454f23e837e4713848adea7a9a33b27a410ea64bbf849eb3f0275034"
+    },
+    {
+      "path": "backend/app/services/risk_contract_service.py",
+      "sha256": "bd34405f4cbad08b5bc490d9c539b451eac2227c2675d2e615bbebd90a0e194b"
+    },
+    {
+      "path": "backend/app/services/risk_service.py",
+      "sha256": "7f10daceb511bcb1bc17f13c5a25798df217b33de286961fd80fbf74c7e1eebd"
+    },
+    {
+      "path": "backend/app/services/user_service.py",
+      "sha256": "cd41fc2523ec2304b1a9ecbe72d86ef8dc6e1e8eec9d78913204b1188f390921"
+    },
+    {
+      "path": "backend/data/questionnaire/risk_questionnaire_v1.json",
+      "sha256": "6d1e98fdac68b1e3aace5c3fa47cd4163c68caa9cc8cc9c05dc433dd370381b1"
+    },
+    {
+      "path": "backend/tests/unit/test_local_s2_portfolio_native_harness.py",
+      "sha256": "3363bc92a1108dddb03537da43e04074994d6caae48af4f88a7b584fea539933"
+    },
+    {
+      "path": "backend/verify_s1_application.py",
+      "sha256": "f9817f68d1b57e36f30bd131f3eca7fa6e71ef36f527883defe76839a203b7e6"
+    },
+    {
+      "path": "backend/verify_s2_manual_portfolio.py",
+      "sha256": "8f5570d7bac165eb133d7a2064129edf55b4f09e072d8fcfb3c043289a1361f5"
+    },
+    {
+      "path": "backend/verify_s2_saved_risk.py",
+      "sha256": "272cf92f18603eed340b04dc3c0f3016da5b5c52c66ea2921133327d07661360"
+    },
+    {
+      "path": "data/fixtures/local_s1/contract_cases.v1.json",
+      "sha256": "57ec264d8028b40c9ae401491c3cc6d28318cf4555c8b6d857e5fa1a7153e42d"
+    },
+    {
+      "path": "docs/features/local-application/S2-manual-portfolio-contract.md",
+      "sha256": "0c5718e1cf32e4c3bf8e5f7d908e938a7aa4163d2af844e9712750ec1ae1363a"
+    }
+  ],
+  "source_manifest_sha256": "64421a89032ccaa5d9613f31ba104ef18db9a37644b743b9bc0e5c529b70944e",
+  "cases": [
+    {
+      "id": "catalogue",
+      "operation": "catalogue",
+      "request": null,
+      "status": 200,
+      "content_type": "application/json",
+      "body_utf8": "{\"success\":true,\"message\":\"Supported synthetic instruments\",\"data\":{\"scope\":\"local_educational_application\",\"contract_version\":\"local.v1\",\"catalog_version\":\"synthetic_catalog.v1\",\"currency\":\"USD\",\"items\":[{\"instrument_id\":\"SYN:AAPL\",\"display_name\":\"Synthetic Apple example\",\"asset_class\":\"EQUITY\",\"sector\":\"TECHNOLOGY\",\"currency\":\"USD\"},{\"instrument_id\":\"SYN:BND\",\"display_name\":\"Synthetic bond-fund example\",\"asset_class\":\"BOND\",\"sector\":\"FIXED_INCOME\",\"currency\":\"USD\"},{\"instrument_id\":\"SYN:MSFT\",\"display_name\":\"Synthetic Microsoft example\",\"asset_class\":\"EQUITY\",\"sector\":\"TECHNOLOGY\",\"currency\":\"USD\"},{\"instrument_id\":\"SYN:UNAVAILABLE\",\"display_name\":\"Synthetic unavailable-price example\",\"asset_class\":\"EQUITY\",\"sector\":\"GENERAL\",\"currency\":\"USD\"}],\"count\":4},\"meta\":{\"correlationId\":\"s1-native-acceptance\",\"apiVersion\":\"v1\",\"dataAsOf\":null,\"dataStatus\":\"CACHED\"}}",
+      "expected": {
+        "outcome": "success"
+      }
+    },
+    {
+      "id": "portfolio_created",
+      "operation": "portfolio_create",
+      "request": {
+        "portfolio_version": "portfolio.v1",
+        "name": "Synthetic native portfolio",
+        "description": null,
+        "currency": "USD"
+      },
+      "status": 201,
+      "content_type": "application/json",
+      "body_utf8": "{\"success\":true,\"message\":\"Owned manual portfolio created\",\"data\":{\"scope\":\"local_educational_application\",\"contract_version\":\"local.v1\",\"portfolio_version\":\"portfolio.v1\",\"portfolio_id\":\"5ee96417-378c-441b-86c8-75fd0c3f99ff\",\"name\":\"Synthetic native portfolio\",\"description\":null,\"currency\":\"USD\",\"created_at\":\"2026-10-11T17:58:14.160645+00:00\",\"updated_at\":\"2026-10-11T17:58:14.160645+00:00\"},\"meta\":{\"correlationId\":\"s1-native-acceptance\",\"apiVersion\":\"v1\",\"dataAsOf\":\"2026-10-11T17:58:14.160645+00:00\",\"dataStatus\":\"CACHED\"}}",
+      "expected": {
+        "outcome": "success"
+      }
+    },
+    {
+      "id": "portfolio_list",
+      "operation": "portfolio_list",
+      "request": null,
+      "status": 200,
+      "content_type": "application/json",
+      "body_utf8": "{\"success\":true,\"message\":\"Owned manual portfolios\",\"data\":{\"scope\":\"local_educational_application\",\"contract_version\":\"local.v1\",\"portfolio_version\":\"portfolio.v1\",\"items\":[{\"scope\":\"local_educational_application\",\"contract_version\":\"local.v1\",\"portfolio_version\":\"portfolio.v1\",\"portfolio_id\":\"5ee96417-378c-441b-86c8-75fd0c3f99ff\",\"name\":\"Synthetic native portfolio\",\"description\":null,\"currency\":\"USD\",\"created_at\":\"2026-10-11T17:58:14.160645+00:00\",\"updated_at\":\"2026-10-11T17:58:14.160645+00:00\"}],\"count\":1},\"meta\":{\"correlationId\":\"s1-native-acceptance\",\"apiVersion\":\"v1\",\"dataAsOf\":null,\"dataStatus\":\"CACHED\"}}",
+      "expected": {
+        "outcome": "success"
+      }
+    },
+    {
+      "id": "portfolio_detail",
+      "operation": "portfolio_detail",
+      "request": null,
+      "status": 200,
+      "content_type": "application/json",
+      "body_utf8": "{\"success\":true,\"message\":\"Owned manual portfolio\",\"data\":{\"scope\":\"local_educational_application\",\"contract_version\":\"local.v1\",\"portfolio_version\":\"portfolio.v1\",\"portfolio_id\":\"5ee96417-378c-441b-86c8-75fd0c3f99ff\",\"name\":\"Synthetic native portfolio\",\"description\":null,\"currency\":\"USD\",\"created_at\":\"2026-10-11T17:58:14.160645+00:00\",\"updated_at\":\"2026-10-11T17:58:14.160645+00:00\"},\"meta\":{\"correlationId\":\"s1-native-acceptance\",\"apiVersion\":\"v1\",\"dataAsOf\":\"2026-10-11T17:58:14.160645+00:00\",\"dataStatus\":\"CACHED\"}}",
+      "expected": {
+        "outcome": "success"
+      }
+    },
+    {
+      "id": "portfolio_updated",
+      "operation": "portfolio_update",
+      "request": {
+        "portfolio_version": "portfolio.v1",
+        "name": " Synthetic native revised ",
+        "description": " synthetic description ",
+        "currency": "USD"
+      },
+      "status": 200,
+      "content_type": "application/json",
+      "body_utf8": "{\"success\":true,\"message\":\"Owned manual portfolio saved\",\"data\":{\"scope\":\"local_educational_application\",\"contract_version\":\"local.v1\",\"portfolio_version\":\"portfolio.v1\",\"portfolio_id\":\"5ee96417-378c-441b-86c8-75fd0c3f99ff\",\"name\":\"Synthetic native revised\",\"description\":\"synthetic description\",\"currency\":\"USD\",\"created_at\":\"2026-10-11T17:58:14.160645+00:00\",\"updated_at\":\"2026-10-11T17:58:14.181646+00:00\"},\"meta\":{\"correlationId\":\"s1-native-acceptance\",\"apiVersion\":\"v1\",\"dataAsOf\":\"2026-10-11T17:58:14.181646+00:00\",\"dataStatus\":\"CACHED\"}}",
+      "expected": {
+        "outcome": "success"
+      }
+    },
+    {
+      "id": "portfolio_unchanged",
+      "operation": "portfolio_update",
+      "request": {
+        "portfolio_version": "portfolio.v1",
+        "name": " Synthetic native revised ",
+        "description": " synthetic description ",
+        "currency": "USD"
+      },
+      "status": 200,
+      "content_type": "application/json",
+      "body_utf8": "{\"success\":true,\"message\":\"Owned manual portfolio saved\",\"data\":{\"scope\":\"local_educational_application\",\"contract_version\":\"local.v1\",\"portfolio_version\":\"portfolio.v1\",\"portfolio_id\":\"5ee96417-378c-441b-86c8-75fd0c3f99ff\",\"name\":\"Synthetic native revised\",\"description\":\"synthetic description\",\"currency\":\"USD\",\"created_at\":\"2026-10-11T17:58:14.160645+00:00\",\"updated_at\":\"2026-10-11T17:58:14.181646+00:00\"},\"meta\":{\"correlationId\":\"s1-native-acceptance\",\"apiVersion\":\"v1\",\"dataAsOf\":\"2026-10-11T17:58:14.181646+00:00\",\"dataStatus\":\"CACHED\"}}",
+      "expected": {
+        "outcome": "success"
+      }
+    },
+    {
+      "id": "portfolio_deleted",
+      "operation": "portfolio_delete",
+      "request": null,
+      "status": 200,
+      "content_type": "application/json",
+      "body_utf8": "{\"success\":true,\"message\":\"Owned manual portfolio deleted\",\"data\":{\"scope\":\"local_educational_application\",\"contract_version\":\"local.v1\",\"portfolio_version\":\"portfolio.v1\",\"portfolio_id\":\"5ee96417-378c-441b-86c8-75fd0c3f99ff\",\"entity_type\":\"portfolio\",\"deleted\":true},\"meta\":{\"correlationId\":\"s1-native-acceptance\",\"apiVersion\":\"v1\",\"dataAsOf\":null,\"dataStatus\":\"CACHED\"}}",
+      "expected": {
+        "outcome": "success"
+      }
+    },
+    {
+      "id": "holding_created",
+      "operation": "holding_create",
+      "request": {
+        "holding_version": "holding.v1",
+        "quantity": "10.000000",
+        "average_cost": "150.0000",
+        "currency": "USD",
+        "instrument_id": "SYN:AAPL"
+      },
+      "status": 201,
+      "content_type": "application/json",
+      "body_utf8": "{\"success\":true,\"message\":\"Owned manual holding created\",\"data\":{\"instrument_id\":\"SYN:AAPL\",\"display_name\":\"Synthetic Apple example\",\"asset_class\":\"EQUITY\",\"sector\":\"TECHNOLOGY\",\"currency\":\"USD\",\"scope\":\"local_educational_application\",\"contract_version\":\"local.v1\",\"holding_version\":\"holding.v1\",\"catalog_version\":\"synthetic_catalog.v1\",\"portfolio_id\":\"5ee96417-378c-441b-86c8-75fd0c3f99ff\",\"holding_id\":\"f147daa1-8501-4720-96d9-91c4679a0405\",\"quantity\":\"10.000000\",\"average_cost\":\"150.0000\",\"created_at\":\"2026-10-11T17:58:14.199888+00:00\",\"updated_at\":\"2026-10-11T17:58:14.199888+00:00\"},\"meta\":{\"correlationId\":\"s1-native-acceptance\",\"apiVersion\":\"v1\",\"dataAsOf\":\"2026-10-11T17:58:14.199888+00:00\",\"dataStatus\":\"CACHED\"}}",
+      "expected": {
+        "outcome": "success"
+      }
+    },
+    {
+      "id": "holding_list",
+      "operation": "holding_list",
+      "request": null,
+      "status": 200,
+      "content_type": "application/json",
+      "body_utf8": "{\"success\":true,\"message\":\"Owned manual portfolio holdings\",\"data\":{\"scope\":\"local_educational_application\",\"contract_version\":\"local.v1\",\"holding_version\":\"holding.v1\",\"catalog_version\":\"synthetic_catalog.v1\",\"portfolio_id\":\"5ee96417-378c-441b-86c8-75fd0c3f99ff\",\"items\":[{\"instrument_id\":\"SYN:AAPL\",\"display_name\":\"Synthetic Apple example\",\"asset_class\":\"EQUITY\",\"sector\":\"TECHNOLOGY\",\"currency\":\"USD\",\"scope\":\"local_educational_application\",\"contract_version\":\"local.v1\",\"holding_version\":\"holding.v1\",\"catalog_version\":\"synthetic_catalog.v1\",\"portfolio_id\":\"5ee96417-378c-441b-86c8-75fd0c3f99ff\",\"holding_id\":\"f147daa1-8501-4720-96d9-91c4679a0405\",\"quantity\":\"10.000000\",\"average_cost\":\"150.0000\",\"created_at\":\"2026-10-11T17:58:14.199888+00:00\",\"updated_at\":\"2026-10-11T17:58:14.199888+00:00\"}],\"count\":1},\"meta\":{\"correlationId\":\"s1-native-acceptance\",\"apiVersion\":\"v1\",\"dataAsOf\":null,\"dataStatus\":\"CACHED\"}}",
+      "expected": {
+        "outcome": "success"
+      }
+    },
+    {
+      "id": "holding_detail",
+      "operation": "holding_detail",
+      "request": null,
+      "status": 200,
+      "content_type": "application/json",
+      "body_utf8": "{\"success\":true,\"message\":\"Owned manual portfolio holding\",\"data\":{\"instrument_id\":\"SYN:AAPL\",\"display_name\":\"Synthetic Apple example\",\"asset_class\":\"EQUITY\",\"sector\":\"TECHNOLOGY\",\"currency\":\"USD\",\"scope\":\"local_educational_application\",\"contract_version\":\"local.v1\",\"holding_version\":\"holding.v1\",\"catalog_version\":\"synthetic_catalog.v1\",\"portfolio_id\":\"5ee96417-378c-441b-86c8-75fd0c3f99ff\",\"holding_id\":\"f147daa1-8501-4720-96d9-91c4679a0405\",\"quantity\":\"10.000000\",\"average_cost\":\"150.0000\",\"created_at\":\"2026-10-11T17:58:14.199888+00:00\",\"updated_at\":\"2026-10-11T17:58:14.199888+00:00\"},\"meta\":{\"correlationId\":\"s1-native-acceptance\",\"apiVersion\":\"v1\",\"dataAsOf\":\"2026-10-11T17:58:14.199888+00:00\",\"dataStatus\":\"CACHED\"}}",
+      "expected": {
+        "outcome": "success"
+      }
+    },
+    {
+      "id": "holding_updated",
+      "operation": "holding_update",
+      "request": {
+        "holding_version": "holding.v1",
+        "quantity": "2.000000",
+        "average_cost": "100.0000",
+        "currency": "USD"
+      },
+      "status": 200,
+      "content_type": "application/json",
+      "body_utf8": "{\"success\":true,\"message\":\"Owned manual portfolio holding saved\",\"data\":{\"instrument_id\":\"SYN:AAPL\",\"display_name\":\"Synthetic Apple example\",\"asset_class\":\"EQUITY\",\"sector\":\"TECHNOLOGY\",\"currency\":\"USD\",\"scope\":\"local_educational_application\",\"contract_version\":\"local.v1\",\"holding_version\":\"holding.v1\",\"catalog_version\":\"synthetic_catalog.v1\",\"portfolio_id\":\"5ee96417-378c-441b-86c8-75fd0c3f99ff\",\"holding_id\":\"f147daa1-8501-4720-96d9-91c4679a0405\",\"quantity\":\"2.000000\",\"average_cost\":\"100.0000\",\"created_at\":\"2026-10-11T17:58:14.199888+00:00\",\"updated_at\":\"2026-10-11T17:58:14.222886+00:00\"},\"meta\":{\"correlationId\":\"s1-native-acceptance\",\"apiVersion\":\"v1\",\"dataAsOf\":\"2026-10-11T17:58:14.222886+00:00\",\"dataStatus\":\"CACHED\"}}",
+      "expected": {
+        "outcome": "success"
+      }
+    },
+    {
+      "id": "holding_unchanged",
+      "operation": "holding_update",
+      "request": {
+        "holding_version": "holding.v1",
+        "quantity": "2.000000",
+        "average_cost": "100.0000",
+        "currency": "USD"
+      },
+      "status": 200,
+      "content_type": "application/json",
+      "body_utf8": "{\"success\":true,\"message\":\"Owned manual portfolio holding saved\",\"data\":{\"instrument_id\":\"SYN:AAPL\",\"display_name\":\"Synthetic Apple example\",\"asset_class\":\"EQUITY\",\"sector\":\"TECHNOLOGY\",\"currency\":\"USD\",\"scope\":\"local_educational_application\",\"contract_version\":\"local.v1\",\"holding_version\":\"holding.v1\",\"catalog_version\":\"synthetic_catalog.v1\",\"portfolio_id\":\"5ee96417-378c-441b-86c8-75fd0c3f99ff\",\"holding_id\":\"f147daa1-8501-4720-96d9-91c4679a0405\",\"quantity\":\"2.000000\",\"average_cost\":\"100.0000\",\"created_at\":\"2026-10-11T17:58:14.199888+00:00\",\"updated_at\":\"2026-10-11T17:58:14.222886+00:00\"},\"meta\":{\"correlationId\":\"s1-native-acceptance\",\"apiVersion\":\"v1\",\"dataAsOf\":\"2026-10-11T17:58:14.222886+00:00\",\"dataStatus\":\"CACHED\"}}",
+      "expected": {
+        "outcome": "success"
+      }
+    },
+    {
+      "id": "holding_deleted",
+      "operation": "holding_delete",
+      "request": null,
+      "status": 200,
+      "content_type": "application/json",
+      "body_utf8": "{\"success\":true,\"message\":\"Owned manual portfolio holding deleted\",\"data\":{\"scope\":\"local_educational_application\",\"contract_version\":\"local.v1\",\"holding_version\":\"holding.v1\",\"portfolio_id\":\"5ee96417-378c-441b-86c8-75fd0c3f99ff\",\"holding_id\":\"f147daa1-8501-4720-96d9-91c4679a0405\",\"entity_type\":\"holding\",\"deleted\":true},\"meta\":{\"correlationId\":\"s1-native-acceptance\",\"apiVersion\":\"v1\",\"dataAsOf\":null,\"dataStatus\":\"CACHED\"}}",
+      "expected": {
+        "outcome": "success"
+      }
+    },
+    {
+      "id": "golden_1",
+      "operation": "metrics",
+      "request": null,
+      "status": 200,
+      "content_type": "application/json",
+      "body_utf8": "{\"success\":true,\"message\":\"Synthetic manual portfolio calculation\",\"data\":{\"scope\":\"local_educational_application\",\"contract_version\":\"local.v1\",\"metrics_version\":\"portfolio_metrics.v1\",\"formula_version\":\"manual_portfolio_math.v1\",\"catalog_version\":\"synthetic_catalog.v1\",\"quote_snapshot_version\":\"synthetic_quotes.v1\",\"portfolio_id\":\"35a1a077-209e-4490-98c4-572383a6de6e\",\"currency\":\"USD\",\"valuation_status\":\"COMPLETE\",\"source\":\"finex.synthetic.portfolio\",\"source_type\":\"SYNTHETIC\",\"fixture_as_of\":\"2026-01-01T00:00:00Z\",\"calculated_at\":\"2026-10-11T17:58:14.437033+00:00\",\"missing_instrument_ids\":[],\"limitations\":[\"SYNTHETIC_QUOTES_NOT_MARKET_DATA\",\"MANUAL_HOLDINGS_NOT_BROKER_POSITIONS\",\"SPREAD_IS_ALLOCATION_ONLY\",\"NO_FUND_LOOKTHROUGH_OR_SUITABILITY\"],\"holdings\":[{\"instrument_id\":\"SYN:AAPL\",\"display_name\":\"Synthetic Apple example\",\"asset_class\":\"EQUITY\",\"sector\":\"TECHNOLOGY\",\"currency\":\"USD\",\"holding_version\":\"holding.v1\",\"portfolio_id\":\"35a1a077-209e-4490-98c4-572383a6de6e\",\"holding_id\":\"20f3a303-24f1-476f-98d5-3d5ae6c66ce5\",\"quantity\":\"10.000000\",\"average_cost\":\"150.0000\",\"cost_basis\":\"1500.00\",\"quote\":{\"unit_price\":\"200.0000\",\"data_status\":\"CACHED\",\"quote_as_of\":\"2026-01-01T00:00:00Z\",\"reason\":null},\"market_value\":\"2000.00\",\"gain_loss\":\"500.00\",\"gain_loss_percent\":\"33.33\",\"weight_percent\":\"50.00\"},{\"instrument_id\":\"SYN:BND\",\"display_name\":\"Synthetic bond-fund example\",\"asset_class\":\"BOND\",\"sector\":\"FIXED_INCOME\",\"currency\":\"USD\",\"holding_version\":\"holding.v1\",\"portfolio_id\":\"35a1a077-209e-4490-98c4-572383a6de6e\",\"holding_id\":\"91d84b08-f56c-42dc-b077-7ac103022a3d\",\"quantity\":\"25.000000\",\"average_cost\":\"80.0000\",\"cost_basis\":\"2000.00\",\"quote\":{\"unit_price\":\"80.0000\",\"data_status\":\"CACHED\",\"quote_as_of\":\"2026-01-01T00:00:00Z\",\"reason\":null},\"market_value\":\"2000.00\",\"gain_loss\":\"0.00\",\"gain_loss_percent\":\"0.00\",\"weight_percent\":\"50.00\"}],\"totals\":{\"cost_basis\":\"3500.00\",\"market_value\":\"4000.00\",\"gain_loss\":\"500.00\",\"gain_loss_percent\":\"14.29\",\"allocation_by_asset_class\":[{\"group\":\"BOND\",\"market_value\":\"2000.00\",\"weight_percent\":\"50.00\"},{\"group\":\"EQUITY\",\"market_value\":\"2000.00\",\"weight_percent\":\"50.00\"}],\"allocation_by_sector\":[{\"group\":\"FIXED_INCOME\",\"market_value\":\"2000.00\",\"weight_percent\":\"50.00\"},{\"group\":\"TECHNOLOGY\",\"market_value\":\"2000.00\",\"weight_percent\":\"50.00\"}],\"concentration_percent\":\"50.00\",\"hhi\":\"0.500000\",\"educational_spread_percent\":\"50.00\"}},\"meta\":{\"correlationId\":\"s1-native-acceptance\",\"apiVersion\":\"v1\",\"dataAsOf\":\"2026-01-01T00:00:00Z\",\"dataStatus\":\"CACHED\"}}",
+      "expected": {
+        "outcome": "success"
+      }
+    },
+    {
+      "id": "golden_2",
+      "operation": "metrics",
+      "request": null,
+      "status": 200,
+      "content_type": "application/json",
+      "body_utf8": "{\"success\":true,\"message\":\"Synthetic manual portfolio calculation\",\"data\":{\"scope\":\"local_educational_application\",\"contract_version\":\"local.v1\",\"metrics_version\":\"portfolio_metrics.v1\",\"formula_version\":\"manual_portfolio_math.v1\",\"catalog_version\":\"synthetic_catalog.v1\",\"quote_snapshot_version\":\"synthetic_quotes.v1\",\"portfolio_id\":\"874f2a5d-6e48-4bb2-8cfb-2aadcd4ff8c5\",\"currency\":\"USD\",\"valuation_status\":\"COMPLETE\",\"source\":\"finex.synthetic.portfolio\",\"source_type\":\"SYNTHETIC\",\"fixture_as_of\":\"2026-01-01T00:00:00Z\",\"calculated_at\":\"2026-10-11T17:58:14.460541+00:00\",\"missing_instrument_ids\":[],\"limitations\":[\"SYNTHETIC_QUOTES_NOT_MARKET_DATA\",\"MANUAL_HOLDINGS_NOT_BROKER_POSITIONS\",\"SPREAD_IS_ALLOCATION_ONLY\",\"NO_FUND_LOOKTHROUGH_OR_SUITABILITY\"],\"holdings\":[{\"instrument_id\":\"SYN:MSFT\",\"display_name\":\"Synthetic Microsoft example\",\"asset_class\":\"EQUITY\",\"sector\":\"TECHNOLOGY\",\"currency\":\"USD\",\"holding_version\":\"holding.v1\",\"portfolio_id\":\"874f2a5d-6e48-4bb2-8cfb-2aadcd4ff8c5\",\"holding_id\":\"76193939-bf50-4042-ad12-a53f9de641e4\",\"quantity\":\"5.000000\",\"average_cost\":\"500.0000\",\"cost_basis\":\"2500.00\",\"quote\":{\"unit_price\":\"400.0000\",\"data_status\":\"CACHED\",\"quote_as_of\":\"2026-01-01T00:00:00Z\",\"reason\":null},\"market_value\":\"2000.00\",\"gain_loss\":\"-500.00\",\"gain_loss_percent\":\"-20.00\",\"weight_percent\":\"100.00\"}],\"totals\":{\"cost_basis\":\"2500.00\",\"market_value\":\"2000.00\",\"gain_loss\":\"-500.00\",\"gain_loss_percent\":\"-20.00\",\"allocation_by_asset_class\":[{\"group\":\"EQUITY\",\"market_value\":\"2000.00\",\"weight_percent\":\"100.00\"}],\"allocation_by_sector\":[{\"group\":\"TECHNOLOGY\",\"market_value\":\"2000.00\",\"weight_percent\":\"100.00\"}],\"concentration_percent\":\"100.00\",\"hhi\":\"1.000000\",\"educational_spread_percent\":\"0.00\"}},\"meta\":{\"correlationId\":\"s1-native-acceptance\",\"apiVersion\":\"v1\",\"dataAsOf\":\"2026-01-01T00:00:00Z\",\"dataStatus\":\"CACHED\"}}",
+      "expected": {
+        "outcome": "success"
+      }
+    },
+    {
+      "id": "golden_3",
+      "operation": "metrics",
+      "request": null,
+      "status": 200,
+      "content_type": "application/json",
+      "body_utf8": "{\"success\":true,\"message\":\"Synthetic manual portfolio calculation\",\"data\":{\"scope\":\"local_educational_application\",\"contract_version\":\"local.v1\",\"metrics_version\":\"portfolio_metrics.v1\",\"formula_version\":\"manual_portfolio_math.v1\",\"catalog_version\":\"synthetic_catalog.v1\",\"quote_snapshot_version\":\"synthetic_quotes.v1\",\"portfolio_id\":\"276dc61f-0c12-4ad7-b14c-58b49db989c1\",\"currency\":\"USD\",\"valuation_status\":\"COMPLETE\",\"source\":\"finex.synthetic.portfolio\",\"source_type\":\"SYNTHETIC\",\"fixture_as_of\":\"2026-01-01T00:00:00Z\",\"calculated_at\":\"2026-10-11T17:58:14.504538+00:00\",\"missing_instrument_ids\":[],\"limitations\":[\"SYNTHETIC_QUOTES_NOT_MARKET_DATA\",\"MANUAL_HOLDINGS_NOT_BROKER_POSITIONS\",\"SPREAD_IS_ALLOCATION_ONLY\",\"NO_FUND_LOOKTHROUGH_OR_SUITABILITY\"],\"holdings\":[{\"instrument_id\":\"SYN:AAPL\",\"display_name\":\"Synthetic Apple example\",\"asset_class\":\"EQUITY\",\"sector\":\"TECHNOLOGY\",\"currency\":\"USD\",\"holding_version\":\"holding.v1\",\"portfolio_id\":\"276dc61f-0c12-4ad7-b14c-58b49db989c1\",\"holding_id\":\"a4f45d5b-e681-470a-86bf-eaaf3c0771ed\",\"quantity\":\"1.000000\",\"average_cost\":\"200.0000\",\"cost_basis\":\"200.00\",\"quote\":{\"unit_price\":\"200.0000\",\"data_status\":\"CACHED\",\"quote_as_of\":\"2026-01-01T00:00:00Z\",\"reason\":null},\"market_value\":\"200.00\",\"gain_loss\":\"0.00\",\"gain_loss_percent\":\"0.00\",\"weight_percent\":\"33.33\"},{\"instrument_id\":\"SYN:MSFT\",\"display_name\":\"Synthetic Microsoft example\",\"asset_class\":\"EQUITY\",\"sector\":\"TECHNOLOGY\",\"currency\":\"USD\",\"holding_version\":\"holding.v1\",\"portfolio_id\":\"276dc61f-0c12-4ad7-b14c-58b49db989c1\",\"holding_id\":\"4ca45269-5578-44c8-a66a-f84ba2695320\",\"quantity\":\"0.500000\",\"average_cost\":\"400.0000\",\"cost_basis\":\"200.00\",\"quote\":{\"unit_price\":\"400.0000\",\"data_status\":\"CACHED\",\"quote_as_of\":\"2026-01-01T00:00:00Z\",\"reason\":null},\"market_value\":\"200.00\",\"gain_loss\":\"0.00\",\"gain_loss_percent\":\"0.00\",\"weight_percent\":\"33.33\"},{\"instrument_id\":\"SYN:BND\",\"display_name\":\"Synthetic bond-fund example\",\"asset_class\":\"BOND\",\"sector\":\"FIXED_INCOME\",\"currency\":\"USD\",\"holding_version\":\"holding.v1\",\"portfolio_id\":\"276dc61f-0c12-4ad7-b14c-58b49db989c1\",\"holding_id\":\"cbc92812-678c-4549-ad6c-8700d6bbf9ec\",\"quantity\":\"2.500000\",\"average_cost\":\"80.0000\",\"cost_basis\":\"200.00\",\"quote\":{\"unit_price\":\"80.0000\",\"data_status\":\"CACHED\",\"quote_as_of\":\"2026-01-01T00:00:00Z\",\"reason\":null},\"market_value\":\"200.00\",\"gain_loss\":\"0.00\",\"gain_loss_percent\":\"0.00\",\"weight_percent\":\"33.33\"}],\"totals\":{\"cost_basis\":\"600.00\",\"market_value\":\"600.00\",\"gain_loss\":\"0.00\",\"gain_loss_percent\":\"0.00\",\"allocation_by_asset_class\":[{\"group\":\"BOND\",\"market_value\":\"200.00\",\"weight_percent\":\"33.33\"},{\"group\":\"EQUITY\",\"market_value\":\"400.00\",\"weight_percent\":\"66.67\"}],\"allocation_by_sector\":[{\"group\":\"FIXED_INCOME\",\"market_value\":\"200.00\",\"weight_percent\":\"33.33\"},{\"group\":\"TECHNOLOGY\",\"market_value\":\"400.00\",\"weight_percent\":\"66.67\"}],\"concentration_percent\":\"33.33\",\"hhi\":\"0.333333\",\"educational_spread_percent\":\"66.67\"}},\"meta\":{\"correlationId\":\"s1-native-acceptance\",\"apiVersion\":\"v1\",\"dataAsOf\":\"2026-01-01T00:00:00Z\",\"dataStatus\":\"CACHED\"}}",
+      "expected": {
+        "outcome": "success"
+      }
+    },
+    {
+      "id": "golden_4",
+      "operation": "metrics",
+      "request": null,
+      "status": 200,
+      "content_type": "application/json",
+      "body_utf8": "{\"success\":true,\"message\":\"Synthetic manual portfolio calculation\",\"data\":{\"scope\":\"local_educational_application\",\"contract_version\":\"local.v1\",\"metrics_version\":\"portfolio_metrics.v1\",\"formula_version\":\"manual_portfolio_math.v1\",\"catalog_version\":\"synthetic_catalog.v1\",\"quote_snapshot_version\":\"synthetic_quotes.v1\",\"portfolio_id\":\"035cfb94-9b9f-4c1a-8f27-b2b385946e58\",\"currency\":\"USD\",\"valuation_status\":\"COMPLETE\",\"source\":\"finex.synthetic.portfolio\",\"source_type\":\"SYNTHETIC\",\"fixture_as_of\":\"2026-01-01T00:00:00Z\",\"calculated_at\":\"2026-10-11T17:58:14.538546+00:00\",\"missing_instrument_ids\":[],\"limitations\":[\"SYNTHETIC_QUOTES_NOT_MARKET_DATA\",\"MANUAL_HOLDINGS_NOT_BROKER_POSITIONS\",\"SPREAD_IS_ALLOCATION_ONLY\",\"NO_FUND_LOOKTHROUGH_OR_SUITABILITY\"],\"holdings\":[{\"instrument_id\":\"SYN:AAPL\",\"display_name\":\"Synthetic Apple example\",\"asset_class\":\"EQUITY\",\"sector\":\"TECHNOLOGY\",\"currency\":\"USD\",\"holding_version\":\"holding.v1\",\"portfolio_id\":\"035cfb94-9b9f-4c1a-8f27-b2b385946e58\",\"holding_id\":\"76788acd-bd27-40da-bded-69d826251f9c\",\"quantity\":\"0.005025\",\"average_cost\":\"100.0000\",\"cost_basis\":\"0.50\",\"quote\":{\"unit_price\":\"200.0000\",\"data_status\":\"CACHED\",\"quote_as_of\":\"2026-01-01T00:00:00Z\",\"reason\":null},\"market_value\":\"1.01\",\"gain_loss\":\"0.51\",\"gain_loss_percent\":\"102.00\",\"weight_percent\":\"50.00\"},{\"instrument_id\":\"SYN:BND\",\"display_name\":\"Synthetic bond-fund example\",\"asset_class\":\"BOND\",\"sector\":\"FIXED_INCOME\",\"currency\":\"USD\",\"holding_version\":\"holding.v1\",\"portfolio_id\":\"035cfb94-9b9f-4c1a-8f27-b2b385946e58\",\"holding_id\":\"95a56383-1c2c-4656-b8a9-861f3694dccc\",\"quantity\":\"0.012563\",\"average_cost\":\"40.0000\",\"cost_basis\":\"0.50\",\"quote\":{\"unit_price\":\"80.0000\",\"data_status\":\"CACHED\",\"quote_as_of\":\"2026-01-01T00:00:00Z\",\"reason\":null},\"market_value\":\"1.01\",\"gain_loss\":\"0.51\",\"gain_loss_percent\":\"102.00\",\"weight_percent\":\"50.00\"}],\"totals\":{\"cost_basis\":\"1.00\",\"market_value\":\"2.02\",\"gain_loss\":\"1.02\",\"gain_loss_percent\":\"102.00\",\"allocation_by_asset_class\":[{\"group\":\"BOND\",\"market_value\":\"1.01\",\"weight_percent\":\"50.00\"},{\"group\":\"EQUITY\",\"market_value\":\"1.01\",\"weight_percent\":\"50.00\"}],\"allocation_by_sector\":[{\"group\":\"FIXED_INCOME\",\"market_value\":\"1.01\",\"weight_percent\":\"50.00\"},{\"group\":\"TECHNOLOGY\",\"market_value\":\"1.01\",\"weight_percent\":\"50.00\"}],\"concentration_percent\":\"50.00\",\"hhi\":\"0.500000\",\"educational_spread_percent\":\"50.00\"}},\"meta\":{\"correlationId\":\"s1-native-acceptance\",\"apiVersion\":\"v1\",\"dataAsOf\":\"2026-01-01T00:00:00Z\",\"dataStatus\":\"CACHED\"}}",
+      "expected": {
+        "outcome": "success"
+      }
+    },
+    {
+      "id": "golden_5",
+      "operation": "metrics",
+      "request": null,
+      "status": 200,
+      "content_type": "application/json",
+      "body_utf8": "{\"success\":true,\"message\":\"Synthetic manual portfolio calculation\",\"data\":{\"scope\":\"local_educational_application\",\"contract_version\":\"local.v1\",\"metrics_version\":\"portfolio_metrics.v1\",\"formula_version\":\"manual_portfolio_math.v1\",\"catalog_version\":\"synthetic_catalog.v1\",\"quote_snapshot_version\":\"synthetic_quotes.v1\",\"portfolio_id\":\"c08a9831-8801-4925-bc0c-9cf5e56832ae\",\"currency\":\"USD\",\"valuation_status\":\"COMPLETE\",\"source\":\"finex.synthetic.portfolio\",\"source_type\":\"SYNTHETIC\",\"fixture_as_of\":\"2026-01-01T00:00:00Z\",\"calculated_at\":\"2026-10-11T17:58:14.568804+00:00\",\"missing_instrument_ids\":[],\"limitations\":[\"SYNTHETIC_QUOTES_NOT_MARKET_DATA\",\"MANUAL_HOLDINGS_NOT_BROKER_POSITIONS\",\"SPREAD_IS_ALLOCATION_ONLY\",\"NO_FUND_LOOKTHROUGH_OR_SUITABILITY\"],\"holdings\":[{\"instrument_id\":\"SYN:AAPL\",\"display_name\":\"Synthetic Apple example\",\"asset_class\":\"EQUITY\",\"sector\":\"TECHNOLOGY\",\"currency\":\"USD\",\"holding_version\":\"holding.v1\",\"portfolio_id\":\"c08a9831-8801-4925-bc0c-9cf5e56832ae\",\"holding_id\":\"cf32cbee-c883-4750-9667-91b0f2a7b2d6\",\"quantity\":\"0.000001\",\"average_cost\":\"1000000.0000\",\"cost_basis\":\"1.00\",\"quote\":{\"unit_price\":\"200.0000\",\"data_status\":\"CACHED\",\"quote_as_of\":\"2026-01-01T00:00:00Z\",\"reason\":null},\"market_value\":\"0.00\",\"gain_loss\":\"-1.00\",\"gain_loss_percent\":\"-100.00\",\"weight_percent\":null}],\"totals\":{\"cost_basis\":\"1.00\",\"market_value\":\"0.00\",\"gain_loss\":\"-1.00\",\"gain_loss_percent\":\"-100.00\",\"allocation_by_asset_class\":[{\"group\":\"EQUITY\",\"market_value\":\"0.00\",\"weight_percent\":null}],\"allocation_by_sector\":[{\"group\":\"TECHNOLOGY\",\"market_value\":\"0.00\",\"weight_percent\":null}],\"concentration_percent\":null,\"hhi\":null,\"educational_spread_percent\":null}},\"meta\":{\"correlationId\":\"s1-native-acceptance\",\"apiVersion\":\"v1\",\"dataAsOf\":\"2026-01-01T00:00:00Z\",\"dataStatus\":\"CACHED\"}}",
+      "expected": {
+        "outcome": "success"
+      }
+    },
+    {
+      "id": "golden_6",
+      "operation": "metrics",
+      "request": null,
+      "status": 200,
+      "content_type": "application/json",
+      "body_utf8": "{\"success\":true,\"message\":\"Synthetic manual portfolio calculation\",\"data\":{\"scope\":\"local_educational_application\",\"contract_version\":\"local.v1\",\"metrics_version\":\"portfolio_metrics.v1\",\"formula_version\":\"manual_portfolio_math.v1\",\"catalog_version\":\"synthetic_catalog.v1\",\"quote_snapshot_version\":\"synthetic_quotes.v1\",\"portfolio_id\":\"7965d6fc-0126-4b8b-9692-167ecfc93730\",\"currency\":\"USD\",\"valuation_status\":\"COMPLETE\",\"source\":\"finex.synthetic.portfolio\",\"source_type\":\"SYNTHETIC\",\"fixture_as_of\":\"2026-01-01T00:00:00Z\",\"calculated_at\":\"2026-10-11T17:58:14.603827+00:00\",\"missing_instrument_ids\":[],\"limitations\":[\"SYNTHETIC_QUOTES_NOT_MARKET_DATA\",\"MANUAL_HOLDINGS_NOT_BROKER_POSITIONS\",\"SPREAD_IS_ALLOCATION_ONLY\",\"NO_FUND_LOOKTHROUGH_OR_SUITABILITY\"],\"holdings\":[{\"instrument_id\":\"SYN:MSFT\",\"display_name\":\"Synthetic Microsoft example\",\"asset_class\":\"EQUITY\",\"sector\":\"TECHNOLOGY\",\"currency\":\"USD\",\"holding_version\":\"holding.v1\",\"portfolio_id\":\"7965d6fc-0126-4b8b-9692-167ecfc93730\",\"holding_id\":\"4265287f-e069-4690-b234-8626c3766f7d\",\"quantity\":\"1000000.000000\",\"average_cost\":\"1000000.0000\",\"cost_basis\":\"1000000000000.00\",\"quote\":{\"unit_price\":\"400.0000\",\"data_status\":\"CACHED\",\"quote_as_of\":\"2026-01-01T00:00:00Z\",\"reason\":null},\"market_value\":\"400000000.00\",\"gain_loss\":\"-999600000000.00\",\"gain_loss_percent\":\"-99.96\",\"weight_percent\":\"100.00\"}],\"totals\":{\"cost_basis\":\"1000000000000.00\",\"market_value\":\"400000000.00\",\"gain_loss\":\"-999600000000.00\",\"gain_loss_percent\":\"-99.96\",\"allocation_by_asset_class\":[{\"group\":\"EQUITY\",\"market_value\":\"400000000.00\",\"weight_percent\":\"100.00\"}],\"allocation_by_sector\":[{\"group\":\"TECHNOLOGY\",\"market_value\":\"400000000.00\",\"weight_percent\":\"100.00\"}],\"concentration_percent\":\"100.00\",\"hhi\":\"1.000000\",\"educational_spread_percent\":\"0.00\"}},\"meta\":{\"correlationId\":\"s1-native-acceptance\",\"apiVersion\":\"v1\",\"dataAsOf\":\"2026-01-01T00:00:00Z\",\"dataStatus\":\"CACHED\"}}",
+      "expected": {
+        "outcome": "success"
+      }
+    },
+    {
+      "id": "empty",
+      "operation": "metrics",
+      "request": null,
+      "status": 200,
+      "content_type": "application/json",
+      "body_utf8": "{\"success\":true,\"message\":\"Synthetic manual portfolio calculation\",\"data\":{\"scope\":\"local_educational_application\",\"contract_version\":\"local.v1\",\"metrics_version\":\"portfolio_metrics.v1\",\"formula_version\":\"manual_portfolio_math.v1\",\"catalog_version\":\"synthetic_catalog.v1\",\"quote_snapshot_version\":\"synthetic_quotes.v1\",\"portfolio_id\":\"2dd96b17-3787-4f1e-929f-b869b742efea\",\"currency\":\"USD\",\"valuation_status\":\"EMPTY\",\"source\":\"finex.synthetic.portfolio\",\"source_type\":\"SYNTHETIC\",\"fixture_as_of\":\"2026-01-01T00:00:00Z\",\"calculated_at\":\"2026-10-11T17:58:14.622975+00:00\",\"missing_instrument_ids\":[],\"limitations\":[\"SYNTHETIC_QUOTES_NOT_MARKET_DATA\",\"MANUAL_HOLDINGS_NOT_BROKER_POSITIONS\",\"SPREAD_IS_ALLOCATION_ONLY\",\"NO_FUND_LOOKTHROUGH_OR_SUITABILITY\"],\"holdings\":[],\"totals\":{\"cost_basis\":\"0.00\",\"market_value\":\"0.00\",\"gain_loss\":\"0.00\",\"gain_loss_percent\":null,\"allocation_by_asset_class\":[],\"allocation_by_sector\":[],\"concentration_percent\":null,\"hhi\":null,\"educational_spread_percent\":null}},\"meta\":{\"correlationId\":\"s1-native-acceptance\",\"apiVersion\":\"v1\",\"dataAsOf\":null,\"dataStatus\":\"CACHED\"}}",
+      "expected": {
+        "outcome": "success"
+      }
+    },
+    {
+      "id": "zero_cost",
+      "operation": "metrics",
+      "request": null,
+      "status": 200,
+      "content_type": "application/json",
+      "body_utf8": "{\"success\":true,\"message\":\"Synthetic manual portfolio calculation\",\"data\":{\"scope\":\"local_educational_application\",\"contract_version\":\"local.v1\",\"metrics_version\":\"portfolio_metrics.v1\",\"formula_version\":\"manual_portfolio_math.v1\",\"catalog_version\":\"synthetic_catalog.v1\",\"quote_snapshot_version\":\"synthetic_quotes.v1\",\"portfolio_id\":\"2dd96b17-3787-4f1e-929f-b869b742efea\",\"currency\":\"USD\",\"valuation_status\":\"COMPLETE\",\"source\":\"finex.synthetic.portfolio\",\"source_type\":\"SYNTHETIC\",\"fixture_as_of\":\"2026-01-01T00:00:00Z\",\"calculated_at\":\"2026-10-11T17:58:14.642562+00:00\",\"missing_instrument_ids\":[],\"limitations\":[\"SYNTHETIC_QUOTES_NOT_MARKET_DATA\",\"MANUAL_HOLDINGS_NOT_BROKER_POSITIONS\",\"SPREAD_IS_ALLOCATION_ONLY\",\"NO_FUND_LOOKTHROUGH_OR_SUITABILITY\"],\"holdings\":[{\"instrument_id\":\"SYN:AAPL\",\"display_name\":\"Synthetic Apple example\",\"asset_class\":\"EQUITY\",\"sector\":\"TECHNOLOGY\",\"currency\":\"USD\",\"holding_version\":\"holding.v1\",\"portfolio_id\":\"2dd96b17-3787-4f1e-929f-b869b742efea\",\"holding_id\":\"b322624f-1657-4dc7-bc0c-21328b2e866b\",\"quantity\":\"10.000000\",\"average_cost\":\"0.0000\",\"cost_basis\":\"0.00\",\"quote\":{\"unit_price\":\"200.0000\",\"data_status\":\"CACHED\",\"quote_as_of\":\"2026-01-01T00:00:00Z\",\"reason\":null},\"market_value\":\"2000.00\",\"gain_loss\":\"2000.00\",\"gain_loss_percent\":null,\"weight_percent\":\"100.00\"}],\"totals\":{\"cost_basis\":\"0.00\",\"market_value\":\"2000.00\",\"gain_loss\":\"2000.00\",\"gain_loss_percent\":null,\"allocation_by_asset_class\":[{\"group\":\"EQUITY\",\"market_value\":\"2000.00\",\"weight_percent\":\"100.00\"}],\"allocation_by_sector\":[{\"group\":\"TECHNOLOGY\",\"market_value\":\"2000.00\",\"weight_percent\":\"100.00\"}],\"concentration_percent\":\"100.00\",\"hhi\":\"1.000000\",\"educational_spread_percent\":\"0.00\"}},\"meta\":{\"correlationId\":\"s1-native-acceptance\",\"apiVersion\":\"v1\",\"dataAsOf\":\"2026-01-01T00:00:00Z\",\"dataStatus\":\"CACHED\"}}",
+      "expected": {
+        "outcome": "success"
+      }
+    },
+    {
+      "id": "partial",
+      "operation": "metrics",
+      "request": null,
+      "status": 200,
+      "content_type": "application/json",
+      "body_utf8": "{\"success\":true,\"message\":\"Synthetic manual portfolio calculation\",\"data\":{\"scope\":\"local_educational_application\",\"contract_version\":\"local.v1\",\"metrics_version\":\"portfolio_metrics.v1\",\"formula_version\":\"manual_portfolio_math.v1\",\"catalog_version\":\"synthetic_catalog.v1\",\"quote_snapshot_version\":\"synthetic_quotes.v1\",\"portfolio_id\":\"2dd96b17-3787-4f1e-929f-b869b742efea\",\"currency\":\"USD\",\"valuation_status\":\"INCOMPLETE\",\"source\":\"finex.synthetic.portfolio\",\"source_type\":\"SYNTHETIC\",\"fixture_as_of\":\"2026-01-01T00:00:00Z\",\"calculated_at\":\"2026-10-11T17:58:14.662983+00:00\",\"missing_instrument_ids\":[\"SYN:UNAVAILABLE\"],\"limitations\":[\"SYNTHETIC_QUOTES_NOT_MARKET_DATA\",\"MANUAL_HOLDINGS_NOT_BROKER_POSITIONS\",\"SPREAD_IS_ALLOCATION_ONLY\",\"NO_FUND_LOOKTHROUGH_OR_SUITABILITY\"],\"holdings\":[{\"instrument_id\":\"SYN:AAPL\",\"display_name\":\"Synthetic Apple example\",\"asset_class\":\"EQUITY\",\"sector\":\"TECHNOLOGY\",\"currency\":\"USD\",\"holding_version\":\"holding.v1\",\"portfolio_id\":\"2dd96b17-3787-4f1e-929f-b869b742efea\",\"holding_id\":\"b322624f-1657-4dc7-bc0c-21328b2e866b\",\"quantity\":\"10.000000\",\"average_cost\":\"0.0000\",\"cost_basis\":\"0.00\",\"quote\":{\"unit_price\":\"200.0000\",\"data_status\":\"CACHED\",\"quote_as_of\":\"2026-01-01T00:00:00Z\",\"reason\":null},\"market_value\":\"2000.00\",\"gain_loss\":\"2000.00\",\"gain_loss_percent\":null,\"weight_percent\":null},{\"instrument_id\":\"SYN:UNAVAILABLE\",\"display_name\":\"Synthetic unavailable-price example\",\"asset_class\":\"EQUITY\",\"sector\":\"GENERAL\",\"currency\":\"USD\",\"holding_version\":\"holding.v1\",\"portfolio_id\":\"2dd96b17-3787-4f1e-929f-b869b742efea\",\"holding_id\":\"b4bfd56c-f55d-4f4f-ba4a-f233a26ae8f3\",\"quantity\":\"10.000000\",\"average_cost\":\"10.0000\",\"cost_basis\":\"100.00\",\"quote\":{\"unit_price\":null,\"data_status\":\"UNAVAILABLE\",\"quote_as_of\":null,\"reason\":\"SYNTHETIC_QUOTE_UNAVAILABLE\"},\"market_value\":null,\"gain_loss\":null,\"gain_loss_percent\":null,\"weight_percent\":null}],\"totals\":{\"cost_basis\":\"100.00\",\"market_value\":null,\"gain_loss\":null,\"gain_loss_percent\":null,\"allocation_by_asset_class\":null,\"allocation_by_sector\":null,\"concentration_percent\":null,\"hhi\":null,\"educational_spread_percent\":null}},\"meta\":{\"correlationId\":\"s1-native-acceptance\",\"apiVersion\":\"v1\",\"dataAsOf\":null,\"dataStatus\":\"UNAVAILABLE\"}}",
+      "expected": {
+        "outcome": "success"
+      }
+    },
+    {
+      "id": "unavailable",
+      "operation": "metrics",
+      "request": null,
+      "status": 200,
+      "content_type": "application/json",
+      "body_utf8": "{\"success\":true,\"message\":\"Synthetic manual portfolio calculation\",\"data\":{\"scope\":\"local_educational_application\",\"contract_version\":\"local.v1\",\"metrics_version\":\"portfolio_metrics.v1\",\"formula_version\":\"manual_portfolio_math.v1\",\"catalog_version\":\"synthetic_catalog.v1\",\"quote_snapshot_version\":\"synthetic_quotes.v1\",\"portfolio_id\":\"2dd96b17-3787-4f1e-929f-b869b742efea\",\"currency\":\"USD\",\"valuation_status\":\"UNAVAILABLE\",\"source\":\"finex.synthetic.portfolio\",\"source_type\":\"SYNTHETIC\",\"fixture_as_of\":\"2026-01-01T00:00:00Z\",\"calculated_at\":\"2026-10-11T17:58:14.681783+00:00\",\"missing_instrument_ids\":[\"SYN:UNAVAILABLE\"],\"limitations\":[\"SYNTHETIC_QUOTES_NOT_MARKET_DATA\",\"MANUAL_HOLDINGS_NOT_BROKER_POSITIONS\",\"SPREAD_IS_ALLOCATION_ONLY\",\"NO_FUND_LOOKTHROUGH_OR_SUITABILITY\"],\"holdings\":[{\"instrument_id\":\"SYN:UNAVAILABLE\",\"display_name\":\"Synthetic unavailable-price example\",\"asset_class\":\"EQUITY\",\"sector\":\"GENERAL\",\"currency\":\"USD\",\"holding_version\":\"holding.v1\",\"portfolio_id\":\"2dd96b17-3787-4f1e-929f-b869b742efea\",\"holding_id\":\"b4bfd56c-f55d-4f4f-ba4a-f233a26ae8f3\",\"quantity\":\"10.000000\",\"average_cost\":\"10.0000\",\"cost_basis\":\"100.00\",\"quote\":{\"unit_price\":null,\"data_status\":\"UNAVAILABLE\",\"quote_as_of\":null,\"reason\":\"SYNTHETIC_QUOTE_UNAVAILABLE\"},\"market_value\":null,\"gain_loss\":null,\"gain_loss_percent\":null,\"weight_percent\":null}],\"totals\":{\"cost_basis\":\"100.00\",\"market_value\":null,\"gain_loss\":null,\"gain_loss_percent\":null,\"allocation_by_asset_class\":null,\"allocation_by_sector\":null,\"concentration_percent\":null,\"hhi\":null,\"educational_spread_percent\":null}},\"meta\":{\"correlationId\":\"s1-native-acceptance\",\"apiVersion\":\"v1\",\"dataAsOf\":null,\"dataStatus\":\"UNAVAILABLE\"}}",
+      "expected": {
+        "outcome": "success"
+      }
+    },
+    {
+      "id": "session_invalid",
+      "operation": "portfolio_list",
+      "request": null,
+      "status": 401,
+      "content_type": "application/json",
+      "body_utf8": "{\"success\":false,\"message\":\"A valid local session is required.\",\"error_code\":\"SESSION_INVALID\",\"error\":{\"code\":\"SESSION_INVALID\",\"message\":\"A valid local session is required.\",\"fieldErrors\":[],\"correlationId\":\"s1-native-acceptance\"},\"detail\":\"A valid local session is required.\"}",
+      "expected": {
+        "outcome": "error",
+        "error_code": "SESSION_INVALID"
+      }
+    },
+    {
+      "id": "onboarding_required",
+      "operation": "portfolio_list",
+      "request": null,
+      "status": 409,
+      "content_type": "application/json",
+      "body_utf8": "{\"success\":false,\"message\":\"Complete current consent and onboarding before using the feature.\",\"error_code\":\"ONBOARDING_REQUIRED\",\"error\":{\"code\":\"ONBOARDING_REQUIRED\",\"message\":\"Complete current consent and onboarding before using the feature.\",\"fieldErrors\":[],\"correlationId\":\"s1-native-acceptance\"},\"detail\":\"Complete current consent and onboarding before using the feature.\"}",
+      "expected": {
+        "outcome": "error",
+        "error_code": "ONBOARDING_REQUIRED"
+      }
+    },
+    {
+      "id": "portfolio_not_found",
+      "operation": "portfolio_detail",
+      "request": null,
+      "status": 404,
+      "content_type": "application/json",
+      "body_utf8": "{\"success\":false,\"message\":\"The local portfolio was not found.\",\"error_code\":\"LOCAL_PORTFOLIO_NOT_FOUND\",\"error\":{\"code\":\"LOCAL_PORTFOLIO_NOT_FOUND\",\"message\":\"The local portfolio was not found.\",\"fieldErrors\":[],\"correlationId\":\"s1-native-acceptance\"},\"detail\":\"The local portfolio was not found.\"}",
+      "expected": {
+        "outcome": "error",
+        "error_code": "LOCAL_PORTFOLIO_NOT_FOUND"
+      }
+    },
+    {
+      "id": "holding_not_found",
+      "operation": "holding_detail",
+      "request": null,
+      "status": 404,
+      "content_type": "application/json",
+      "body_utf8": "{\"success\":false,\"message\":\"The local holding was not found.\",\"error_code\":\"LOCAL_HOLDING_NOT_FOUND\",\"error\":{\"code\":\"LOCAL_HOLDING_NOT_FOUND\",\"message\":\"The local holding was not found.\",\"fieldErrors\":[],\"correlationId\":\"s1-native-acceptance\"},\"detail\":\"The local holding was not found.\"}",
+      "expected": {
+        "outcome": "error",
+        "error_code": "LOCAL_HOLDING_NOT_FOUND"
+      }
+    },
+    {
+      "id": "validation_error",
+      "operation": "holding_create",
+      "request": null,
+      "status": 422,
+      "content_type": "application/json",
+      "body_utf8": "{\"success\":false,\"message\":\"Request validation failed\",\"error_code\":\"VALIDATION_ERROR\",\"error\":{\"code\":\"VALIDATION_ERROR\",\"message\":\"Request validation failed\",\"fieldErrors\":[{\"field\":\"request\",\"code\":\"INVALID_FORMAT\"}],\"correlationId\":\"s1-native-acceptance\"},\"detail\":\"Request validation failed\"}",
+      "expected": {
+        "outcome": "error",
+        "error_code": "VALIDATION_ERROR"
+      }
+    },
+    {
+      "id": "unsupported_instrument",
+      "operation": "holding_create",
+      "request": null,
+      "status": 422,
+      "content_type": "application/json",
+      "body_utf8": "{\"success\":false,\"message\":\"Use a supported synthetic instrument.\",\"error_code\":\"UNSUPPORTED_INSTRUMENT\",\"error\":{\"code\":\"UNSUPPORTED_INSTRUMENT\",\"message\":\"Use a supported synthetic instrument.\",\"fieldErrors\":[],\"correlationId\":\"s1-native-acceptance\"},\"detail\":\"Use a supported synthetic instrument.\"}",
+      "expected": {
+        "outcome": "error",
+        "error_code": "UNSUPPORTED_INSTRUMENT"
+      }
+    },
+    {
+      "id": "holding_duplicate",
+      "operation": "holding_create",
+      "request": null,
+      "status": 409,
+      "content_type": "application/json",
+      "body_utf8": "{\"success\":false,\"message\":\"That instrument already has a holding.\",\"error_code\":\"HOLDING_ALREADY_EXISTS\",\"error\":{\"code\":\"HOLDING_ALREADY_EXISTS\",\"message\":\"That instrument already has a holding.\",\"fieldErrors\":[],\"correlationId\":\"s1-native-acceptance\"},\"detail\":\"That instrument already has a holding.\"}",
+      "expected": {
+        "outcome": "error",
+        "error_code": "HOLDING_ALREADY_EXISTS"
+      }
+    },
+    {
+      "id": "portfolio_limit",
+      "operation": "portfolio_create",
+      "request": null,
+      "status": 409,
+      "content_type": "application/json",
+      "body_utf8": "{\"success\":false,\"message\":\"The local portfolio limit was reached.\",\"error_code\":\"PORTFOLIO_LIMIT_REACHED\",\"error\":{\"code\":\"PORTFOLIO_LIMIT_REACHED\",\"message\":\"The local portfolio limit was reached.\",\"fieldErrors\":[],\"correlationId\":\"s1-native-acceptance\"},\"detail\":\"The local portfolio limit was reached.\"}",
+      "expected": {
+        "outcome": "error",
+        "error_code": "PORTFOLIO_LIMIT_REACHED"
+      }
+    }
+  ]
+}

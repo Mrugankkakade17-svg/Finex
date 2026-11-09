@@ -1,0 +1,4 @@
+user_id,consent_type,consent_version,is_consented,consented_at
+1,terms_of_service,v1,true,2026-08-20 10:00:00
+2,privacy_policy,v1,false,2026-08-20 10:01:00
+3,terms_of_service,v1,true,2026-08-20 10:02:00

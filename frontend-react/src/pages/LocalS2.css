@@ -1,0 +1,19 @@
+.local-s2 { overflow-wrap: anywhere; }
+.local-s2-fieldset { padding: 0; border: 0; min-width: 0; }
+.local-s2-question { padding: 20px 0; border-bottom: 1px solid #475569; }
+.local-s2-question legend { padding-top: 12px; line-height: 1.6; }
+.local-s2 button, .local-s2 summary, .local-s2 select, .local-s2 textarea { min-height: 48px; }
+.local-s2 select, .local-s2 textarea { width: 100%; color: #f8fafc; background: #1e293b; border: 1px solid #64748b; border-radius: 8px; font: inherit; padding: 12px; }
+.local-s2 select:focus-visible, .local-s2 textarea:focus-visible, .local-s2 summary:focus-visible { outline: 3px solid #67e8f9; outline-offset: 4px; }
+.local-s2-rules { white-space: pre-wrap; font-size: .85rem; overflow-wrap: anywhere; margin: 12px 0; }
+.local-s2-digest { word-break: break-all; }
+.local-s2-result, .local-s2-history { margin-top: 32px; }
+.local-s2 dl { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 10px; margin: 18px 0; }
+.local-s2 dd { margin: 0; font-weight: 700; }
+.local-s2 ol, .local-s2 ul { padding-left: 20px; }
+.local-s2 li { margin: 12px 0; }
+.local-s2 summary { cursor: pointer; padding: 12px 0; }
+.local-s2-section { padding-top: 28px; border-top: 1px solid #475569; margin-top: 28px; }
+.local-s2-row { border: 1px solid #475569; border-radius: 10px; padding: 18px; margin: 14px 0; }
+.local-s2-grid { display: grid; gap: 18px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+@media (max-width: 650px) { .local-s2-grid { grid-template-columns: 1fr; } .local-s2 dl { grid-template-columns: 1fr; } .local-s2 .btn-secondary, .local-s2 .btn-primary { width: 100%; white-space: normal; } }

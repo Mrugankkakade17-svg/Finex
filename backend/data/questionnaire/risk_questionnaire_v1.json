@@ -1,0 +1,177 @@
+{
+  "questionnaire": {
+    "questionnaire_id": "risk_questionnaire_v1",
+    "version_label": "v1",
+    "title": "FinEx Risk Questionnaire v1",
+    "status": "APPROVED",
+    "active_from": "2026-08-23T21:21:00+05:30",
+    "retired_at": null
+  },
+  "questions": [
+    {
+      "position": 1,
+      "question_id": "W1",
+      "dimension": "willingness",
+      "text": "If your investment portfolio suddenly dropped 20% in value over a few weeks, what would you most likely do?",
+      "response_type": "single_choice",
+      "required": true,
+      "answers": [
+        { "code": "W1_A", "label": "Sell all investments immediately to avoid further loss", "proposed_score": 1 },
+        { "code": "W1_B", "label": "Sell some investments to reduce risk", "proposed_score": 2 },
+        { "code": "W1_C", "label": "Do nothing and wait it out", "proposed_score": 3 },
+        { "code": "W1_D", "label": "Hold and consider it a normal part of investing", "proposed_score": 4 },
+        { "code": "W1_E", "label": "Buy more while prices are low", "proposed_score": 5 }
+      ]
+    },
+    {
+      "position": 2,
+      "question_id": "W2",
+      "dimension": "willingness",
+      "text": "How comfortable are you with your investment value going up and down significantly from month to month?",
+      "response_type": "single_choice",
+      "required": true,
+      "answers": [
+        { "code": "W2_A", "label": "Very uncomfortable — I prefer stable, predictable value", "proposed_score": 1 },
+        { "code": "W2_B", "label": "Somewhat uncomfortable", "proposed_score": 2 },
+        { "code": "W2_C", "label": "Neutral", "proposed_score": 3 },
+        { "code": "W2_D", "label": "Somewhat comfortable", "proposed_score": 4 },
+        { "code": "W2_E", "label": "Very comfortable — I expect and accept ups and downs", "proposed_score": 5 }
+      ]
+    },
+    {
+      "position": 3,
+      "question_id": "W3",
+      "dimension": "willingness",
+      "text": "Which statement best describes your investing preference?",
+      "response_type": "single_choice",
+      "required": true,
+      "answers": [
+        { "code": "W3_A", "label": "I prefer to protect my money even if it grows slowly", "proposed_score": 1 },
+        { "code": "W3_B", "label": "I prefer mostly stable investments with a little growth", "proposed_score": 2 },
+        { "code": "W3_C", "label": "I want a balance of growth and stability", "proposed_score": 3 },
+        { "code": "W3_D", "label": "I prefer mostly growth-focused investments", "proposed_score": 4 },
+        { "code": "W3_E", "label": "I want maximum growth even with higher risk", "proposed_score": 5 }
+      ]
+    },
+    {
+      "position": 4,
+      "question_id": "W4",
+      "dimension": "willingness",
+      "text": "How long could you continue holding an investment that has lost value before you'd want to sell it?",
+      "response_type": "single_choice",
+      "required": true,
+      "answers": [
+        { "code": "W4_A", "label": "I would want to sell immediately", "proposed_score": 1 },
+        { "code": "W4_B", "label": "A few weeks", "proposed_score": 2 },
+        { "code": "W4_C", "label": "A few months", "proposed_score": 3 },
+        { "code": "W4_D", "label": "A year or more", "proposed_score": 4 },
+        { "code": "W4_E", "label": "I would hold indefinitely if I believed in the long-term plan", "proposed_score": 5 }
+      ]
+    },
+    {
+      "position": 5,
+      "question_id": "W5",
+      "dimension": "willingness",
+      "text": "What kind of returns do you expect from your investments, understanding that higher returns come with higher risk?",
+      "response_type": "single_choice",
+      "required": true,
+      "answers": [
+        { "code": "W5_A", "label": "I prefer minimal risk even if returns are low", "proposed_score": 1 },
+        { "code": "W5_B", "label": "Modest, steady returns", "proposed_score": 2 },
+        { "code": "W5_C", "label": "Moderate returns with some risk", "proposed_score": 3 },
+        { "code": "W5_D", "label": "Above-average returns, accepting more risk", "proposed_score": 4 },
+        { "code": "W5_E", "label": "High returns, accepting significant risk of loss", "proposed_score": 5 }
+      ]
+    },
+    {
+      "position": 6,
+      "question_id": "C1",
+      "dimension": "capacity",
+      "text": "When do you expect to need to withdraw a significant portion of this invested money?",
+      "response_type": "single_choice",
+      "required": true,
+      "answers": [
+        { "code": "C1_A", "label": "Within 1 year", "proposed_score": 1 },
+        { "code": "C1_B", "label": "1–3 years", "proposed_score": 2 },
+        { "code": "C1_C", "label": "3–5 years", "proposed_score": 3 },
+        { "code": "C1_D", "label": "5–10 years", "proposed_score": 4 },
+        { "code": "C1_E", "label": "More than 10 years", "proposed_score": 5 }
+      ]
+    },
+    {
+      "position": 7,
+      "question_id": "C2",
+      "dimension": "capacity",
+      "text": "How much do you depend on this specific invested money to cover your everyday living expenses?",
+      "response_type": "single_choice",
+      "required": true,
+      "answers": [
+        { "code": "C2_A", "label": "I depend on it heavily / may need it soon", "proposed_score": 1 },
+        { "code": "C2_B", "label": "I depend on it somewhat", "proposed_score": 2 },
+        { "code": "C2_C", "label": "I depend on it a little", "proposed_score": 3 },
+        { "code": "C2_D", "label": "I depend on it rarely", "proposed_score": 4 },
+        { "code": "C2_E", "label": "I do not depend on it at all — it's money I can leave invested long-term", "proposed_score": 5 }
+      ]
+    },
+    {
+      "position": 8,
+      "question_id": "C3",
+      "dimension": "capacity",
+      "text": "Do you have separate emergency savings (outside of this investment) that could cover unexpected expenses?",
+      "response_type": "single_choice",
+      "required": true,
+      "answers": [
+        { "code": "C3_A", "label": "No emergency savings", "proposed_score": 1 },
+        { "code": "C3_B", "label": "Less than 1 month of expenses saved", "proposed_score": 2 },
+        { "code": "C3_C", "label": "1–3 months of expenses saved", "proposed_score": 3 },
+        { "code": "C3_D", "label": "3–6 months of expenses saved", "proposed_score": 4 },
+        { "code": "C3_E", "label": "More than 6 months of expenses saved", "proposed_score": 5 }
+      ]
+    },
+    {
+      "position": 9,
+      "question_id": "C4",
+      "dimension": "capacity",
+      "text": "How stable is your current income?",
+      "response_type": "single_choice",
+      "required": true,
+      "answers": [
+        { "code": "C4_A", "label": "Very unstable / no regular income", "proposed_score": 1 },
+        { "code": "C4_B", "label": "Somewhat unstable", "proposed_score": 2 },
+        { "code": "C4_C", "label": "Moderately stable", "proposed_score": 3 },
+        { "code": "C4_D", "label": "Stable", "proposed_score": 4 },
+        { "code": "C4_E", "label": "Very stable / secure", "proposed_score": 5 }
+      ]
+    },
+    {
+      "position": 10,
+      "question_id": "C5",
+      "dimension": "capacity",
+      "text": "Do you have any major financial obligations planned in the near future (e.g., buying a home, education expenses, medical costs)?",
+      "response_type": "single_choice",
+      "required": true,
+      "answers": [
+        { "code": "C5_A", "label": "Yes, a major obligation is very likely within 1 year", "proposed_score": 1 },
+        { "code": "C5_B", "label": "Yes, likely within 1–2 years", "proposed_score": 2 },
+        { "code": "C5_C", "label": "Possibly, but not certain", "proposed_score": 3 },
+        { "code": "C5_D", "label": "Unlikely in the near future", "proposed_score": 4 },
+        { "code": "C5_E", "label": "No major obligations planned", "proposed_score": 5 }
+      ]
+    }
+  ],
+  "scoring": {
+    "status": "APPROVED",
+    "dimension_raw_range": { "min": 5, "max": 25 },
+    "normalization": "((raw_sum - 5) / (25 - 5)) * 100",
+    "combination": {
+      "formula": "(willingness_score * 0.5) + (capacity_score * 0.5)",
+      "willingness_weight": 0.5,
+      "capacity_weight": 0.5
+    },
+    "category_boundaries": [
+      { "min": 0, "max": 33.99, "category": "Conservative" },
+      { "min": 34, "max": 66.99, "category": "Moderate" },
+      { "min": 67, "max": 100, "category": "Aggressive" }
+    ]
+  }
+}

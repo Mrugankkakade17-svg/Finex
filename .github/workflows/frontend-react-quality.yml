@@ -1,0 +1,51 @@
+name: React Quality Gates
+
+on:
+  push:
+    paths:
+      - "frontend-react/**"
+      - "docs/evidence/s2-full-acceptance.md"
+      - "docs/evidence/s3-api-validation.md"
+      - "docs/evidence/s3-owned-flutter-validation.md"
+      - ".nvmrc"
+      - ".github/workflows/frontend-react-quality.yml"
+  pull_request:
+    paths:
+      - "frontend-react/**"
+      - "docs/evidence/s2-full-acceptance.md"
+      - "docs/evidence/s3-api-validation.md"
+      - "docs/evidence/s3-owned-flutter-validation.md"
+      - ".nvmrc"
+      - ".github/workflows/frontend-react-quality.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend-react
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+          cache-dependency-path: frontend-react/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run tests
+        run: npm test -- --watchAll=false
+        env:
+          CI: "true"
+
+      - name: Build production bundle
+        run: npm run build

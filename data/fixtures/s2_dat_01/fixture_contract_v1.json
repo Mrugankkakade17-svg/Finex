@@ -1,0 +1,101 @@
+{
+  "fixture_contract_schema_version": "s2-dat-01.fixture.v1",
+  "fixture_name": "s2_dat_01_local_assessment_fixtures",
+  "fixture_scope": "local_test_only",
+  "fixture_mode": "s2_dat_01",
+  "risk_contract_version": "s2-risk-contract/v1.0",
+  "questionnaire": {
+    "questionnaire_id": "risk_questionnaire_v1",
+    "questionnaire_version": "v1",
+    "source": "backend/data/questionnaire/risk_questionnaire_v1.json"
+  },
+  "golden_case_source": {
+    "path": "docs/features/risk-profiling/golden-cases.v1.json",
+    "fixture_version": "s2-risk-golden-cases/v1.0",
+    "contract_ref": "risk-contract.v1.json"
+  },
+  "deterministic_id_rules": {
+    "required": true,
+    "format": "lowercase ASCII fixture identifier",
+    "pattern": "^s2_dat_01_risk_gold_[0-9]{3}$",
+    "stable_across_runs": true,
+    "random_uuid_allowed": false
+  },
+  "reset_rules": {
+    "adapter": "in_memory",
+    "operation": "clear snapshot, validate sources, and rebuild from the manifest",
+    "deterministic": true,
+    "database_required": false,
+    "docker_required": false,
+    "cloud_dependency": false
+  },
+  "ownership_rules": {
+    "data_owner": "local_fixture_adapter",
+    "personal_user_identity_allowed": false,
+    "external_account_reference_allowed": false,
+    "fixture_records_may_be_persisted_to_shared_environment": false
+  },
+  "synthetic_data_rules": {
+    "test_only": true,
+    "real_personal_data_allowed": false,
+    "real_financial_data_allowed": false,
+    "market_data_allowed": false,
+    "credentials_allowed": false,
+    "oauth_tokens_allowed": false,
+    "production_data_allowed": false,
+    "cloud_endpoints_allowed": false,
+    "investment_recommendations_allowed": false
+  },
+  "required_coverages": [
+    "normal",
+    "reachable_lower_boundary",
+    "reachable_upper_boundary",
+    "dimension_tension",
+    "missing_required",
+    "duplicate",
+    "unknown_question",
+    "invalid_answer_code",
+    "contradictory",
+    "malformed",
+    "unsupported_version"
+  ],
+  "record_type": {
+    "name": "assessment_fixture",
+    "required_fields": [
+      "fixture_id",
+      "case_id",
+      "kind",
+      "coverage",
+      "title",
+      "request",
+      "expected"
+    ],
+    "request_fields": [
+      "questionnaire_id",
+      "questionnaire_version",
+      "answers"
+    ],
+    "prohibited_fields": [
+      "user_id",
+      "email",
+      "phone",
+      "account_number",
+      "credential",
+      "token",
+      "market_price",
+      "security_symbol",
+      "recommendation"
+    ]
+  },
+  "data_port": {
+    "interface": "app.ports.assessment_fixture_store.AssessmentFixtureStore",
+    "operations": [
+      "seed",
+      "reset",
+      "reset_and_seed",
+      "list_fixtures",
+      "get_fixture"
+    ],
+    "shared_database_adapter_in_scope": false
+  }
+}

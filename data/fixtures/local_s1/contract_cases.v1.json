@@ -1,0 +1,265 @@
+{
+  "schema_version": "finex.local_s1.corpus.v1",
+  "scope": "local_educational_application",
+  "contract_version": "local.v1",
+  "provenance": {
+    "kind": "synthetic_fixture",
+    "source": "handcrafted",
+    "command": "handcrafted local S1 contract fixture"
+  },
+  "cases": [
+    {
+      "id": "initial",
+      "operation": "state",
+      "request": null,
+      "status": 200,
+      "content_type": "application/json",
+      "body_utf8": "{\"success\":true,\"message\":\"Owned onboarding state\",\"data\":{\"scope\":\"local_educational_application\",\"contract_version\":\"local.v1\",\"profile_schema_version\":\"profile.v1\",\"consent_version\":\"consent.v1\",\"consent\":null,\"draft\":{\"display_name\":null,\"experience_level\":null,\"updated_at\":null},\"onboarding_completed\":false,\"completed_at\":null},\"meta\":{\"correlationId\":\"s1-synthetic-fixture\",\"apiVersion\":\"v1\",\"dataAsOf\":null,\"dataStatus\":\"CACHED\"}}",
+      "expected": {
+        "outcome": "success"
+      }
+    },
+    {
+      "id": "me",
+      "operation": "me",
+      "request": null,
+      "status": 200,
+      "content_type": "application/json",
+      "body_utf8": "{\"success\":true,\"message\":\"Local session validated\",\"data\":{\"scope\":\"local_educational_application\",\"contract_version\":\"local.v1\",\"user\":{\"id\":\"synthetic-user-a\",\"alias\":\"learner-a\"}},\"meta\":{\"correlationId\":\"s1-synthetic-fixture\",\"apiVersion\":\"v1\",\"dataAsOf\":null,\"dataStatus\":\"CACHED\"}}",
+      "expected": {
+        "outcome": "success"
+      }
+    },
+    {
+      "id": "partial_draft",
+      "operation": "draft",
+      "request": {
+        "profile_schema_version": "profile.v1",
+        "display_name": null,
+        "experience_level": "beginner"
+      },
+      "status": 200,
+      "content_type": "application/json",
+      "body_utf8": "{\"success\":true,\"message\":\"Profile draft saved\",\"data\":{\"scope\":\"local_educational_application\",\"contract_version\":\"local.v1\",\"profile_schema_version\":\"profile.v1\",\"consent_version\":\"consent.v1\",\"consent\":null,\"draft\":{\"display_name\":null,\"experience_level\":\"beginner\",\"updated_at\":\"2026-10-11T12:00:00+00:00\"},\"onboarding_completed\":false,\"completed_at\":null},\"meta\":{\"correlationId\":\"s1-synthetic-fixture\",\"apiVersion\":\"v1\",\"dataAsOf\":null,\"dataStatus\":\"CACHED\"}}",
+      "expected": {
+        "outcome": "success"
+      }
+    },
+    {
+      "id": "saved_profile",
+      "operation": "draft",
+      "request": {
+        "profile_schema_version": "profile.v1",
+        "display_name": "Synthetic learner A",
+        "experience_level": "beginner"
+      },
+      "status": 200,
+      "content_type": "application/json",
+      "body_utf8": "{\"success\":true,\"message\":\"Profile draft saved\",\"data\":{\"scope\":\"local_educational_application\",\"contract_version\":\"local.v1\",\"profile_schema_version\":\"profile.v1\",\"consent_version\":\"consent.v1\",\"consent\":{\"accepted\":true,\"version\":\"consent.v1\",\"recorded_at\":\"2026-10-11T12:00:00+00:00\"},\"draft\":{\"display_name\":\"Synthetic learner A\",\"experience_level\":\"beginner\",\"updated_at\":\"2026-10-11T12:00:00+00:00\"},\"onboarding_completed\":false,\"completed_at\":null},\"meta\":{\"correlationId\":\"s1-synthetic-fixture\",\"apiVersion\":\"v1\",\"dataAsOf\":null,\"dataStatus\":\"CACHED\"}}",
+      "expected": {
+        "outcome": "success"
+      }
+    },
+    {
+      "id": "consent_accepted",
+      "operation": "consent",
+      "request": {
+        "consent_version": "consent.v1",
+        "consent_given": true
+      },
+      "status": 200,
+      "content_type": "application/json",
+      "body_utf8": "{\"success\":true,\"message\":\"Consent decision recorded\",\"data\":{\"scope\":\"local_educational_application\",\"contract_version\":\"local.v1\",\"profile_schema_version\":\"profile.v1\",\"consent_version\":\"consent.v1\",\"consent\":{\"accepted\":true,\"version\":\"consent.v1\",\"recorded_at\":\"2026-10-11T12:00:00+00:00\"},\"draft\":{\"display_name\":null,\"experience_level\":\"beginner\",\"updated_at\":\"2026-10-11T12:00:00+00:00\"},\"onboarding_completed\":false,\"completed_at\":null},\"meta\":{\"correlationId\":\"s1-synthetic-fixture\",\"apiVersion\":\"v1\",\"dataAsOf\":null,\"dataStatus\":\"CACHED\"}}",
+      "expected": {
+        "outcome": "success"
+      }
+    },
+    {
+      "id": "completed",
+      "operation": "complete",
+      "request": {
+        "consent_version": "consent.v1",
+        "profile_schema_version": "profile.v1"
+      },
+      "status": 200,
+      "content_type": "application/json",
+      "body_utf8": "{\"success\":true,\"message\":\"Owned onboarding completed\",\"data\":{\"scope\":\"local_educational_application\",\"contract_version\":\"local.v1\",\"profile_schema_version\":\"profile.v1\",\"consent_version\":\"consent.v1\",\"consent\":{\"accepted\":true,\"version\":\"consent.v1\",\"recorded_at\":\"2026-10-11T12:00:00+00:00\"},\"draft\":{\"display_name\":\"Synthetic learner A\",\"experience_level\":\"beginner\",\"updated_at\":\"2026-10-11T12:00:00+00:00\"},\"onboarding_completed\":true,\"completed_at\":\"2026-10-11T12:00:00+00:00\"},\"meta\":{\"correlationId\":\"s1-synthetic-fixture\",\"apiVersion\":\"v1\",\"dataAsOf\":null,\"dataStatus\":\"CACHED\"}}",
+      "expected": {
+        "outcome": "success"
+      }
+    },
+    {
+      "id": "repeated_complete",
+      "operation": "complete",
+      "request": {
+        "consent_version": "consent.v1",
+        "profile_schema_version": "profile.v1"
+      },
+      "status": 200,
+      "content_type": "application/json",
+      "body_utf8": "{\"success\":true,\"message\":\"Owned onboarding completed\",\"data\":{\"scope\":\"local_educational_application\",\"contract_version\":\"local.v1\",\"profile_schema_version\":\"profile.v1\",\"consent_version\":\"consent.v1\",\"consent\":{\"accepted\":true,\"version\":\"consent.v1\",\"recorded_at\":\"2026-10-11T12:00:00+00:00\"},\"draft\":{\"display_name\":\"Synthetic learner A\",\"experience_level\":\"beginner\",\"updated_at\":\"2026-10-11T12:00:00+00:00\"},\"onboarding_completed\":true,\"completed_at\":\"2026-10-11T12:00:00+00:00\"},\"meta\":{\"correlationId\":\"s1-synthetic-fixture\",\"apiVersion\":\"v1\",\"dataAsOf\":null,\"dataStatus\":\"CACHED\"}}",
+      "expected": {
+        "outcome": "success"
+      }
+    },
+    {
+      "id": "identical_draft",
+      "operation": "draft",
+      "request": {
+        "profile_schema_version": "profile.v1",
+        "display_name": "Synthetic learner A",
+        "experience_level": "beginner"
+      },
+      "status": 200,
+      "content_type": "application/json",
+      "body_utf8": "{\"success\":true,\"message\":\"Profile draft saved\",\"data\":{\"scope\":\"local_educational_application\",\"contract_version\":\"local.v1\",\"profile_schema_version\":\"profile.v1\",\"consent_version\":\"consent.v1\",\"consent\":{\"accepted\":true,\"version\":\"consent.v1\",\"recorded_at\":\"2026-10-11T12:00:00+00:00\"},\"draft\":{\"display_name\":\"Synthetic learner A\",\"experience_level\":\"beginner\",\"updated_at\":\"2026-10-11T12:00:00+00:00\"},\"onboarding_completed\":true,\"completed_at\":\"2026-10-11T12:00:00+00:00\"},\"meta\":{\"correlationId\":\"s1-synthetic-fixture\",\"apiVersion\":\"v1\",\"dataAsOf\":null,\"dataStatus\":\"CACHED\"}}",
+      "expected": {
+        "outcome": "success"
+      }
+    },
+    {
+      "id": "changed_profile",
+      "operation": "draft",
+      "request": {
+        "profile_schema_version": "profile.v1",
+        "display_name": "Synthetic learner A revised",
+        "experience_level": "advanced"
+      },
+      "status": 200,
+      "content_type": "application/json",
+      "body_utf8": "{\"success\":true,\"message\":\"Profile draft saved\",\"data\":{\"scope\":\"local_educational_application\",\"contract_version\":\"local.v1\",\"profile_schema_version\":\"profile.v1\",\"consent_version\":\"consent.v1\",\"consent\":{\"accepted\":true,\"version\":\"consent.v1\",\"recorded_at\":\"2026-10-11T12:00:00+00:00\"},\"draft\":{\"display_name\":\"Synthetic learner A revised\",\"experience_level\":\"advanced\",\"updated_at\":\"2026-10-11T12:00:00+00:00\"},\"onboarding_completed\":false,\"completed_at\":null},\"meta\":{\"correlationId\":\"s1-synthetic-fixture\",\"apiVersion\":\"v1\",\"dataAsOf\":null,\"dataStatus\":\"CACHED\"}}",
+      "expected": {
+        "outcome": "success"
+      }
+    },
+    {
+      "id": "withdrawn",
+      "operation": "consent",
+      "request": {
+        "consent_version": "consent.v1",
+        "consent_given": false
+      },
+      "status": 200,
+      "content_type": "application/json",
+      "body_utf8": "{\"success\":true,\"message\":\"Consent decision recorded\",\"data\":{\"scope\":\"local_educational_application\",\"contract_version\":\"local.v1\",\"profile_schema_version\":\"profile.v1\",\"consent_version\":\"consent.v1\",\"consent\":{\"accepted\":false,\"version\":\"consent.v1\",\"recorded_at\":\"2026-10-11T12:00:00+00:00\"},\"draft\":{\"display_name\":\"Synthetic learner A revised\",\"experience_level\":\"advanced\",\"updated_at\":\"2026-10-11T12:00:00+00:00\"},\"onboarding_completed\":false,\"completed_at\":null},\"meta\":{\"correlationId\":\"s1-synthetic-fixture\",\"apiVersion\":\"v1\",\"dataAsOf\":null,\"dataStatus\":\"CACHED\"}}",
+      "expected": {
+        "outcome": "success"
+      }
+    },
+    {
+      "id": "reaccepted",
+      "operation": "consent",
+      "request": {
+        "consent_version": "consent.v1",
+        "consent_given": true
+      },
+      "status": 200,
+      "content_type": "application/json",
+      "body_utf8": "{\"success\":true,\"message\":\"Consent decision recorded\",\"data\":{\"scope\":\"local_educational_application\",\"contract_version\":\"local.v1\",\"profile_schema_version\":\"profile.v1\",\"consent_version\":\"consent.v1\",\"consent\":{\"accepted\":true,\"version\":\"consent.v1\",\"recorded_at\":\"2026-10-11T12:00:00+00:00\"},\"draft\":{\"display_name\":\"Synthetic learner A revised\",\"experience_level\":\"advanced\",\"updated_at\":\"2026-10-11T12:00:00+00:00\"},\"onboarding_completed\":false,\"completed_at\":null},\"meta\":{\"correlationId\":\"s1-synthetic-fixture\",\"apiVersion\":\"v1\",\"dataAsOf\":null,\"dataStatus\":\"CACHED\"}}",
+      "expected": {
+        "outcome": "success"
+      }
+    },
+    {
+      "id": "logged_out",
+      "operation": "logout",
+      "request": null,
+      "status": 200,
+      "content_type": "application/json",
+      "body_utf8": "{\"success\":true,\"message\":\"Local session revoked\",\"data\":{\"scope\":\"local_educational_application\",\"contract_version\":\"local.v1\",\"signed_out\":true},\"meta\":{\"correlationId\":\"s1-synthetic-fixture\",\"apiVersion\":\"v1\",\"dataAsOf\":null,\"dataStatus\":\"CACHED\"}}",
+      "expected": {
+        "outcome": "success"
+      }
+    },
+    {
+      "id": "session_invalid",
+      "operation": "state",
+      "request": null,
+      "status": 401,
+      "content_type": "application/json",
+      "body_utf8": "{\"success\":false,\"message\":\"A valid local session is required.\",\"error_code\":\"SESSION_INVALID\",\"error\":{\"code\":\"SESSION_INVALID\",\"message\":\"A valid local session is required.\",\"fieldErrors\":[],\"correlationId\":\"s1-synthetic-fixture\"},\"detail\":\"A valid local session is required.\"}",
+      "expected": {
+        "outcome": "error",
+        "error_code": "SESSION_INVALID"
+      }
+    },
+    {
+      "id": "consent_required",
+      "operation": "complete",
+      "request": {
+        "consent_version": "consent.v1",
+        "profile_schema_version": "profile.v1"
+      },
+      "status": 409,
+      "content_type": "application/json",
+      "body_utf8": "{\"success\":false,\"message\":\"Accept the current educational consent notice.\",\"error_code\":\"CONSENT_REQUIRED\",\"error\":{\"code\":\"CONSENT_REQUIRED\",\"message\":\"Accept the current educational consent notice.\",\"fieldErrors\":[],\"correlationId\":\"s1-synthetic-fixture\"},\"detail\":\"Accept the current educational consent notice.\"}",
+      "expected": {
+        "outcome": "error",
+        "error_code": "CONSENT_REQUIRED"
+      }
+    },
+    {
+      "id": "profile_incomplete",
+      "operation": "complete",
+      "request": {
+        "consent_version": "consent.v1",
+        "profile_schema_version": "profile.v1"
+      },
+      "status": 409,
+      "content_type": "application/json",
+      "body_utf8": "{\"success\":false,\"message\":\"Save the required display label and experience level.\",\"error_code\":\"PROFILE_INCOMPLETE\",\"error\":{\"code\":\"PROFILE_INCOMPLETE\",\"message\":\"Save the required display label and experience level.\",\"fieldErrors\":[],\"correlationId\":\"s1-synthetic-fixture\"},\"detail\":\"Save the required display label and experience level.\"}",
+      "expected": {
+        "outcome": "error",
+        "error_code": "PROFILE_INCOMPLETE"
+      }
+    },
+    {
+      "id": "validation_error",
+      "operation": "draft",
+      "request": {
+        "profile_schema_version": "profile.v1",
+        "display_name": "Synthetic learner A",
+        "experience_level": "beginner",
+        "owner_id": "synthetic-user-b"
+      },
+      "status": 422,
+      "content_type": "application/json",
+      "body_utf8": "{\"success\":false,\"message\":\"Request validation failed\",\"error_code\":\"VALIDATION_ERROR\",\"error\":{\"code\":\"VALIDATION_ERROR\",\"message\":\"Request validation failed\",\"fieldErrors\":[{\"field\":\"request\",\"code\":\"INVALID_FORMAT\"}],\"correlationId\":\"s1-synthetic-fixture\"},\"detail\":\"Request validation failed\"}",
+      "expected": {
+        "outcome": "error",
+        "error_code": "VALIDATION_ERROR"
+      }
+    },
+    {
+      "id": "consent_version_mismatch",
+      "operation": "consent",
+      "request": {
+        "consent_version": "consent.future",
+        "consent_given": true
+      },
+      "status": 409,
+      "content_type": "application/json",
+      "body_utf8": "{\"success\":false,\"message\":\"The client contract version is not supported.\",\"error_code\":\"CONSENT_VERSION_MISMATCH\",\"error\":{\"code\":\"CONSENT_VERSION_MISMATCH\",\"message\":\"The client contract version is not supported.\",\"fieldErrors\":[],\"correlationId\":\"s1-synthetic-fixture\"},\"detail\":\"The client contract version is not supported.\"}",
+      "expected": {
+        "outcome": "error",
+        "error_code": "CONSENT_VERSION_MISMATCH"
+      }
+    },
+    {
+      "id": "profile_version_mismatch",
+      "operation": "draft",
+      "request": {
+        "profile_schema_version": "profile.future",
+        "display_name": "Synthetic learner A",
+        "experience_level": "beginner"
+      },
+      "status": 409,
+      "content_type": "application/json",
+      "body_utf8": "{\"success\":false,\"message\":\"The client contract version is not supported.\",\"error_code\":\"PROFILE_VERSION_MISMATCH\",\"error\":{\"code\":\"PROFILE_VERSION_MISMATCH\",\"message\":\"The client contract version is not supported.\",\"fieldErrors\":[],\"correlationId\":\"s1-synthetic-fixture\"},\"detail\":\"The client contract version is not supported.\"}",
+      "expected": {
+        "outcome": "error",
+        "error_code": "PROFILE_VERSION_MISMATCH"
+      }
+    }
+  ]
+}

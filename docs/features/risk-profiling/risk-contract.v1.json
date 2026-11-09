@@ -1,0 +1,194 @@
+{
+  "contract_version": "s2-risk-contract/v1.0",
+  "status": "implementation_baseline",
+  "purpose": "Internal deterministic educational risk-profile contract for the FinEx prototype.",
+  "source_of_truth": {
+    "questionnaire_path": "backend/data/questionnaire/risk_questionnaire_v1.json",
+    "questionnaire_id": "risk_questionnaire_v1",
+    "questionnaire_version": "v1",
+    "source_status": "APPROVED",
+    "change_control": "Do not mutate a released version. Create a new questionnaire and contract version for changed questions, weights, thresholds, or output semantics."
+  },
+  "approval_boundary": {
+    "approved_canonical_decisions": [
+      "v1 question IDs and permitted answer values",
+      "v1 answer scores, dimension ranges, normalization, and category boundaries"
+    ],
+    "s2_implementation_proposal": [
+      "logical transport DTO",
+      "stable error vocabulary and validation order",
+      "non-advisory informational tension labels"
+    ],
+    "governance_rule": "A change to a proposed item must be recorded in a versioned contract before API, UI, or evaluation code relies on it."
+  },
+  "input": {
+    "required_fields": [
+      "questionnaire_id",
+      "questionnaire_version",
+      "answers"
+    ],
+    "answer_required_fields": [
+      "question_id",
+      "answer_code"
+    ],
+    "response_type": "single_choice",
+    "required_answer_count": 10,
+    "required_question_ids": [
+      "W1",
+      "W2",
+      "W3",
+      "W4",
+      "W5",
+      "C1",
+      "C2",
+      "C3",
+      "C4",
+      "C5"
+    ],
+    "dimension_membership": {
+      "willingness": [
+        "W1",
+        "W2",
+        "W3",
+        "W4",
+        "W5"
+      ],
+      "capacity": [
+        "C1",
+        "C2",
+        "C3",
+        "C4",
+        "C5"
+      ]
+    },
+    "answer_code_pattern": "^(W[1-5]|C[1-5])_[A-E]$",
+    "permitted_answer_rule": "An answer code must exist in the canonical questionnaire and belong to the submitted question_id.",
+    "validation_order": [
+      "MALFORMED_ANSWER",
+      "UNSUPPORTED_QUESTIONNAIRE_VERSION",
+      "DUPLICATE_QUESTION_ANSWER",
+      "UNKNOWN_QUESTION_ID",
+      "MISSING_REQUIRED_QUESTION",
+      "INVALID_ANSWER_CODE",
+      "ANSWER_NOT_PERMITTED_FOR_QUESTION"
+    ]
+  },
+  "scoring_policy": {
+    "calculation_mode": "deterministic_only",
+    "numeric_decision_maker": "local deterministic rules",
+    "external_model_may_calculate_or_override_score": false,
+    "dimension_raw_range": {
+      "min": 5,
+      "max": 25
+    },
+    "normalization": "((raw_sum - 5) / (25 - 5)) * 100",
+    "combination": {
+      "formula": "(willingness_score * 0.5) + (capacity_score * 0.5)",
+      "willingness_weight": 0.5,
+      "capacity_weight": 0.5
+    },
+    "categories": [
+      {
+        "code": "CONSERVATIVE",
+        "label": "Conservative",
+        "min_inclusive": 0,
+        "max_exclusive": 34
+      },
+      {
+        "code": "MODERATE",
+        "label": "Moderate",
+        "min_inclusive": 34,
+        "max_exclusive": 67
+      },
+      {
+        "code": "AGGRESSIVE",
+        "label": "Aggressive",
+        "min_inclusive": 67,
+        "max_inclusive": 100
+      }
+    ],
+    "reachable_composite_increment": 2.5,
+    "rounding_rule": "Use the exact calculated numeric value for category mapping. Presentation formatting must not change the category."
+  },
+  "result": {
+    "required_fields": [
+      "contract_version",
+      "questionnaire_id",
+      "questionnaire_version",
+      "scoring_version",
+      "willingness_score",
+      "capacity_score",
+      "composite_score",
+      "risk_category",
+      "calculated_at",
+      "limitation"
+    ],
+    "risk_category_fields": [
+      "code",
+      "label"
+    ],
+    "optional_fields": [
+      "informational_tension"
+    ],
+    "informational_tension": {
+      "purpose": "Describe a material difference between the two deterministic dimensions without giving advice.",
+      "allowed_codes": [
+        "CAPACITY_BELOW_WILLINGNESS",
+        "WILLINGNESS_BELOW_CAPACITY"
+      ]
+    },
+    "limitation": {
+      "code": "EDUCATIONAL_SELF_REPORTED_PROFILE",
+      "required_message": "This educational profile is based on self-reported answers and is not individualized financial, legal, tax, or investment advice."
+    },
+    "determinism": "For the same accepted request and scoring version, the three scores and category must be identical. A generated timestamp may differ."
+  },
+  "errors": [
+    {
+      "code": "MALFORMED_ANSWER",
+      "meaning": "A required answer field is absent or has an invalid type or format."
+    },
+    {
+      "code": "UNSUPPORTED_QUESTIONNAIRE_VERSION",
+      "meaning": "The questionnaire ID or version is not supported."
+    },
+    {
+      "code": "DUPLICATE_QUESTION_ANSWER",
+      "meaning": "More than one answer was supplied for one question."
+    },
+    {
+      "code": "UNKNOWN_QUESTION_ID",
+      "meaning": "A submitted question ID does not exist in the requested questionnaire version."
+    },
+    {
+      "code": "MISSING_REQUIRED_QUESTION",
+      "meaning": "At least one required question has no answer."
+    },
+    {
+      "code": "INVALID_ANSWER_CODE",
+      "meaning": "An answer code is not defined by the requested questionnaire version."
+    },
+    {
+      "code": "ANSWER_NOT_PERMITTED_FOR_QUESTION",
+      "meaning": "A known answer code was supplied for a different question."
+    }
+  ],
+  "explanation_boundary": {
+    "allowed": [
+      "Describe the already-calculated category and dimensions in plain language.",
+      "State the self-reported and educational limitations.",
+      "Identify a dimension difference as informational context only."
+    ],
+    "prohibited": [
+      "Changing, selecting, rounding, or overriding a numeric result or category.",
+      "Naming a security, broker, fund, or trading action.",
+      "Promising returns, capital protection, suitability, or a personalized outcome.",
+      "Using market data, external financial data, an LLM, RAG, or another hosted model for numeric scoring."
+    ]
+  },
+  "privacy_and_operations": {
+    "fixture_data": "Synthetic only; no personal, account, production, or market data.",
+    "logging": "Do not echo full submitted answers in client-visible errors. Preserve only approved audit fields under the product retention policy.",
+    "deployment_dependency": "None. Contract validation and deterministic scoring must run locally without Docker or a cloud service."
+  }
+}

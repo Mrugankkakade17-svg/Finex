@@ -1,0 +1,11 @@
+[Section: Investment Objective]
+The FinEx Balanced Growth Fund aims to achieve moderate capital growth with a secondary focus on current income preservation by maintaining a balanced asset mix between equity securities and fixed-income debt instruments.
+
+[Section: Asset Allocation Strategy]
+The target asset allocation is 60% equities and 40% high-grade fixed income bonds. Equity allocation focuses on dividend-yielding blue-chip corporations, while bond holdings consist of government treasuries and investment-grade corporate bonds.
+
+[Section: Liquidity and Redemption Rules]
+Units may be redeemed on any business day at the prevailing Net Asset Value (NAV). Settlement occurs within T+2 business days. A 1% early redemption fee applies to holdings liquidated within 90 days of initial purchase.
+
+[Section: Expense Ratio & Management Structure]
+The annual management fee is 0.75% of average net assets. Operating expenses and administrative fees bring the net expense ratio to 0.90% per annum.

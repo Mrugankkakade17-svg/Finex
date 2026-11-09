@@ -1,0 +1,74 @@
+{
+  "fixture_contract_schema_version": "s2-dat-01.fixture.v1",
+  "fixture_mode": "s2_dat_01",
+  "risk_contract_version": "s2-risk-contract/v1.0",
+  "questionnaire_id": "risk_questionnaire_v1",
+  "questionnaire_version": "v1",
+  "golden_fixture_version": "s2-risk-golden-cases/v1.0",
+  "fixtures": [
+    {
+      "fixture_id": "s2_dat_01_risk_gold_001",
+      "golden_case_id": "RISK-GOLD-001"
+    },
+    {
+      "fixture_id": "s2_dat_01_risk_gold_002",
+      "golden_case_id": "RISK-GOLD-002"
+    },
+    {
+      "fixture_id": "s2_dat_01_risk_gold_003",
+      "golden_case_id": "RISK-GOLD-003"
+    },
+    {
+      "fixture_id": "s2_dat_01_risk_gold_004",
+      "golden_case_id": "RISK-GOLD-004"
+    },
+    {
+      "fixture_id": "s2_dat_01_risk_gold_005",
+      "golden_case_id": "RISK-GOLD-005"
+    },
+    {
+      "fixture_id": "s2_dat_01_risk_gold_006",
+      "golden_case_id": "RISK-GOLD-006"
+    },
+    {
+      "fixture_id": "s2_dat_01_risk_gold_007",
+      "golden_case_id": "RISK-GOLD-007"
+    },
+    {
+      "fixture_id": "s2_dat_01_risk_gold_008",
+      "golden_case_id": "RISK-GOLD-008"
+    },
+    {
+      "fixture_id": "s2_dat_01_risk_gold_009",
+      "golden_case_id": "RISK-GOLD-009"
+    },
+    {
+      "fixture_id": "s2_dat_01_risk_gold_010",
+      "golden_case_id": "RISK-GOLD-010"
+    },
+    {
+      "fixture_id": "s2_dat_01_risk_gold_011",
+      "golden_case_id": "RISK-GOLD-011"
+    },
+    {
+      "fixture_id": "s2_dat_01_risk_gold_012",
+      "golden_case_id": "RISK-GOLD-012"
+    },
+    {
+      "fixture_id": "s2_dat_01_risk_gold_013",
+      "golden_case_id": "RISK-GOLD-013"
+    },
+    {
+      "fixture_id": "s2_dat_01_risk_gold_014",
+      "golden_case_id": "RISK-GOLD-014"
+    },
+    {
+      "fixture_id": "s2_dat_01_risk_gold_015",
+      "golden_case_id": "RISK-GOLD-015"
+    },
+    {
+      "fixture_id": "s2_dat_01_risk_gold_016",
+      "golden_case_id": "RISK-GOLD-016"
+    }
+  ]
+}

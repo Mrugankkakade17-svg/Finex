@@ -1,0 +1,35 @@
+[
+  {
+    "doc_id": 1,
+    "title": "FinEx Global Equity Fund Factsheet Q3",
+    "filename": "sample_factsheet.txt",
+    "source": "FinEx_Global_Equity_Factsheet_Q3",
+    "doc_type": "factsheet",
+    "document_date": "2026-08-01",
+    "version": "1.0",
+    "uploaded_by": 1001,
+    "is_active": true
+  },
+  {
+    "doc_id": 2,
+    "title": "FinEx Balanced Growth Fund Prospectus",
+    "filename": "sample_fund_prospectus.txt",
+    "source": "FinEx_Balanced_Growth_Prospectus_2026",
+    "doc_type": "prospectus",
+    "document_date": "2026-07-15",
+    "version": "1.0",
+    "uploaded_by": 1001,
+    "is_active": true
+  },
+  {
+    "doc_id": 3,
+    "title": "FinEx Q3 2026 Macroeconomic and Market Commentary",
+    "filename": "sample_market_commentary.txt",
+    "source": "FinEx_Macro_Commentary_Q3_2026",
+    "doc_type": "market_commentary",
+    "document_date": "2026-08-10",
+    "version": "1.0",
+    "uploaded_by": 1001,
+    "is_active": true
+  }
+]

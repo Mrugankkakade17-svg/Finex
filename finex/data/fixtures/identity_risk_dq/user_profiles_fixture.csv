@@ -1,0 +1,3 @@
+profile_id,user_id,first_name,last_name,phone,date_of_birth,address,city,country,created_at,updated_at
+1,1,Alice,Sharma,9876543210,2002-05-10,123 Main Street,Nagpur,India,2026-08-20 10:00:00,2026-08-20 10:00:00
+2,2,Bob,,9876543211,,456 Park Road,Nagpur,India,2026-08-20 10:01:00,2026-08-20 10:01:00

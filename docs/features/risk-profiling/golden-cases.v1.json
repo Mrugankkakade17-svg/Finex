@@ -1,0 +1,449 @@
+{
+  "fixture_version": "s2-risk-golden-cases/v1.0",
+  "contract_ref": "risk-contract.v1.json",
+  "fixture_data_classification": "synthetic_non_production",
+  "base_request": {
+    "questionnaire_id": "risk_questionnaire_v1",
+    "questionnaire_version": "v1"
+  },
+  "answer_sets": {
+    "all_low": {
+      "W1": "W1_A",
+      "W2": "W2_A",
+      "W3": "W3_A",
+      "W4": "W4_A",
+      "W5": "W5_A",
+      "C1": "C1_A",
+      "C2": "C2_A",
+      "C3": "C3_A",
+      "C4": "C4_A",
+      "C5": "C5_A"
+    },
+    "conservative_upper_reachable": {
+      "W1": "W1_C",
+      "W2": "W2_B",
+      "W3": "W3_B",
+      "W4": "W4_B",
+      "W5": "W5_B",
+      "C1": "C1_C",
+      "C2": "C2_C",
+      "C3": "C3_B",
+      "C4": "C4_B",
+      "C5": "C5_B"
+    },
+    "moderate_lower_reachable": {
+      "W1": "W1_C",
+      "W2": "W2_C",
+      "W3": "W3_B",
+      "W4": "W4_B",
+      "W5": "W5_B",
+      "C1": "C1_C",
+      "C2": "C2_C",
+      "C3": "C3_B",
+      "C4": "C4_B",
+      "C5": "C5_B"
+    },
+    "all_mid": {
+      "W1": "W1_C",
+      "W2": "W2_C",
+      "W3": "W3_C",
+      "W4": "W4_C",
+      "W5": "W5_C",
+      "C1": "C1_C",
+      "C2": "C2_C",
+      "C3": "C3_C",
+      "C4": "C4_C",
+      "C5": "C5_C"
+    },
+    "moderate_upper_reachable": {
+      "W1": "W1_D",
+      "W2": "W2_D",
+      "W3": "W3_D",
+      "W4": "W4_C",
+      "W5": "W5_C",
+      "C1": "C1_D",
+      "C2": "C2_D",
+      "C3": "C3_D",
+      "C4": "C4_C",
+      "C5": "C5_C"
+    },
+    "aggressive_lower_reachable": {
+      "W1": "W1_D",
+      "W2": "W2_D",
+      "W3": "W3_D",
+      "W4": "W4_D",
+      "W5": "W5_C",
+      "C1": "C1_D",
+      "C2": "C2_D",
+      "C3": "C3_D",
+      "C4": "C4_C",
+      "C5": "C5_C"
+    },
+    "all_high": {
+      "W1": "W1_E",
+      "W2": "W2_E",
+      "W3": "W3_E",
+      "W4": "W4_E",
+      "W5": "W5_E",
+      "C1": "C1_E",
+      "C2": "C2_E",
+      "C3": "C3_E",
+      "C4": "C4_E",
+      "C5": "C5_E"
+    },
+    "high_willingness_low_capacity": {
+      "W1": "W1_E",
+      "W2": "W2_E",
+      "W3": "W3_E",
+      "W4": "W4_E",
+      "W5": "W5_E",
+      "C1": "C1_A",
+      "C2": "C2_A",
+      "C3": "C3_A",
+      "C4": "C4_A",
+      "C5": "C5_A"
+    },
+    "low_willingness_high_capacity": {
+      "W1": "W1_A",
+      "W2": "W2_A",
+      "W3": "W3_A",
+      "W4": "W4_A",
+      "W5": "W5_A",
+      "C1": "C1_E",
+      "C2": "C2_E",
+      "C3": "C3_E",
+      "C4": "C4_E",
+      "C5": "C5_E"
+    }
+  },
+  "cases": [
+    {
+      "case_id": "RISK-GOLD-001",
+      "kind": "valid",
+      "coverage": "normal",
+      "title": "All low answers map to Conservative",
+      "answer_set": "all_low",
+      "expected": {
+        "willingness_raw": 5,
+        "capacity_raw": 5,
+        "willingness_score": 0.0,
+        "capacity_score": 0.0,
+        "composite_score": 0.0,
+        "risk_category": {
+          "code": "CONSERVATIVE",
+          "label": "Conservative"
+        },
+        "limitation_code": "EDUCATIONAL_SELF_REPORTED_PROFILE"
+      }
+    },
+    {
+      "case_id": "RISK-GOLD-002",
+      "kind": "valid",
+      "coverage": "reachable_lower_boundary",
+      "title": "32.5 stays Conservative below the 34 threshold",
+      "answer_set": "conservative_upper_reachable",
+      "expected": {
+        "willingness_raw": 11,
+        "capacity_raw": 12,
+        "willingness_score": 30.0,
+        "capacity_score": 35.0,
+        "composite_score": 32.5,
+        "risk_category": {
+          "code": "CONSERVATIVE",
+          "label": "Conservative"
+        },
+        "limitation_code": "EDUCATIONAL_SELF_REPORTED_PROFILE"
+      }
+    },
+    {
+      "case_id": "RISK-GOLD-003",
+      "kind": "valid",
+      "coverage": "reachable_lower_boundary",
+      "title": "35.0 is the first reachable Moderate result",
+      "answer_set": "moderate_lower_reachable",
+      "expected": {
+        "willingness_raw": 12,
+        "capacity_raw": 12,
+        "willingness_score": 35.0,
+        "capacity_score": 35.0,
+        "composite_score": 35.0,
+        "risk_category": {
+          "code": "MODERATE",
+          "label": "Moderate"
+        },
+        "limitation_code": "EDUCATIONAL_SELF_REPORTED_PROFILE"
+      }
+    },
+    {
+      "case_id": "RISK-GOLD-004",
+      "kind": "valid",
+      "coverage": "normal",
+      "title": "All midpoint answers map to Moderate",
+      "answer_set": "all_mid",
+      "expected": {
+        "willingness_raw": 15,
+        "capacity_raw": 15,
+        "willingness_score": 50.0,
+        "capacity_score": 50.0,
+        "composite_score": 50.0,
+        "risk_category": {
+          "code": "MODERATE",
+          "label": "Moderate"
+        },
+        "limitation_code": "EDUCATIONAL_SELF_REPORTED_PROFILE"
+      }
+    },
+    {
+      "case_id": "RISK-GOLD-005",
+      "kind": "valid",
+      "coverage": "reachable_upper_boundary",
+      "title": "65.0 stays Moderate below the 67 threshold",
+      "answer_set": "moderate_upper_reachable",
+      "expected": {
+        "willingness_raw": 18,
+        "capacity_raw": 18,
+        "willingness_score": 65.0,
+        "capacity_score": 65.0,
+        "composite_score": 65.0,
+        "risk_category": {
+          "code": "MODERATE",
+          "label": "Moderate"
+        },
+        "limitation_code": "EDUCATIONAL_SELF_REPORTED_PROFILE"
+      }
+    },
+    {
+      "case_id": "RISK-GOLD-006",
+      "kind": "valid",
+      "coverage": "reachable_upper_boundary",
+      "title": "67.5 is the first reachable Aggressive result",
+      "answer_set": "aggressive_lower_reachable",
+      "expected": {
+        "willingness_raw": 19,
+        "capacity_raw": 18,
+        "willingness_score": 70.0,
+        "capacity_score": 65.0,
+        "composite_score": 67.5,
+        "risk_category": {
+          "code": "AGGRESSIVE",
+          "label": "Aggressive"
+        },
+        "limitation_code": "EDUCATIONAL_SELF_REPORTED_PROFILE"
+      }
+    },
+    {
+      "case_id": "RISK-GOLD-007",
+      "kind": "valid",
+      "coverage": "normal",
+      "title": "All high answers map to Aggressive",
+      "answer_set": "all_high",
+      "expected": {
+        "willingness_raw": 25,
+        "capacity_raw": 25,
+        "willingness_score": 100.0,
+        "capacity_score": 100.0,
+        "composite_score": 100.0,
+        "risk_category": {
+          "code": "AGGRESSIVE",
+          "label": "Aggressive"
+        },
+        "limitation_code": "EDUCATIONAL_SELF_REPORTED_PROFILE"
+      }
+    },
+    {
+      "case_id": "RISK-GOLD-008",
+      "kind": "valid",
+      "coverage": "dimension_tension",
+      "title": "High willingness and low capacity remains a Moderate profile with a capacity tension",
+      "answer_set": "high_willingness_low_capacity",
+      "expected": {
+        "willingness_raw": 25,
+        "capacity_raw": 5,
+        "willingness_score": 100.0,
+        "capacity_score": 0.0,
+        "composite_score": 50.0,
+        "risk_category": {
+          "code": "MODERATE",
+          "label": "Moderate"
+        },
+        "informational_tension_code": "CAPACITY_BELOW_WILLINGNESS",
+        "limitation_code": "EDUCATIONAL_SELF_REPORTED_PROFILE"
+      }
+    },
+    {
+      "case_id": "RISK-GOLD-009",
+      "kind": "valid",
+      "coverage": "dimension_tension",
+      "title": "Low willingness and high capacity remains a Moderate profile with a willingness tension",
+      "answer_set": "low_willingness_high_capacity",
+      "expected": {
+        "willingness_raw": 5,
+        "capacity_raw": 25,
+        "willingness_score": 0.0,
+        "capacity_score": 100.0,
+        "composite_score": 50.0,
+        "risk_category": {
+          "code": "MODERATE",
+          "label": "Moderate"
+        },
+        "informational_tension_code": "WILLINGNESS_BELOW_CAPACITY",
+        "limitation_code": "EDUCATIONAL_SELF_REPORTED_PROFILE"
+      }
+    },
+    {
+      "case_id": "RISK-GOLD-010",
+      "kind": "invalid",
+      "coverage": "missing_required",
+      "title": "A missing required question fails closed",
+      "answer_set": "all_mid",
+      "mutations": [
+        {
+          "operation": "remove_by_question_id",
+          "question_id": "C5"
+        }
+      ],
+      "expected": {
+        "error_code": "MISSING_REQUIRED_QUESTION",
+        "error_question_ids": [
+          "C5"
+        ],
+        "score_returned": false
+      }
+    },
+    {
+      "case_id": "RISK-GOLD-011",
+      "kind": "invalid",
+      "coverage": "duplicate",
+      "title": "A duplicate answer fails closed",
+      "answer_set": "all_mid",
+      "mutations": [
+        {
+          "operation": "append_answer",
+          "answer": {
+            "question_id": "W1",
+            "answer_code": "W1_C"
+          }
+        }
+      ],
+      "expected": {
+        "error_code": "DUPLICATE_QUESTION_ANSWER",
+        "error_question_ids": [
+          "W1"
+        ],
+        "score_returned": false
+      }
+    },
+    {
+      "case_id": "RISK-GOLD-012",
+      "kind": "invalid",
+      "coverage": "unknown_question",
+      "title": "An unknown question ID fails before missing-question validation",
+      "answer_set": "all_mid",
+      "mutations": [
+        {
+          "operation": "replace_answer",
+          "question_id": "W1",
+          "answer": {
+            "question_id": "X1",
+            "answer_code": "X1_A"
+          }
+        }
+      ],
+      "expected": {
+        "error_code": "UNKNOWN_QUESTION_ID",
+        "error_question_ids": [
+          "X1"
+        ],
+        "score_returned": false
+      }
+    },
+    {
+      "case_id": "RISK-GOLD-013",
+      "kind": "invalid",
+      "coverage": "invalid_answer_code",
+      "title": "An unknown answer code fails closed",
+      "answer_set": "all_mid",
+      "mutations": [
+        {
+          "operation": "replace_answer",
+          "question_id": "W1",
+          "answer": {
+            "question_id": "W1",
+            "answer_code": "W1_Z"
+          }
+        }
+      ],
+      "expected": {
+        "error_code": "INVALID_ANSWER_CODE",
+        "error_question_ids": [
+          "W1"
+        ],
+        "score_returned": false
+      }
+    },
+    {
+      "case_id": "RISK-GOLD-014",
+      "kind": "invalid",
+      "coverage": "contradictory",
+      "title": "A valid code belonging to another question fails closed",
+      "answer_set": "all_mid",
+      "mutations": [
+        {
+          "operation": "replace_answer",
+          "question_id": "W1",
+          "answer": {
+            "question_id": "W1",
+            "answer_code": "C1_C"
+          }
+        }
+      ],
+      "expected": {
+        "error_code": "ANSWER_NOT_PERMITTED_FOR_QUESTION",
+        "error_question_ids": [
+          "W1"
+        ],
+        "score_returned": false
+      }
+    },
+    {
+      "case_id": "RISK-GOLD-015",
+      "kind": "invalid",
+      "coverage": "malformed",
+      "title": "An answer without an answer code fails closed",
+      "answer_set": "all_mid",
+      "mutations": [
+        {
+          "operation": "replace_answer",
+          "question_id": "W1",
+          "answer": {
+            "question_id": "W1"
+          }
+        }
+      ],
+      "expected": {
+        "error_code": "MALFORMED_ANSWER",
+        "error_question_ids": [
+          "W1"
+        ],
+        "score_returned": false
+      }
+    },
+    {
+      "case_id": "RISK-GOLD-016",
+      "kind": "invalid",
+      "coverage": "unsupported_version",
+      "title": "An unsupported questionnaire version fails before answer validation",
+      "answer_set": "all_mid",
+      "mutations": [
+        {
+          "operation": "set_questionnaire_version",
+          "value": "v2"
+        }
+      ],
+      "expected": {
+        "error_code": "UNSUPPORTED_QUESTIONNAIRE_VERSION",
+        "score_returned": false
+      }
+    }
+  ]
+}

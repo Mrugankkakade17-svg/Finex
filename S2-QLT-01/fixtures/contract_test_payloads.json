@@ -1,0 +1,74 @@
+{
+  "schema": "s2-qlt-01/contract-payloads/v1",
+  "description": "Valid and invalid payloads for contract boundary testing.",
+  "valid_payload": {
+    "questionnaire_id": "risk_questionnaire_v1",
+    "questionnaire_version": "v1",
+    "answers": [
+      {"question_id": "W1", "answer_code": "W1_C"},
+      {"question_id": "W2", "answer_code": "W2_C"},
+      {"question_id": "W3", "answer_code": "W3_C"},
+      {"question_id": "W4", "answer_code": "W4_C"},
+      {"question_id": "W5", "answer_code": "W5_C"},
+      {"question_id": "C1", "answer_code": "C1_C"},
+      {"question_id": "C2", "answer_code": "C2_C"},
+      {"question_id": "C3", "answer_code": "C3_C"},
+      {"question_id": "C4", "answer_code": "C4_C"},
+      {"question_id": "C5", "answer_code": "C5_C"}
+    ]
+  },
+  "invalid_payloads": {
+    "malformed_keys": {
+      "payload": {"bad": "keys"},
+      "expected_error": "MALFORMED_ANSWER"
+    },
+    "wrong_version": {
+      "payload": {
+        "questionnaire_id": "risk_questionnaire_v1",
+        "questionnaire_version": "v999",
+        "answers": [
+          {"question_id": "W1", "answer_code": "W1_C"},
+          {"question_id": "W2", "answer_code": "W2_C"},
+          {"question_id": "W3", "answer_code": "W3_C"},
+          {"question_id": "W4", "answer_code": "W4_C"},
+          {"question_id": "W5", "answer_code": "W5_C"},
+          {"question_id": "C1", "answer_code": "C1_C"},
+          {"question_id": "C2", "answer_code": "C2_C"},
+          {"question_id": "C3", "answer_code": "C3_C"},
+          {"question_id": "C4", "answer_code": "C4_C"},
+          {"question_id": "C5", "answer_code": "C5_C"}
+        ]
+      },
+      "expected_error": "UNSUPPORTED_QUESTIONNAIRE_VERSION"
+    },
+    "unknown_question": {
+      "payload": {
+        "questionnaire_id": "risk_questionnaire_v1",
+        "questionnaire_version": "v1",
+        "answers": [
+          {"question_id": "ZZ9", "answer_code": "ZZ9_A"}
+        ]
+      },
+      "expected_error": "UNKNOWN_QUESTION_ID"
+    },
+    "invalid_answer_code": {
+      "payload": {
+        "questionnaire_id": "risk_questionnaire_v1",
+        "questionnaire_version": "v1",
+        "answers": [
+          {"question_id": "W1", "answer_code": "INVALID_Z"},
+          {"question_id": "W2", "answer_code": "W2_C"},
+          {"question_id": "W3", "answer_code": "W3_C"},
+          {"question_id": "W4", "answer_code": "W4_C"},
+          {"question_id": "W5", "answer_code": "W5_C"},
+          {"question_id": "C1", "answer_code": "C1_C"},
+          {"question_id": "C2", "answer_code": "C2_C"},
+          {"question_id": "C3", "answer_code": "C3_C"},
+          {"question_id": "C4", "answer_code": "C4_C"},
+          {"question_id": "C5", "answer_code": "C5_C"}
+        ]
+      },
+      "expected_error": "INVALID_ANSWER_CODE"
+    }
+  }
+}

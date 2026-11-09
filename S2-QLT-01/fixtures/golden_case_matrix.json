@@ -1,0 +1,120 @@
+{
+  "schema": "s2-qlt-01/golden-cases/v1",
+  "description": "Golden case profiles for S2-QLT-01 evaluation harness. Scores are derived from the v1 scoring engine: normalize((raw-5)/20)*100, composite = 0.5*W + 0.5*C.",
+  "cases": [
+    {
+      "profile": "Extreme Conservative (all A = score 1)",
+      "answers": [
+        {"question_id": "W1", "answer_code": "W1_A"},
+        {"question_id": "W2", "answer_code": "W2_A"},
+        {"question_id": "W3", "answer_code": "W3_A"},
+        {"question_id": "W4", "answer_code": "W4_A"},
+        {"question_id": "W5", "answer_code": "W5_A"},
+        {"question_id": "C1", "answer_code": "C1_A"},
+        {"question_id": "C2", "answer_code": "C2_A"},
+        {"question_id": "C3", "answer_code": "C3_A"},
+        {"question_id": "C4", "answer_code": "C4_A"},
+        {"question_id": "C5", "answer_code": "C5_A"}
+      ],
+      "expected_willingness": 0.0,
+      "expected_capacity": 0.0,
+      "expected_composite": 0.0,
+      "expected_category_code": "CONSERVATIVE"
+    },
+    {
+      "profile": "Extreme Aggressive (all E = score 5)",
+      "answers": [
+        {"question_id": "W1", "answer_code": "W1_E"},
+        {"question_id": "W2", "answer_code": "W2_E"},
+        {"question_id": "W3", "answer_code": "W3_E"},
+        {"question_id": "W4", "answer_code": "W4_E"},
+        {"question_id": "W5", "answer_code": "W5_E"},
+        {"question_id": "C1", "answer_code": "C1_E"},
+        {"question_id": "C2", "answer_code": "C2_E"},
+        {"question_id": "C3", "answer_code": "C3_E"},
+        {"question_id": "C4", "answer_code": "C4_E"},
+        {"question_id": "C5", "answer_code": "C5_E"}
+      ],
+      "expected_willingness": 100.0,
+      "expected_capacity": 100.0,
+      "expected_composite": 100.0,
+      "expected_category_code": "AGGRESSIVE"
+    },
+    {
+      "profile": "Balanced Moderate (all C = score 3)",
+      "answers": [
+        {"question_id": "W1", "answer_code": "W1_C"},
+        {"question_id": "W2", "answer_code": "W2_C"},
+        {"question_id": "W3", "answer_code": "W3_C"},
+        {"question_id": "W4", "answer_code": "W4_C"},
+        {"question_id": "W5", "answer_code": "W5_C"},
+        {"question_id": "C1", "answer_code": "C1_C"},
+        {"question_id": "C2", "answer_code": "C2_C"},
+        {"question_id": "C3", "answer_code": "C3_C"},
+        {"question_id": "C4", "answer_code": "C4_C"},
+        {"question_id": "C5", "answer_code": "C5_C"}
+      ],
+      "expected_willingness": 50.0,
+      "expected_capacity": 50.0,
+      "expected_composite": 50.0,
+      "expected_category_code": "MODERATE"
+    },
+    {
+      "profile": "High W / Low C (W=all E, C=all A)",
+      "answers": [
+        {"question_id": "W1", "answer_code": "W1_E"},
+        {"question_id": "W2", "answer_code": "W2_E"},
+        {"question_id": "W3", "answer_code": "W3_E"},
+        {"question_id": "W4", "answer_code": "W4_E"},
+        {"question_id": "W5", "answer_code": "W5_E"},
+        {"question_id": "C1", "answer_code": "C1_A"},
+        {"question_id": "C2", "answer_code": "C2_A"},
+        {"question_id": "C3", "answer_code": "C3_A"},
+        {"question_id": "C4", "answer_code": "C4_A"},
+        {"question_id": "C5", "answer_code": "C5_A"}
+      ],
+      "expected_willingness": 100.0,
+      "expected_capacity": 0.0,
+      "expected_composite": 50.0,
+      "expected_category_code": "MODERATE"
+    },
+    {
+      "profile": "Steady Low-Risk (all B = score 2)",
+      "answers": [
+        {"question_id": "W1", "answer_code": "W1_B"},
+        {"question_id": "W2", "answer_code": "W2_B"},
+        {"question_id": "W3", "answer_code": "W3_B"},
+        {"question_id": "W4", "answer_code": "W4_B"},
+        {"question_id": "W5", "answer_code": "W5_B"},
+        {"question_id": "C1", "answer_code": "C1_B"},
+        {"question_id": "C2", "answer_code": "C2_B"},
+        {"question_id": "C3", "answer_code": "C3_B"},
+        {"question_id": "C4", "answer_code": "C4_B"},
+        {"question_id": "C5", "answer_code": "C5_B"}
+      ],
+      "expected_willingness": 25.0,
+      "expected_capacity": 25.0,
+      "expected_composite": 25.0,
+      "expected_category_code": "CONSERVATIVE"
+    },
+    {
+      "profile": "High Growth Aggressive (all D = score 4)",
+      "answers": [
+        {"question_id": "W1", "answer_code": "W1_D"},
+        {"question_id": "W2", "answer_code": "W2_D"},
+        {"question_id": "W3", "answer_code": "W3_D"},
+        {"question_id": "W4", "answer_code": "W4_D"},
+        {"question_id": "W5", "answer_code": "W5_D"},
+        {"question_id": "C1", "answer_code": "C1_D"},
+        {"question_id": "C2", "answer_code": "C2_D"},
+        {"question_id": "C3", "answer_code": "C3_D"},
+        {"question_id": "C4", "answer_code": "C4_D"},
+        {"question_id": "C5", "answer_code": "C5_D"}
+      ],
+      "expected_willingness": 75.0,
+      "expected_capacity": 75.0,
+      "expected_composite": 75.0,
+      "expected_category_code": "AGGRESSIVE"
+    }
+  ]
+}

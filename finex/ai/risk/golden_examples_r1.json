@@ -1,0 +1,348 @@
+{
+  "matrix_version": "v1.0.0-proposed",
+  "contract_version": "risk_contract_v1.0.0-proposed",
+  "questionnaire_id": "risk_questionnaire_v1",
+  "questionnaire_version": "v1",
+  "proposed_scoring_version": "risk_scoring_v1",
+  "status": "DRAFT — pending Anand sir approval",
+  "approval_note": "Every field marked proposed_* or containing a 'PROPOSED' status is a recommendation, not an approved contract value. Existing-implementation-derived expected values are evidence of current behavior, not proof of correctness. See docs/handoffs/S1-RSK-00/README.md sections 5A/5B for the full list of decisions and deferred defects this matrix depends on.",
+  "notes": "GC-01 through GC-10 reuse ai/risk/golden_examples_v1.json verbatim, now with confirmed stable example_id values, full answer_code lists, and expected scores (independently recomputed against the ((raw-5)/20)*100 / 50-50 composite formula — all 10 matched exactly, zero discrepancies). CORRECTION FROM PRIOR DRAFT: this pass found that the previously-added 'new' cases GC-11, GC-12 (tension profiles) and GC-27 through GC-30 (full-assessment boundary profiles) were exact duplicates of GC-06, GC-07, GC-03, GC-04, GC-08, and GC-09 respectively, once the real golden file was read. Those duplicate case entries have been removed; the roles they were meant to cover are now documented as additional tags on the real cases instead (see role_tags on GC-03/04/06/07/08/09). Source questionnaire file confirmed at backend/data/questionnaire/risk_questionnaire_v1.json (the previously assumed ai/risk/ path does not exist for this file; ai/risk/golden_examples_v1.json is correct for the golden file).",
+  "known_data_caveat": "C2_C was verified directly against backend/data/questionnaire/risk_questionnaire_v1.json.",
+  "cases": [
+    {
+      "id": "GC-01",
+      "category": "normal_valid",
+      "action": "reuse_as_is",
+      "source": { "file": "ai/risk/golden_examples_v1.json", "example_id": "profile_01_extreme_conservative" },
+      "input": {
+        "questionnaire_id": "risk_questionnaire_v1", "version": "v1",
+        "answers": [
+          {"question_id":"W1","answer_code":"W1_A"},{"question_id":"W2","answer_code":"W2_A"},{"question_id":"W3","answer_code":"W3_A"},{"question_id":"W4","answer_code":"W4_A"},{"question_id":"W5","answer_code":"W5_A"},
+          {"question_id":"C1","answer_code":"C1_A"},{"question_id":"C2","answer_code":"C2_A"},{"question_id":"C3","answer_code":"C3_A"},{"question_id":"C4","answer_code":"C4_A"},{"question_id":"C5","answer_code":"C5_A"}
+        ]
+      },
+      "expected": { "result": "scored", "error_code": null, "willingness_score": 0.0, "capacity_score": 0.0, "composite_score": 0.0, "risk_category": "CONSERVATIVE" },
+      "verification": "independently recomputed from raw sums — matches source exactly"
+    },
+    {
+      "id": "GC-02",
+      "category": "normal_valid",
+      "action": "reuse_as_is",
+      "source": { "file": "ai/risk/golden_examples_v1.json", "example_id": "profile_02_steady_conservative" },
+      "input": {
+        "questionnaire_id": "risk_questionnaire_v1", "version": "v1",
+        "answers": [
+          {"question_id":"W1","answer_code":"W1_B"},{"question_id":"W2","answer_code":"W2_B"},{"question_id":"W3","answer_code":"W3_B"},{"question_id":"W4","answer_code":"W4_B"},{"question_id":"W5","answer_code":"W5_B"},
+          {"question_id":"C1","answer_code":"C1_B"},{"question_id":"C2","answer_code":"C2_B"},{"question_id":"C3","answer_code":"C3_B"},{"question_id":"C4","answer_code":"C4_B"},{"question_id":"C5","answer_code":"C5_B"}
+        ]
+      },
+      "expected": { "result": "scored", "error_code": null, "willingness_score": 25.0, "capacity_score": 25.0, "composite_score": 25.0, "risk_category": "CONSERVATIVE" },
+      "verification": "independently recomputed from raw sums — matches source exactly"
+    },
+    {
+      "id": "GC-03",
+      "category": "normal_valid",
+      "role_tags": ["boundary_full_assessment — closest achievable full-assessment value below the 34.0 threshold, complements GC-14 unit test"],
+      "action": "reuse_as_is",
+      "source": { "file": "ai/risk/golden_examples_v1.json", "example_id": "profile_03_conservative_upper_bound" },
+      "input": {
+        "questionnaire_id": "risk_questionnaire_v1", "version": "v1",
+        "answers": [
+          {"question_id":"W1","answer_code":"W1_C"},{"question_id":"W2","answer_code":"W2_B"},{"question_id":"W3","answer_code":"W3_B"},{"question_id":"W4","answer_code":"W4_B"},{"question_id":"W5","answer_code":"W5_B"},
+          {"question_id":"C1","answer_code":"C1_C"},{"question_id":"C2","answer_code":"C2_C"},{"question_id":"C3","answer_code":"C3_B"},{"question_id":"C4","answer_code":"C4_B"},{"question_id":"C5","answer_code":"C5_B"}
+        ]
+      },
+      "expected": { "result": "scored", "error_code": null, "willingness_score": 30.0, "capacity_score": 35.0, "composite_score": 32.5, "risk_category": "CONSERVATIVE" },
+      "verification": "independently recomputed from raw sums — matches source exactly (uses C2_C, see known_data_caveat)"
+    },
+    {
+      "id": "GC-04",
+      "category": "normal_valid",
+      "role_tags": ["boundary_full_assessment — closest achievable full-assessment value at/above the 34.0 threshold, complements GC-14 unit test"],
+      "action": "reuse_as_is",
+      "source": { "file": "ai/risk/golden_examples_v1.json", "example_id": "profile_04_moderate_lower_bound" },
+      "input": {
+        "questionnaire_id": "risk_questionnaire_v1", "version": "v1",
+        "answers": [
+          {"question_id":"W1","answer_code":"W1_C"},{"question_id":"W2","answer_code":"W2_C"},{"question_id":"W3","answer_code":"W3_B"},{"question_id":"W4","answer_code":"W4_B"},{"question_id":"W5","answer_code":"W5_B"},
+          {"question_id":"C1","answer_code":"C1_C"},{"question_id":"C2","answer_code":"C2_C"},{"question_id":"C3","answer_code":"C3_B"},{"question_id":"C4","answer_code":"C4_B"},{"question_id":"C5","answer_code":"C5_B"}
+        ]
+      },
+      "expected": { "result": "scored", "error_code": null, "willingness_score": 35.0, "capacity_score": 35.0, "composite_score": 35.0, "risk_category": "MODERATE" },
+      "verification": "independently recomputed from raw sums — matches source exactly (uses C2_C, see known_data_caveat)"
+    },
+    {
+      "id": "GC-05",
+      "category": "normal_valid",
+      "action": "reuse_as_is",
+      "source": { "file": "ai/risk/golden_examples_v1.json", "example_id": "profile_05_balanced_moderate" },
+      "input": {
+        "questionnaire_id": "risk_questionnaire_v1", "version": "v1",
+        "answers": [
+          {"question_id":"W1","answer_code":"W1_C"},{"question_id":"W2","answer_code":"W2_C"},{"question_id":"W3","answer_code":"W3_C"},{"question_id":"W4","answer_code":"W4_C"},{"question_id":"W5","answer_code":"W5_C"},
+          {"question_id":"C1","answer_code":"C1_C"},{"question_id":"C2","answer_code":"C2_C"},{"question_id":"C3","answer_code":"C3_C"},{"question_id":"C4","answer_code":"C4_C"},{"question_id":"C5","answer_code":"C5_C"}
+        ]
+      },
+      "expected": { "result": "scored", "error_code": null, "willingness_score": 50.0, "capacity_score": 50.0, "composite_score": 50.0, "risk_category": "MODERATE" },
+      "verification": "independently recomputed from raw sums — matches source exactly (uses C2_C, see known_data_caveat)"
+    },
+    {
+      "id": "GC-06",
+      "category": "normal_valid",
+      "role_tags": ["tension_high_willingness_low_capacity"],
+      "action": "reuse_as_is",
+      "source": { "file": "ai/risk/golden_examples_v1.json", "example_id": "profile_06_high_willingness_low_capacity" },
+      "input": {
+        "questionnaire_id": "risk_questionnaire_v1", "version": "v1",
+        "answers": [
+          {"question_id":"W1","answer_code":"W1_E"},{"question_id":"W2","answer_code":"W2_E"},{"question_id":"W3","answer_code":"W3_E"},{"question_id":"W4","answer_code":"W4_E"},{"question_id":"W5","answer_code":"W5_E"},
+          {"question_id":"C1","answer_code":"C1_A"},{"question_id":"C2","answer_code":"C2_A"},{"question_id":"C3","answer_code":"C3_A"},{"question_id":"C4","answer_code":"C4_A"},{"question_id":"C5","answer_code":"C5_A"}
+        ]
+      },
+      "expected": { "result": "scored", "error_code": null, "willingness_score": 100.0, "capacity_score": 0.0, "composite_score": 50.0, "risk_category": "MODERATE" },
+      "verification": "independently recomputed from raw sums — matches source exactly",
+      "explanation_note": "PROPOSED contract requirement only (see contract 5A5): explanation must reflect computed dimensions per an approved factor policy. Existing implementation cites W1/W2/C1/C3 as factors here — existing behavior, not yet an approved rule."
+    },
+    {
+      "id": "GC-07",
+      "category": "normal_valid",
+      "role_tags": ["tension_low_willingness_high_capacity"],
+      "action": "reuse_as_is",
+      "source": { "file": "ai/risk/golden_examples_v1.json", "example_id": "profile_07_low_willingness_high_capacity" },
+      "input": {
+        "questionnaire_id": "risk_questionnaire_v1", "version": "v1",
+        "answers": [
+          {"question_id":"W1","answer_code":"W1_A"},{"question_id":"W2","answer_code":"W2_A"},{"question_id":"W3","answer_code":"W3_A"},{"question_id":"W4","answer_code":"W4_A"},{"question_id":"W5","answer_code":"W5_A"},
+          {"question_id":"C1","answer_code":"C1_E"},{"question_id":"C2","answer_code":"C2_E"},{"question_id":"C3","answer_code":"C3_E"},{"question_id":"C4","answer_code":"C4_E"},{"question_id":"C5","answer_code":"C5_E"}
+        ]
+      },
+      "expected": { "result": "scored", "error_code": null, "willingness_score": 0.0, "capacity_score": 100.0, "composite_score": 50.0, "risk_category": "MODERATE" },
+      "verification": "independently recomputed from raw sums — matches source exactly",
+      "explanation_note": "Same caveat as GC-06 — existing W1/W2/C1/C3 factor citation is existing behavior, not yet an approved rule."
+    },
+    {
+      "id": "GC-08",
+      "category": "normal_valid",
+      "role_tags": ["boundary_full_assessment — closest achievable full-assessment value below the 67.0 threshold, complements GC-15 unit test"],
+      "action": "reuse_as_is",
+      "source": { "file": "ai/risk/golden_examples_v1.json", "example_id": "profile_08_moderate_upper_bound" },
+      "input": {
+        "questionnaire_id": "risk_questionnaire_v1", "version": "v1",
+        "answers": [
+          {"question_id":"W1","answer_code":"W1_D"},{"question_id":"W2","answer_code":"W2_D"},{"question_id":"W3","answer_code":"W3_D"},{"question_id":"W4","answer_code":"W4_C"},{"question_id":"W5","answer_code":"W5_C"},
+          {"question_id":"C1","answer_code":"C1_D"},{"question_id":"C2","answer_code":"C2_D"},{"question_id":"C3","answer_code":"C3_D"},{"question_id":"C4","answer_code":"C4_C"},{"question_id":"C5","answer_code":"C5_C"}
+        ]
+      },
+      "expected": { "result": "scored", "error_code": null, "willingness_score": 65.0, "capacity_score": 65.0, "composite_score": 65.0, "risk_category": "MODERATE" },
+      "verification": "independently recomputed from raw sums — matches source exactly"
+    },
+    {
+      "id": "GC-09",
+      "category": "normal_valid",
+      "role_tags": ["boundary_full_assessment — closest achievable full-assessment value at/above the 67.0 threshold, complements GC-16 unit test"],
+      "action": "reuse_as_is",
+      "source": { "file": "ai/risk/golden_examples_v1.json", "example_id": "profile_09_aggressive_lower_bound" },
+      "input": {
+        "questionnaire_id": "risk_questionnaire_v1", "version": "v1",
+        "answers": [
+          {"question_id":"W1","answer_code":"W1_D"},{"question_id":"W2","answer_code":"W2_D"},{"question_id":"W3","answer_code":"W3_D"},{"question_id":"W4","answer_code":"W4_D"},{"question_id":"W5","answer_code":"W5_C"},
+          {"question_id":"C1","answer_code":"C1_D"},{"question_id":"C2","answer_code":"C2_D"},{"question_id":"C3","answer_code":"C3_D"},{"question_id":"C4","answer_code":"C4_C"},{"question_id":"C5","answer_code":"C5_C"}
+        ]
+      },
+      "expected": { "result": "scored", "error_code": null, "willingness_score": 70.0, "capacity_score": 65.0, "composite_score": 67.5, "risk_category": "AGGRESSIVE" },
+      "verification": "independently recomputed from raw sums — matches source exactly"
+    },
+    {
+      "id": "GC-10",
+      "category": "normal_valid",
+      "action": "reuse_as_is",
+      "source": { "file": "ai/risk/golden_examples_v1.json", "example_id": "profile_10_extreme_aggressive" },
+      "input": {
+        "questionnaire_id": "risk_questionnaire_v1", "version": "v1",
+        "answers": [
+          {"question_id":"W1","answer_code":"W1_E"},{"question_id":"W2","answer_code":"W2_E"},{"question_id":"W3","answer_code":"W3_E"},{"question_id":"W4","answer_code":"W4_E"},{"question_id":"W5","answer_code":"W5_E"},
+          {"question_id":"C1","answer_code":"C1_E"},{"question_id":"C2","answer_code":"C2_E"},{"question_id":"C3","answer_code":"C3_E"},{"question_id":"C4","answer_code":"C4_E"},{"question_id":"C5","answer_code":"C5_E"}
+        ]
+      },
+      "expected": { "result": "scored", "error_code": null, "willingness_score": 100.0, "capacity_score": 100.0, "composite_score": 100.0, "risk_category": "AGGRESSIVE" },
+      "verification": "independently recomputed from raw sums — matches source exactly"
+    },
+    {
+      "id": "GC-13",
+      "category": "boundary_unit_test",
+      "action": "reuse",
+      "source": "ai/risk/test_scoring.py",
+      "description": "Direct category-classification function test on a raw composite value, NOT a full RiskAssessmentRequest example. GC-03 is the full-assessment complement (closest achievable real value below this threshold, 32.5).",
+      "input": { "composite_score_direct": 33.99 },
+      "expected": { "result": "classified", "error_code": null, "risk_category": "CONSERVATIVE" }
+    },
+    {
+      "id": "GC-14",
+      "category": "boundary_unit_test",
+      "action": "reuse",
+      "source": "ai/risk/test_scoring.py",
+      "description": "Direct category-classification function test on a raw composite value, NOT a full RiskAssessmentRequest example. GC-03/GC-04 are the full-assessment complements straddling this threshold (32.5 below, 35.0 at/above).",
+      "input": { "composite_score_direct": 34.00 },
+      "expected": { "result": "classified", "error_code": null, "risk_category": "MODERATE" }
+    },
+    {
+      "id": "GC-15",
+      "category": "boundary_unit_test",
+      "action": "reuse",
+      "source": "ai/risk/test_scoring.py",
+      "description": "Direct category-classification function test on a raw composite value, NOT a full RiskAssessmentRequest example. GC-08 is the full-assessment complement (closest achievable real value below this threshold, 65.0).",
+      "input": { "composite_score_direct": 66.99 },
+      "expected": { "result": "classified", "error_code": null, "risk_category": "MODERATE" }
+    },
+    {
+      "id": "GC-16",
+      "category": "boundary_unit_test",
+      "action": "reuse",
+      "source": "ai/risk/test_scoring.py",
+      "description": "Direct category-classification function test on a raw composite value, NOT a full RiskAssessmentRequest example. GC-08/GC-09 are the full-assessment complements straddling this threshold (65.0 below, 67.5 at/above).",
+      "input": { "composite_score_direct": 67.00 },
+      "expected": { "result": "classified", "error_code": null, "risk_category": "AGGRESSIVE" }
+    },
+    {
+      "id": "GC-17",
+      "category": "missing_input",
+      "action": "promote_from_test",
+      "source": "ai/risk/test_scoring.py",
+      "input": {
+        "questionnaire_id": "risk_questionnaire_v1",
+        "version": "v1",
+        "answers": [
+          {"question_id":"W1","answer_code":"W1_A"},{"question_id":"W2","answer_code":"W2_A"},{"question_id":"W3","answer_code":"W3_A"},{"question_id":"W4","answer_code":"W4_A"},{"question_id":"W5","answer_code":"W5_A"},
+          {"question_id":"C1","answer_code":"C1_A"},{"question_id":"C2","answer_code":"C2_A"},{"question_id":"C3","answer_code":"C3_A"},{"question_id":"C4","answer_code":"C4_A"}
+        ]
+      },
+      "expected": { "result": "rejected", "reason": "missing required question", "error_code": null, "requires_approval": true, "approval_note": "Exact error-code vocabulary requires Anand approval." }
+    },
+    {
+      "id": "GC-18",
+      "category": "missing_input",
+      "action": "promote_from_test",
+      "source": "ai/risk/schemas.py",
+      "input": { "answers": [] },
+      "expected": { "result": "rejected", "reason": "empty answers list — DTO-level validation", "error_code": null, "requires_approval": true, "approval_note": "Exact error-code vocabulary requires Anand approval." }
+    },
+    {
+      "id": "GC-19",
+      "category": "invalid_input",
+      "action": "promote_from_test",
+      "source": "ai/risk/scoring.py",
+      "input": {
+        "questionnaire_id": "risk_questionnaire_v1",
+        "version": "v1",
+        "answers": [{"question_id":"W99","answer_code":"W99_A"}]
+      },
+      "expected": { "result": "rejected", "reason": "unknown question_id", "error_code": null, "requires_approval": true, "approval_note": "Exact error-code vocabulary requires Anand approval." }
+    },
+    {
+      "id": "GC-20",
+      "category": "invalid_input",
+      "action": "promote_from_test",
+      "source": "ai/risk/scoring.py",
+      "input": {
+        "questionnaire_id": "risk_questionnaire_v1",
+        "version": "v1",
+        "answers": [{"question_id":"W1","answer_code":"W1_Z"}]
+      },
+      "expected": { "result": "rejected", "reason": "unknown answer_code", "error_code": null, "requires_approval": true, "approval_note": "Exact error-code vocabulary requires Anand approval." }
+    },
+    {
+      "id": "GC-21",
+      "category": "invalid_input",
+      "action": "promote_from_test",
+      "source": "ai/risk/scoring.py",
+      "input": {
+        "questionnaire_id": "risk_questionnaire_v1",
+        "version": "v1",
+        "answers": [{"question_id":"C1","answer_code":"W1_A"}]
+      },
+      "expected": { "result": "rejected", "reason": "answer_code belongs to a different question", "error_code": null, "requires_approval": true, "approval_note": "Exact error-code vocabulary requires Anand approval." }
+    },
+    {
+      "id": "GC-22",
+      "category": "contradictory_input",
+      "action": "promote_from_test",
+      "source": "ai/risk/scoring.py",
+      "input": {
+        "questionnaire_id": "risk_questionnaire_v1",
+        "version": "v1",
+        "answers": [{"question_id":"W1","answer_code":"W1_A"},{"question_id":"W1","answer_code":"W1_E"}]
+      },
+      "expected": { "result": "rejected", "reason": "duplicate answer for same question", "error_code": null, "requires_approval": true, "approval_note": "Exact error-code vocabulary requires Anand approval." }
+    },
+    {
+      "id": "GC-23",
+      "category": "unsupported_questionnaire",
+      "action": "promote_from_test",
+      "source": "ai/risk/scoring.py",
+      "input": {
+        "questionnaire_id": "risk_questionnaire_v99",
+        "version": "v1",
+        "answers": []
+      },
+      "expected": { "result": "rejected", "reason": "unknown questionnaire_id", "error_code": null, "requires_approval": true, "approval_note": "Exact error-code vocabulary requires Anand approval." }
+    },
+    {
+      "id": "GC-24",
+      "category": "unsupported_version",
+      "action": "new_proposed",
+      "linked_open_item": "contract section 5B, item B1",
+      "source": "docs/handoffs/S1-RSK-00/README.md",
+      "input": {
+        "questionnaire_id": "risk_questionnaire_v1",
+        "version": "v2",
+        "answers": [
+          {"question_id":"W1","answer_code":"W1_A"},{"question_id":"W2","answer_code":"W2_A"},{"question_id":"W3","answer_code":"W3_A"},{"question_id":"W4","answer_code":"W4_A"},{"question_id":"W5","answer_code":"W5_A"},
+          {"question_id":"C1","answer_code":"C1_A"},{"question_id":"C2","answer_code":"C2_A"},{"question_id":"C3","answer_code":"C3_A"},{"question_id":"C4","answer_code":"C4_A"},{"question_id":"C5","answer_code":"C5_A"}
+        ]
+      },
+      "observed_current": {
+        "result": "scored",
+        "error_code": null,
+        "returned_questionnaire_version": "v1",
+        "risk_category": "Conservative",
+        "composite_score": 0.0,
+        "note": "The input declares v2, but the current canonical implementation scores against v1 and returns v1 metadata."
+      },
+      "proposed_target": {
+        "result": "rejected",
+        "reason": "input questionnaire version v2 does not match supported questionnaire version v1",
+        "error_code": null,
+        "requires_approval": true,
+        "approval_note": "Exact error-code vocabulary and version-rejection behavior require Anand approval."
+      },
+      "status": "NOT CURRENTLY SATISFIED — requires Anand approval of the proposed behavior AND a future implementation change under #143. Do not mark this case as passing."
+    },
+    {
+      "id": "GC-25",
+      "category": "malformed_input",
+      "action": "promote_from_test",
+      "source": "ai/risk/schemas.py",
+      "input": {
+        "questionnaire_id": "risk_questionnaire_v1",
+        "version": "v1",
+        "answers": [{"question_id": 1, "answer_code": null}]
+      },
+      "expected": { "result": "rejected", "reason": "Pydantic validation error", "error_code": null, "requires_approval": true, "approval_note": "Exact error-code vocabulary requires Anand approval." },
+      "note": "Linked to contract 5B item B4: the legacy /assessments path raises a raw TypeError instead of a structured validation error for the equivalent case. That inconsistency is a deferred defect, not resolved by this case."
+    },
+    {
+      "id": "GC-26",
+      "category": "determinism",
+      "action": "promote_from_test",
+      "source": "ai/risk/test_scoring.py",
+      "input": { "answers": "any single fixed valid answer set (e.g. GC-01's answer list), scored 1000 times" },
+      "expected": {
+        "result": "deterministic",
+        "error_code": null,
+        "result_description": "all deterministic scoring fields are identical across all 1000 runs",
+        "fields_covered_by_determinism_guarantee": ["willingness_score", "capacity_score", "composite_score", "risk_category", "risk_category_code", "breakdown", "explanation"],
+        "fields_excluded_from_determinism_guarantee": ["calculated_at — execution-generated timestamp metadata, legitimately differs run to run"]
+      }
+    }
+  ]
+}

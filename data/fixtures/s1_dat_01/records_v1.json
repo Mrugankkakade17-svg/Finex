@@ -1,0 +1,227 @@
+{
+  "fixture_contract_schema_version": "s1-dat-01.fixture.v1",
+  "supported_consent_version": "consent.v1",
+  "supported_profile_schema_version": "profile.v1",
+  "fixture_mode": "local",
+  "records": {
+    "synthetic_users": [
+      {
+        "user_id": "s1_dat_01_user_001",
+        "is_synthetic": true
+      },
+      {
+        "user_id": "s1_dat_01_user_002",
+        "is_synthetic": true
+      },
+      {
+        "user_id": "s1_dat_01_user_003",
+        "is_synthetic": true
+      },
+      {
+        "user_id": "s1_dat_01_user_004",
+        "is_synthetic": true
+      },
+      {
+        "user_id": "s1_dat_01_user_005",
+        "is_synthetic": true
+      }
+    ],
+    "scenarios": [
+      {
+        "scenario_id": "s1_dat_01_new",
+        "scenario_state": "new",
+        "user_id": "s1_dat_01_user_001",
+        "consent": {
+          "consent_id": "s1_dat_01_consent_001",
+          "user_id": "s1_dat_01_user_001",
+          "consent_version": "consent.v1",
+          "consent_status": "accepted",
+          "recorded_at": "2026-09-11T00:00:00Z",
+          "is_synthetic": true
+        },
+        "profile": {
+          "profile_id": "s1_dat_01_profile_001",
+          "user_id": "s1_dat_01_user_001",
+          "profile_schema_version": "profile.v1",
+          "profile_state": "new",
+          "profile_label": "synthetic_profile_new",
+          "recorded_at": "2026-09-11T00:00:01Z",
+          "is_synthetic": true
+        },
+        "onboarding": {
+          "onboarding_id": "s1_dat_01_onboarding_001",
+          "user_id": "s1_dat_01_user_001",
+          "onboarding_state": "new",
+          "completed": false,
+          "recorded_at": "2026-09-11T00:00:02Z",
+          "is_synthetic": true
+        },
+        "audit": {
+          "audit_id": "s1_dat_01_audit_001",
+          "user_id": "s1_dat_01_user_001",
+          "event_type": "fixture_loaded",
+          "event_state": "new",
+          "source": "local_fixture",
+          "recorded_at": "2026-09-11T00:00:03Z",
+          "is_synthetic": true
+        }
+      },
+      {
+        "scenario_id": "s1_dat_01_partial_draft",
+        "scenario_state": "partial-draft",
+        "user_id": "s1_dat_01_user_002",
+        "consent": {
+          "consent_id": "s1_dat_01_consent_002",
+          "user_id": "s1_dat_01_user_002",
+          "consent_version": "consent.v1",
+          "consent_status": "accepted",
+          "recorded_at": "2026-09-11T00:01:00Z",
+          "is_synthetic": true
+        },
+        "profile": {
+          "profile_id": "s1_dat_01_profile_002",
+          "user_id": "s1_dat_01_user_002",
+          "profile_schema_version": "profile.v1",
+          "profile_state": "partial-draft",
+          "profile_label": "synthetic_profile_partial_draft",
+          "recorded_at": "2026-09-11T00:01:01Z",
+          "is_synthetic": true
+        },
+        "onboarding": {
+          "onboarding_id": "s1_dat_01_onboarding_002",
+          "user_id": "s1_dat_01_user_002",
+          "onboarding_state": "partial-draft",
+          "completed": false,
+          "recorded_at": "2026-09-11T00:01:02Z",
+          "is_synthetic": true
+        },
+        "audit": {
+          "audit_id": "s1_dat_01_audit_002",
+          "user_id": "s1_dat_01_user_002",
+          "event_type": "fixture_loaded",
+          "event_state": "partial-draft",
+          "source": "local_fixture",
+          "recorded_at": "2026-09-11T00:01:03Z",
+          "is_synthetic": true
+        }
+      },
+      {
+        "scenario_id": "s1_dat_01_completed",
+        "scenario_state": "completed",
+        "user_id": "s1_dat_01_user_003",
+        "consent": {
+          "consent_id": "s1_dat_01_consent_003",
+          "user_id": "s1_dat_01_user_003",
+          "consent_version": "consent.v1",
+          "consent_status": "accepted",
+          "recorded_at": "2026-09-11T00:02:00Z",
+          "is_synthetic": true
+        },
+        "profile": {
+          "profile_id": "s1_dat_01_profile_003",
+          "user_id": "s1_dat_01_user_003",
+          "profile_schema_version": "profile.v1",
+          "profile_state": "completed",
+          "profile_label": "synthetic_profile_completed",
+          "recorded_at": "2026-09-11T00:02:01Z",
+          "is_synthetic": true
+        },
+        "onboarding": {
+          "onboarding_id": "s1_dat_01_onboarding_003",
+          "user_id": "s1_dat_01_user_003",
+          "onboarding_state": "completed",
+          "completed": true,
+          "recorded_at": "2026-09-11T00:02:02Z",
+          "is_synthetic": true
+        },
+        "audit": {
+          "audit_id": "s1_dat_01_audit_003",
+          "user_id": "s1_dat_01_user_003",
+          "event_type": "fixture_loaded",
+          "event_state": "completed",
+          "source": "local_fixture",
+          "recorded_at": "2026-09-11T00:02:03Z",
+          "is_synthetic": true
+        }
+      },
+      {
+        "scenario_id": "s1_dat_01_validation_failure",
+        "scenario_state": "validation-failure",
+        "user_id": "s1_dat_01_user_004",
+        "consent": {
+          "consent_id": "s1_dat_01_consent_004",
+          "user_id": "s1_dat_01_user_004",
+          "consent_version": "consent.v1",
+          "consent_status": "accepted",
+          "recorded_at": "2026-09-11T00:03:00Z",
+          "is_synthetic": true
+        },
+        "profile": {
+          "profile_id": "s1_dat_01_profile_004",
+          "user_id": "s1_dat_01_user_004",
+          "profile_schema_version": "profile.v1",
+          "profile_state": "validation-failure",
+          "profile_label": "synthetic_profile_validation_failure",
+          "recorded_at": "2026-09-11T00:03:01Z",
+          "is_synthetic": true
+        },
+        "onboarding": {
+          "onboarding_id": "s1_dat_01_onboarding_004",
+          "user_id": "s1_dat_01_user_004",
+          "onboarding_state": "validation-failure",
+          "completed": false,
+          "recorded_at": "2026-09-11T00:03:02Z",
+          "is_synthetic": true
+        },
+        "audit": {
+          "audit_id": "s1_dat_01_audit_004",
+          "user_id": "s1_dat_01_user_004",
+          "event_type": "validation_failed",
+          "event_state": "validation-failure",
+          "source": "local_fixture",
+          "recorded_at": "2026-09-11T00:03:03Z",
+          "is_synthetic": true
+        }
+      },
+      {
+        "scenario_id": "s1_dat_01_revoked_changed_consent",
+        "scenario_state": "revoked/changed-consent",
+        "user_id": "s1_dat_01_user_005",
+        "consent": {
+          "consent_id": "s1_dat_01_consent_005",
+          "user_id": "s1_dat_01_user_005",
+          "consent_version": "consent.v1",
+          "consent_status": "changed",
+          "recorded_at": "2026-09-11T00:04:00Z",
+          "is_synthetic": true
+        },
+        "profile": {
+          "profile_id": "s1_dat_01_profile_005",
+          "user_id": "s1_dat_01_user_005",
+          "profile_schema_version": "profile.v1",
+          "profile_state": "completed",
+          "profile_label": "synthetic_profile_consent_changed",
+          "recorded_at": "2026-09-11T00:04:01Z",
+          "is_synthetic": true
+        },
+        "onboarding": {
+          "onboarding_id": "s1_dat_01_onboarding_005",
+          "user_id": "s1_dat_01_user_005",
+          "onboarding_state": "completed",
+          "completed": true,
+          "recorded_at": "2026-09-11T00:04:02Z",
+          "is_synthetic": true
+        },
+        "audit": {
+          "audit_id": "s1_dat_01_audit_005",
+          "user_id": "s1_dat_01_user_005",
+          "event_type": "consent_changed",
+          "event_state": "revoked/changed-consent",
+          "source": "local_fixture",
+          "recorded_at": "2026-09-11T00:04:03Z",
+          "is_synthetic": true
+        }
+      }
+    ]
+  }
+}

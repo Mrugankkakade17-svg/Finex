@@ -1,0 +1,1389 @@
+{
+  "schema_version": "s2-client-fixtures/v1",
+  "synthetic": true,
+  "contract_version": "s2-risk-contract/v1.0",
+  "questionnaire": {
+    "contract_version": "s2-risk-contract/v1.0",
+    "questionnaire_id": "risk_questionnaire_v1",
+    "questionnaire_version": "v1",
+    "questions": [
+      {
+        "question_id": "W1",
+        "dimension": "willingness",
+        "text": "If your investment portfolio suddenly dropped 20% in value over a few weeks, what would you most likely do?",
+        "options": [
+          {
+            "code": "W1_A",
+            "label": "Sell all investments immediately to avoid further loss"
+          },
+          {
+            "code": "W1_B",
+            "label": "Sell some investments to reduce risk"
+          },
+          {
+            "code": "W1_C",
+            "label": "Do nothing and wait it out"
+          },
+          {
+            "code": "W1_D",
+            "label": "Hold and consider it a normal part of investing"
+          },
+          {
+            "code": "W1_E",
+            "label": "Buy more while prices are low"
+          }
+        ]
+      },
+      {
+        "question_id": "W2",
+        "dimension": "willingness",
+        "text": "How comfortable are you with your investment value going up and down significantly from month to month?",
+        "options": [
+          {
+            "code": "W2_A",
+            "label": "Very uncomfortable \u2014 I prefer stable, predictable value"
+          },
+          {
+            "code": "W2_B",
+            "label": "Somewhat uncomfortable"
+          },
+          {
+            "code": "W2_C",
+            "label": "Neutral"
+          },
+          {
+            "code": "W2_D",
+            "label": "Somewhat comfortable"
+          },
+          {
+            "code": "W2_E",
+            "label": "Very comfortable \u2014 I expect and accept ups and downs"
+          }
+        ]
+      },
+      {
+        "question_id": "W3",
+        "dimension": "willingness",
+        "text": "Which statement best describes your investing preference?",
+        "options": [
+          {
+            "code": "W3_A",
+            "label": "I prefer to protect my money even if it grows slowly"
+          },
+          {
+            "code": "W3_B",
+            "label": "I prefer mostly stable investments with a little growth"
+          },
+          {
+            "code": "W3_C",
+            "label": "I want a balance of growth and stability"
+          },
+          {
+            "code": "W3_D",
+            "label": "I prefer mostly growth-focused investments"
+          },
+          {
+            "code": "W3_E",
+            "label": "I want maximum growth even with higher risk"
+          }
+        ]
+      },
+      {
+        "question_id": "W4",
+        "dimension": "willingness",
+        "text": "How long could you continue holding an investment that has lost value before you'd want to sell it?",
+        "options": [
+          {
+            "code": "W4_A",
+            "label": "I would want to sell immediately"
+          },
+          {
+            "code": "W4_B",
+            "label": "A few weeks"
+          },
+          {
+            "code": "W4_C",
+            "label": "A few months"
+          },
+          {
+            "code": "W4_D",
+            "label": "A year or more"
+          },
+          {
+            "code": "W4_E",
+            "label": "I would hold indefinitely if I believed in the long-term plan"
+          }
+        ]
+      },
+      {
+        "question_id": "W5",
+        "dimension": "willingness",
+        "text": "What kind of returns do you expect from your investments, understanding that higher returns come with higher risk?",
+        "options": [
+          {
+            "code": "W5_A",
+            "label": "I prefer minimal risk even if returns are low"
+          },
+          {
+            "code": "W5_B",
+            "label": "Modest, steady returns"
+          },
+          {
+            "code": "W5_C",
+            "label": "Moderate returns with some risk"
+          },
+          {
+            "code": "W5_D",
+            "label": "Above-average returns, accepting more risk"
+          },
+          {
+            "code": "W5_E",
+            "label": "High returns, accepting significant risk of loss"
+          }
+        ]
+      },
+      {
+        "question_id": "C1",
+        "dimension": "capacity",
+        "text": "When do you expect to need to withdraw a significant portion of this invested money?",
+        "options": [
+          {
+            "code": "C1_A",
+            "label": "Within 1 year"
+          },
+          {
+            "code": "C1_B",
+            "label": "1\u20133 years"
+          },
+          {
+            "code": "C1_C",
+            "label": "3\u20135 years"
+          },
+          {
+            "code": "C1_D",
+            "label": "5\u201310 years"
+          },
+          {
+            "code": "C1_E",
+            "label": "More than 10 years"
+          }
+        ]
+      },
+      {
+        "question_id": "C2",
+        "dimension": "capacity",
+        "text": "How much do you depend on this specific invested money to cover your everyday living expenses?",
+        "options": [
+          {
+            "code": "C2_A",
+            "label": "I depend on it heavily / may need it soon"
+          },
+          {
+            "code": "C2_B",
+            "label": "I depend on it somewhat"
+          },
+          {
+            "code": "C2_C",
+            "label": "I depend on it a little"
+          },
+          {
+            "code": "C2_D",
+            "label": "I depend on it rarely"
+          },
+          {
+            "code": "C2_E",
+            "label": "I do not depend on it at all \u2014 it's money I can leave invested long-term"
+          }
+        ]
+      },
+      {
+        "question_id": "C3",
+        "dimension": "capacity",
+        "text": "Do you have separate emergency savings (outside of this investment) that could cover unexpected expenses?",
+        "options": [
+          {
+            "code": "C3_A",
+            "label": "No emergency savings"
+          },
+          {
+            "code": "C3_B",
+            "label": "Less than 1 month of expenses saved"
+          },
+          {
+            "code": "C3_C",
+            "label": "1\u20133 months of expenses saved"
+          },
+          {
+            "code": "C3_D",
+            "label": "3\u20136 months of expenses saved"
+          },
+          {
+            "code": "C3_E",
+            "label": "More than 6 months of expenses saved"
+          }
+        ]
+      },
+      {
+        "question_id": "C4",
+        "dimension": "capacity",
+        "text": "How stable is your current income?",
+        "options": [
+          {
+            "code": "C4_A",
+            "label": "Very unstable / no regular income"
+          },
+          {
+            "code": "C4_B",
+            "label": "Somewhat unstable"
+          },
+          {
+            "code": "C4_C",
+            "label": "Moderately stable"
+          },
+          {
+            "code": "C4_D",
+            "label": "Stable"
+          },
+          {
+            "code": "C4_E",
+            "label": "Very stable / secure"
+          }
+        ]
+      },
+      {
+        "question_id": "C5",
+        "dimension": "capacity",
+        "text": "Do you have any major financial obligations planned in the near future (e.g., buying a home, education expenses, medical costs)?",
+        "options": [
+          {
+            "code": "C5_A",
+            "label": "Yes, a major obligation is very likely within 1 year"
+          },
+          {
+            "code": "C5_B",
+            "label": "Yes, likely within 1\u20132 years"
+          },
+          {
+            "code": "C5_C",
+            "label": "Possibly, but not certain"
+          },
+          {
+            "code": "C5_D",
+            "label": "Unlikely in the near future"
+          },
+          {
+            "code": "C5_E",
+            "label": "No major obligations planned"
+          }
+        ]
+      }
+    ],
+    "limitation": {
+      "code": "EDUCATIONAL_SELF_REPORTED_PROFILE",
+      "message": "This educational profile is based on self-reported answers and is not individualized financial, legal, tax, or investment advice."
+    }
+  },
+  "cases": [
+    {
+      "case_id": "RISK-GOLD-001",
+      "title": "All low answers map to Conservative",
+      "request": {
+        "questionnaire_id": "risk_questionnaire_v1",
+        "questionnaire_version": "v1",
+        "answers": [
+          {
+            "question_id": "W1",
+            "answer_code": "W1_A"
+          },
+          {
+            "question_id": "W2",
+            "answer_code": "W2_A"
+          },
+          {
+            "question_id": "W3",
+            "answer_code": "W3_A"
+          },
+          {
+            "question_id": "W4",
+            "answer_code": "W4_A"
+          },
+          {
+            "question_id": "W5",
+            "answer_code": "W5_A"
+          },
+          {
+            "question_id": "C1",
+            "answer_code": "C1_A"
+          },
+          {
+            "question_id": "C2",
+            "answer_code": "C2_A"
+          },
+          {
+            "question_id": "C3",
+            "answer_code": "C3_A"
+          },
+          {
+            "question_id": "C4",
+            "answer_code": "C4_A"
+          },
+          {
+            "question_id": "C5",
+            "answer_code": "C5_A"
+          }
+        ]
+      },
+      "response": {
+        "assessment": {
+          "contract_version": "s2-risk-contract/v1.0",
+          "questionnaire_id": "risk_questionnaire_v1",
+          "questionnaire_version": "v1",
+          "scoring_version": "deterministic_v1.0.0",
+          "willingness_score": 0.0,
+          "capacity_score": 0.0,
+          "composite_score": 0.0,
+          "risk_category": {
+            "code": "CONSERVATIVE",
+            "label": "Conservative"
+          },
+          "calculated_at": "2026-10-10T00:00:00Z",
+          "limitation": {
+            "code": "EDUCATIONAL_SELF_REPORTED_PROFILE",
+            "message": "This educational profile is based on self-reported answers and is not individualized financial, legal, tax, or investment advice."
+          }
+        },
+        "explanation": {
+          "summary": "The self-reported questionnaire produces the Conservative model band with a composite score of 0/100.",
+          "dimensions": "Willingness: 0/100; capacity: 0/100. These describe the answers, not verified financial circumstances or suitability for an investment.",
+          "method": "Five willingness and five capacity answers are normalized to 0\u2013100 and combined equally by deterministic rules; no model generates the numeric score.",
+          "questionnaire_version": "v1",
+          "scoring_version": "deterministic_v1.0.0",
+          "calculated_at": "2026-10-10T00:00:00Z",
+          "limitation": "This educational profile is based on self-reported answers and is not individualized financial, legal, tax, or investment advice."
+        },
+        "scope": "local_educational_pilot",
+        "persisted": false
+      }
+    },
+    {
+      "case_id": "RISK-GOLD-002",
+      "title": "32.5 stays Conservative below the 34 threshold",
+      "request": {
+        "questionnaire_id": "risk_questionnaire_v1",
+        "questionnaire_version": "v1",
+        "answers": [
+          {
+            "question_id": "W1",
+            "answer_code": "W1_C"
+          },
+          {
+            "question_id": "W2",
+            "answer_code": "W2_B"
+          },
+          {
+            "question_id": "W3",
+            "answer_code": "W3_B"
+          },
+          {
+            "question_id": "W4",
+            "answer_code": "W4_B"
+          },
+          {
+            "question_id": "W5",
+            "answer_code": "W5_B"
+          },
+          {
+            "question_id": "C1",
+            "answer_code": "C1_C"
+          },
+          {
+            "question_id": "C2",
+            "answer_code": "C2_C"
+          },
+          {
+            "question_id": "C3",
+            "answer_code": "C3_B"
+          },
+          {
+            "question_id": "C4",
+            "answer_code": "C4_B"
+          },
+          {
+            "question_id": "C5",
+            "answer_code": "C5_B"
+          }
+        ]
+      },
+      "response": {
+        "assessment": {
+          "contract_version": "s2-risk-contract/v1.0",
+          "questionnaire_id": "risk_questionnaire_v1",
+          "questionnaire_version": "v1",
+          "scoring_version": "deterministic_v1.0.0",
+          "willingness_score": 30.0,
+          "capacity_score": 35.0,
+          "composite_score": 32.5,
+          "risk_category": {
+            "code": "CONSERVATIVE",
+            "label": "Conservative"
+          },
+          "calculated_at": "2026-10-10T00:00:00Z",
+          "limitation": {
+            "code": "EDUCATIONAL_SELF_REPORTED_PROFILE",
+            "message": "This educational profile is based on self-reported answers and is not individualized financial, legal, tax, or investment advice."
+          },
+          "informational_tension": {
+            "code": "WILLINGNESS_BELOW_CAPACITY",
+            "message": "The two self-reported dimensions are in different model bands. This is informational context, not a recommendation or suitability decision."
+          }
+        },
+        "explanation": {
+          "summary": "The self-reported questionnaire produces the Conservative model band with a composite score of 32.5/100.",
+          "dimensions": "Willingness: 30/100; capacity: 35/100. These describe the answers, not verified financial circumstances or suitability for an investment.",
+          "method": "Five willingness and five capacity answers are normalized to 0\u2013100 and combined equally by deterministic rules; no model generates the numeric score.",
+          "questionnaire_version": "v1",
+          "scoring_version": "deterministic_v1.0.0",
+          "calculated_at": "2026-10-10T00:00:00Z",
+          "limitation": "This educational profile is based on self-reported answers and is not individualized financial, legal, tax, or investment advice."
+        },
+        "scope": "local_educational_pilot",
+        "persisted": false
+      }
+    },
+    {
+      "case_id": "RISK-GOLD-003",
+      "title": "35.0 is the first reachable Moderate result",
+      "request": {
+        "questionnaire_id": "risk_questionnaire_v1",
+        "questionnaire_version": "v1",
+        "answers": [
+          {
+            "question_id": "W1",
+            "answer_code": "W1_C"
+          },
+          {
+            "question_id": "W2",
+            "answer_code": "W2_C"
+          },
+          {
+            "question_id": "W3",
+            "answer_code": "W3_B"
+          },
+          {
+            "question_id": "W4",
+            "answer_code": "W4_B"
+          },
+          {
+            "question_id": "W5",
+            "answer_code": "W5_B"
+          },
+          {
+            "question_id": "C1",
+            "answer_code": "C1_C"
+          },
+          {
+            "question_id": "C2",
+            "answer_code": "C2_C"
+          },
+          {
+            "question_id": "C3",
+            "answer_code": "C3_B"
+          },
+          {
+            "question_id": "C4",
+            "answer_code": "C4_B"
+          },
+          {
+            "question_id": "C5",
+            "answer_code": "C5_B"
+          }
+        ]
+      },
+      "response": {
+        "assessment": {
+          "contract_version": "s2-risk-contract/v1.0",
+          "questionnaire_id": "risk_questionnaire_v1",
+          "questionnaire_version": "v1",
+          "scoring_version": "deterministic_v1.0.0",
+          "willingness_score": 35.0,
+          "capacity_score": 35.0,
+          "composite_score": 35.0,
+          "risk_category": {
+            "code": "MODERATE",
+            "label": "Moderate"
+          },
+          "calculated_at": "2026-10-10T00:00:00Z",
+          "limitation": {
+            "code": "EDUCATIONAL_SELF_REPORTED_PROFILE",
+            "message": "This educational profile is based on self-reported answers and is not individualized financial, legal, tax, or investment advice."
+          }
+        },
+        "explanation": {
+          "summary": "The self-reported questionnaire produces the Moderate model band with a composite score of 35/100.",
+          "dimensions": "Willingness: 35/100; capacity: 35/100. These describe the answers, not verified financial circumstances or suitability for an investment.",
+          "method": "Five willingness and five capacity answers are normalized to 0\u2013100 and combined equally by deterministic rules; no model generates the numeric score.",
+          "questionnaire_version": "v1",
+          "scoring_version": "deterministic_v1.0.0",
+          "calculated_at": "2026-10-10T00:00:00Z",
+          "limitation": "This educational profile is based on self-reported answers and is not individualized financial, legal, tax, or investment advice."
+        },
+        "scope": "local_educational_pilot",
+        "persisted": false
+      }
+    },
+    {
+      "case_id": "RISK-GOLD-004",
+      "title": "All midpoint answers map to Moderate",
+      "request": {
+        "questionnaire_id": "risk_questionnaire_v1",
+        "questionnaire_version": "v1",
+        "answers": [
+          {
+            "question_id": "W1",
+            "answer_code": "W1_C"
+          },
+          {
+            "question_id": "W2",
+            "answer_code": "W2_C"
+          },
+          {
+            "question_id": "W3",
+            "answer_code": "W3_C"
+          },
+          {
+            "question_id": "W4",
+            "answer_code": "W4_C"
+          },
+          {
+            "question_id": "W5",
+            "answer_code": "W5_C"
+          },
+          {
+            "question_id": "C1",
+            "answer_code": "C1_C"
+          },
+          {
+            "question_id": "C2",
+            "answer_code": "C2_C"
+          },
+          {
+            "question_id": "C3",
+            "answer_code": "C3_C"
+          },
+          {
+            "question_id": "C4",
+            "answer_code": "C4_C"
+          },
+          {
+            "question_id": "C5",
+            "answer_code": "C5_C"
+          }
+        ]
+      },
+      "response": {
+        "assessment": {
+          "contract_version": "s2-risk-contract/v1.0",
+          "questionnaire_id": "risk_questionnaire_v1",
+          "questionnaire_version": "v1",
+          "scoring_version": "deterministic_v1.0.0",
+          "willingness_score": 50.0,
+          "capacity_score": 50.0,
+          "composite_score": 50.0,
+          "risk_category": {
+            "code": "MODERATE",
+            "label": "Moderate"
+          },
+          "calculated_at": "2026-10-10T00:00:00Z",
+          "limitation": {
+            "code": "EDUCATIONAL_SELF_REPORTED_PROFILE",
+            "message": "This educational profile is based on self-reported answers and is not individualized financial, legal, tax, or investment advice."
+          }
+        },
+        "explanation": {
+          "summary": "The self-reported questionnaire produces the Moderate model band with a composite score of 50/100.",
+          "dimensions": "Willingness: 50/100; capacity: 50/100. These describe the answers, not verified financial circumstances or suitability for an investment.",
+          "method": "Five willingness and five capacity answers are normalized to 0\u2013100 and combined equally by deterministic rules; no model generates the numeric score.",
+          "questionnaire_version": "v1",
+          "scoring_version": "deterministic_v1.0.0",
+          "calculated_at": "2026-10-10T00:00:00Z",
+          "limitation": "This educational profile is based on self-reported answers and is not individualized financial, legal, tax, or investment advice."
+        },
+        "scope": "local_educational_pilot",
+        "persisted": false
+      }
+    },
+    {
+      "case_id": "RISK-GOLD-005",
+      "title": "65.0 stays Moderate below the 67 threshold",
+      "request": {
+        "questionnaire_id": "risk_questionnaire_v1",
+        "questionnaire_version": "v1",
+        "answers": [
+          {
+            "question_id": "W1",
+            "answer_code": "W1_D"
+          },
+          {
+            "question_id": "W2",
+            "answer_code": "W2_D"
+          },
+          {
+            "question_id": "W3",
+            "answer_code": "W3_D"
+          },
+          {
+            "question_id": "W4",
+            "answer_code": "W4_C"
+          },
+          {
+            "question_id": "W5",
+            "answer_code": "W5_C"
+          },
+          {
+            "question_id": "C1",
+            "answer_code": "C1_D"
+          },
+          {
+            "question_id": "C2",
+            "answer_code": "C2_D"
+          },
+          {
+            "question_id": "C3",
+            "answer_code": "C3_D"
+          },
+          {
+            "question_id": "C4",
+            "answer_code": "C4_C"
+          },
+          {
+            "question_id": "C5",
+            "answer_code": "C5_C"
+          }
+        ]
+      },
+      "response": {
+        "assessment": {
+          "contract_version": "s2-risk-contract/v1.0",
+          "questionnaire_id": "risk_questionnaire_v1",
+          "questionnaire_version": "v1",
+          "scoring_version": "deterministic_v1.0.0",
+          "willingness_score": 65.0,
+          "capacity_score": 65.0,
+          "composite_score": 65.0,
+          "risk_category": {
+            "code": "MODERATE",
+            "label": "Moderate"
+          },
+          "calculated_at": "2026-10-10T00:00:00Z",
+          "limitation": {
+            "code": "EDUCATIONAL_SELF_REPORTED_PROFILE",
+            "message": "This educational profile is based on self-reported answers and is not individualized financial, legal, tax, or investment advice."
+          }
+        },
+        "explanation": {
+          "summary": "The self-reported questionnaire produces the Moderate model band with a composite score of 65/100.",
+          "dimensions": "Willingness: 65/100; capacity: 65/100. These describe the answers, not verified financial circumstances or suitability for an investment.",
+          "method": "Five willingness and five capacity answers are normalized to 0\u2013100 and combined equally by deterministic rules; no model generates the numeric score.",
+          "questionnaire_version": "v1",
+          "scoring_version": "deterministic_v1.0.0",
+          "calculated_at": "2026-10-10T00:00:00Z",
+          "limitation": "This educational profile is based on self-reported answers and is not individualized financial, legal, tax, or investment advice."
+        },
+        "scope": "local_educational_pilot",
+        "persisted": false
+      }
+    },
+    {
+      "case_id": "RISK-GOLD-006",
+      "title": "67.5 is the first reachable Aggressive result",
+      "request": {
+        "questionnaire_id": "risk_questionnaire_v1",
+        "questionnaire_version": "v1",
+        "answers": [
+          {
+            "question_id": "W1",
+            "answer_code": "W1_D"
+          },
+          {
+            "question_id": "W2",
+            "answer_code": "W2_D"
+          },
+          {
+            "question_id": "W3",
+            "answer_code": "W3_D"
+          },
+          {
+            "question_id": "W4",
+            "answer_code": "W4_D"
+          },
+          {
+            "question_id": "W5",
+            "answer_code": "W5_C"
+          },
+          {
+            "question_id": "C1",
+            "answer_code": "C1_D"
+          },
+          {
+            "question_id": "C2",
+            "answer_code": "C2_D"
+          },
+          {
+            "question_id": "C3",
+            "answer_code": "C3_D"
+          },
+          {
+            "question_id": "C4",
+            "answer_code": "C4_C"
+          },
+          {
+            "question_id": "C5",
+            "answer_code": "C5_C"
+          }
+        ]
+      },
+      "response": {
+        "assessment": {
+          "contract_version": "s2-risk-contract/v1.0",
+          "questionnaire_id": "risk_questionnaire_v1",
+          "questionnaire_version": "v1",
+          "scoring_version": "deterministic_v1.0.0",
+          "willingness_score": 70.0,
+          "capacity_score": 65.0,
+          "composite_score": 67.5,
+          "risk_category": {
+            "code": "AGGRESSIVE",
+            "label": "Aggressive"
+          },
+          "calculated_at": "2026-10-10T00:00:00Z",
+          "limitation": {
+            "code": "EDUCATIONAL_SELF_REPORTED_PROFILE",
+            "message": "This educational profile is based on self-reported answers and is not individualized financial, legal, tax, or investment advice."
+          },
+          "informational_tension": {
+            "code": "CAPACITY_BELOW_WILLINGNESS",
+            "message": "The two self-reported dimensions are in different model bands. This is informational context, not a recommendation or suitability decision."
+          }
+        },
+        "explanation": {
+          "summary": "The self-reported questionnaire produces the Aggressive model band with a composite score of 67.5/100.",
+          "dimensions": "Willingness: 70/100; capacity: 65/100. These describe the answers, not verified financial circumstances or suitability for an investment.",
+          "method": "Five willingness and five capacity answers are normalized to 0\u2013100 and combined equally by deterministic rules; no model generates the numeric score.",
+          "questionnaire_version": "v1",
+          "scoring_version": "deterministic_v1.0.0",
+          "calculated_at": "2026-10-10T00:00:00Z",
+          "limitation": "This educational profile is based on self-reported answers and is not individualized financial, legal, tax, or investment advice."
+        },
+        "scope": "local_educational_pilot",
+        "persisted": false
+      }
+    },
+    {
+      "case_id": "RISK-GOLD-007",
+      "title": "All high answers map to Aggressive",
+      "request": {
+        "questionnaire_id": "risk_questionnaire_v1",
+        "questionnaire_version": "v1",
+        "answers": [
+          {
+            "question_id": "W1",
+            "answer_code": "W1_E"
+          },
+          {
+            "question_id": "W2",
+            "answer_code": "W2_E"
+          },
+          {
+            "question_id": "W3",
+            "answer_code": "W3_E"
+          },
+          {
+            "question_id": "W4",
+            "answer_code": "W4_E"
+          },
+          {
+            "question_id": "W5",
+            "answer_code": "W5_E"
+          },
+          {
+            "question_id": "C1",
+            "answer_code": "C1_E"
+          },
+          {
+            "question_id": "C2",
+            "answer_code": "C2_E"
+          },
+          {
+            "question_id": "C3",
+            "answer_code": "C3_E"
+          },
+          {
+            "question_id": "C4",
+            "answer_code": "C4_E"
+          },
+          {
+            "question_id": "C5",
+            "answer_code": "C5_E"
+          }
+        ]
+      },
+      "response": {
+        "assessment": {
+          "contract_version": "s2-risk-contract/v1.0",
+          "questionnaire_id": "risk_questionnaire_v1",
+          "questionnaire_version": "v1",
+          "scoring_version": "deterministic_v1.0.0",
+          "willingness_score": 100.0,
+          "capacity_score": 100.0,
+          "composite_score": 100.0,
+          "risk_category": {
+            "code": "AGGRESSIVE",
+            "label": "Aggressive"
+          },
+          "calculated_at": "2026-10-10T00:00:00Z",
+          "limitation": {
+            "code": "EDUCATIONAL_SELF_REPORTED_PROFILE",
+            "message": "This educational profile is based on self-reported answers and is not individualized financial, legal, tax, or investment advice."
+          }
+        },
+        "explanation": {
+          "summary": "The self-reported questionnaire produces the Aggressive model band with a composite score of 100/100.",
+          "dimensions": "Willingness: 100/100; capacity: 100/100. These describe the answers, not verified financial circumstances or suitability for an investment.",
+          "method": "Five willingness and five capacity answers are normalized to 0\u2013100 and combined equally by deterministic rules; no model generates the numeric score.",
+          "questionnaire_version": "v1",
+          "scoring_version": "deterministic_v1.0.0",
+          "calculated_at": "2026-10-10T00:00:00Z",
+          "limitation": "This educational profile is based on self-reported answers and is not individualized financial, legal, tax, or investment advice."
+        },
+        "scope": "local_educational_pilot",
+        "persisted": false
+      }
+    },
+    {
+      "case_id": "RISK-GOLD-008",
+      "title": "High willingness and low capacity remains a Moderate profile with a capacity tension",
+      "request": {
+        "questionnaire_id": "risk_questionnaire_v1",
+        "questionnaire_version": "v1",
+        "answers": [
+          {
+            "question_id": "W1",
+            "answer_code": "W1_E"
+          },
+          {
+            "question_id": "W2",
+            "answer_code": "W2_E"
+          },
+          {
+            "question_id": "W3",
+            "answer_code": "W3_E"
+          },
+          {
+            "question_id": "W4",
+            "answer_code": "W4_E"
+          },
+          {
+            "question_id": "W5",
+            "answer_code": "W5_E"
+          },
+          {
+            "question_id": "C1",
+            "answer_code": "C1_A"
+          },
+          {
+            "question_id": "C2",
+            "answer_code": "C2_A"
+          },
+          {
+            "question_id": "C3",
+            "answer_code": "C3_A"
+          },
+          {
+            "question_id": "C4",
+            "answer_code": "C4_A"
+          },
+          {
+            "question_id": "C5",
+            "answer_code": "C5_A"
+          }
+        ]
+      },
+      "response": {
+        "assessment": {
+          "contract_version": "s2-risk-contract/v1.0",
+          "questionnaire_id": "risk_questionnaire_v1",
+          "questionnaire_version": "v1",
+          "scoring_version": "deterministic_v1.0.0",
+          "willingness_score": 100.0,
+          "capacity_score": 0.0,
+          "composite_score": 50.0,
+          "risk_category": {
+            "code": "MODERATE",
+            "label": "Moderate"
+          },
+          "calculated_at": "2026-10-10T00:00:00Z",
+          "limitation": {
+            "code": "EDUCATIONAL_SELF_REPORTED_PROFILE",
+            "message": "This educational profile is based on self-reported answers and is not individualized financial, legal, tax, or investment advice."
+          },
+          "informational_tension": {
+            "code": "CAPACITY_BELOW_WILLINGNESS",
+            "message": "The two self-reported dimensions are in different model bands. This is informational context, not a recommendation or suitability decision."
+          }
+        },
+        "explanation": {
+          "summary": "The self-reported questionnaire produces the Moderate model band with a composite score of 50/100.",
+          "dimensions": "Willingness: 100/100; capacity: 0/100. These describe the answers, not verified financial circumstances or suitability for an investment.",
+          "method": "Five willingness and five capacity answers are normalized to 0\u2013100 and combined equally by deterministic rules; no model generates the numeric score.",
+          "questionnaire_version": "v1",
+          "scoring_version": "deterministic_v1.0.0",
+          "calculated_at": "2026-10-10T00:00:00Z",
+          "limitation": "This educational profile is based on self-reported answers and is not individualized financial, legal, tax, or investment advice."
+        },
+        "scope": "local_educational_pilot",
+        "persisted": false
+      }
+    },
+    {
+      "case_id": "RISK-GOLD-009",
+      "title": "Low willingness and high capacity remains a Moderate profile with a willingness tension",
+      "request": {
+        "questionnaire_id": "risk_questionnaire_v1",
+        "questionnaire_version": "v1",
+        "answers": [
+          {
+            "question_id": "W1",
+            "answer_code": "W1_A"
+          },
+          {
+            "question_id": "W2",
+            "answer_code": "W2_A"
+          },
+          {
+            "question_id": "W3",
+            "answer_code": "W3_A"
+          },
+          {
+            "question_id": "W4",
+            "answer_code": "W4_A"
+          },
+          {
+            "question_id": "W5",
+            "answer_code": "W5_A"
+          },
+          {
+            "question_id": "C1",
+            "answer_code": "C1_E"
+          },
+          {
+            "question_id": "C2",
+            "answer_code": "C2_E"
+          },
+          {
+            "question_id": "C3",
+            "answer_code": "C3_E"
+          },
+          {
+            "question_id": "C4",
+            "answer_code": "C4_E"
+          },
+          {
+            "question_id": "C5",
+            "answer_code": "C5_E"
+          }
+        ]
+      },
+      "response": {
+        "assessment": {
+          "contract_version": "s2-risk-contract/v1.0",
+          "questionnaire_id": "risk_questionnaire_v1",
+          "questionnaire_version": "v1",
+          "scoring_version": "deterministic_v1.0.0",
+          "willingness_score": 0.0,
+          "capacity_score": 100.0,
+          "composite_score": 50.0,
+          "risk_category": {
+            "code": "MODERATE",
+            "label": "Moderate"
+          },
+          "calculated_at": "2026-10-10T00:00:00Z",
+          "limitation": {
+            "code": "EDUCATIONAL_SELF_REPORTED_PROFILE",
+            "message": "This educational profile is based on self-reported answers and is not individualized financial, legal, tax, or investment advice."
+          },
+          "informational_tension": {
+            "code": "WILLINGNESS_BELOW_CAPACITY",
+            "message": "The two self-reported dimensions are in different model bands. This is informational context, not a recommendation or suitability decision."
+          }
+        },
+        "explanation": {
+          "summary": "The self-reported questionnaire produces the Moderate model band with a composite score of 50/100.",
+          "dimensions": "Willingness: 0/100; capacity: 100/100. These describe the answers, not verified financial circumstances or suitability for an investment.",
+          "method": "Five willingness and five capacity answers are normalized to 0\u2013100 and combined equally by deterministic rules; no model generates the numeric score.",
+          "questionnaire_version": "v1",
+          "scoring_version": "deterministic_v1.0.0",
+          "calculated_at": "2026-10-10T00:00:00Z",
+          "limitation": "This educational profile is based on self-reported answers and is not individualized financial, legal, tax, or investment advice."
+        },
+        "scope": "local_educational_pilot",
+        "persisted": false
+      }
+    },
+    {
+      "case_id": "RISK-GOLD-010",
+      "title": "A missing required question fails closed",
+      "request": {
+        "questionnaire_id": "risk_questionnaire_v1",
+        "questionnaire_version": "v1",
+        "answers": [
+          {
+            "question_id": "W1",
+            "answer_code": "W1_C"
+          },
+          {
+            "question_id": "W2",
+            "answer_code": "W2_C"
+          },
+          {
+            "question_id": "W3",
+            "answer_code": "W3_C"
+          },
+          {
+            "question_id": "W4",
+            "answer_code": "W4_C"
+          },
+          {
+            "question_id": "W5",
+            "answer_code": "W5_C"
+          },
+          {
+            "question_id": "C1",
+            "answer_code": "C1_C"
+          },
+          {
+            "question_id": "C2",
+            "answer_code": "C2_C"
+          },
+          {
+            "question_id": "C3",
+            "answer_code": "C3_C"
+          },
+          {
+            "question_id": "C4",
+            "answer_code": "C4_C"
+          }
+        ]
+      },
+      "error_code": "MISSING_REQUIRED_QUESTION"
+    },
+    {
+      "case_id": "RISK-GOLD-011",
+      "title": "A duplicate answer fails closed",
+      "request": {
+        "questionnaire_id": "risk_questionnaire_v1",
+        "questionnaire_version": "v1",
+        "answers": [
+          {
+            "question_id": "W1",
+            "answer_code": "W1_C"
+          },
+          {
+            "question_id": "W2",
+            "answer_code": "W2_C"
+          },
+          {
+            "question_id": "W3",
+            "answer_code": "W3_C"
+          },
+          {
+            "question_id": "W4",
+            "answer_code": "W4_C"
+          },
+          {
+            "question_id": "W5",
+            "answer_code": "W5_C"
+          },
+          {
+            "question_id": "C1",
+            "answer_code": "C1_C"
+          },
+          {
+            "question_id": "C2",
+            "answer_code": "C2_C"
+          },
+          {
+            "question_id": "C3",
+            "answer_code": "C3_C"
+          },
+          {
+            "question_id": "C4",
+            "answer_code": "C4_C"
+          },
+          {
+            "question_id": "C5",
+            "answer_code": "C5_C"
+          },
+          {
+            "question_id": "W1",
+            "answer_code": "W1_C"
+          }
+        ]
+      },
+      "error_code": "DUPLICATE_QUESTION_ANSWER"
+    },
+    {
+      "case_id": "RISK-GOLD-012",
+      "title": "An unknown question ID fails before missing-question validation",
+      "request": {
+        "questionnaire_id": "risk_questionnaire_v1",
+        "questionnaire_version": "v1",
+        "answers": [
+          {
+            "question_id": "X1",
+            "answer_code": "X1_A"
+          },
+          {
+            "question_id": "W2",
+            "answer_code": "W2_C"
+          },
+          {
+            "question_id": "W3",
+            "answer_code": "W3_C"
+          },
+          {
+            "question_id": "W4",
+            "answer_code": "W4_C"
+          },
+          {
+            "question_id": "W5",
+            "answer_code": "W5_C"
+          },
+          {
+            "question_id": "C1",
+            "answer_code": "C1_C"
+          },
+          {
+            "question_id": "C2",
+            "answer_code": "C2_C"
+          },
+          {
+            "question_id": "C3",
+            "answer_code": "C3_C"
+          },
+          {
+            "question_id": "C4",
+            "answer_code": "C4_C"
+          },
+          {
+            "question_id": "C5",
+            "answer_code": "C5_C"
+          }
+        ]
+      },
+      "error_code": "UNKNOWN_QUESTION_ID"
+    },
+    {
+      "case_id": "RISK-GOLD-013",
+      "title": "An unknown answer code fails closed",
+      "request": {
+        "questionnaire_id": "risk_questionnaire_v1",
+        "questionnaire_version": "v1",
+        "answers": [
+          {
+            "question_id": "W1",
+            "answer_code": "W1_Z"
+          },
+          {
+            "question_id": "W2",
+            "answer_code": "W2_C"
+          },
+          {
+            "question_id": "W3",
+            "answer_code": "W3_C"
+          },
+          {
+            "question_id": "W4",
+            "answer_code": "W4_C"
+          },
+          {
+            "question_id": "W5",
+            "answer_code": "W5_C"
+          },
+          {
+            "question_id": "C1",
+            "answer_code": "C1_C"
+          },
+          {
+            "question_id": "C2",
+            "answer_code": "C2_C"
+          },
+          {
+            "question_id": "C3",
+            "answer_code": "C3_C"
+          },
+          {
+            "question_id": "C4",
+            "answer_code": "C4_C"
+          },
+          {
+            "question_id": "C5",
+            "answer_code": "C5_C"
+          }
+        ]
+      },
+      "error_code": "INVALID_ANSWER_CODE"
+    },
+    {
+      "case_id": "RISK-GOLD-014",
+      "title": "A valid code belonging to another question fails closed",
+      "request": {
+        "questionnaire_id": "risk_questionnaire_v1",
+        "questionnaire_version": "v1",
+        "answers": [
+          {
+            "question_id": "W1",
+            "answer_code": "C1_C"
+          },
+          {
+            "question_id": "W2",
+            "answer_code": "W2_C"
+          },
+          {
+            "question_id": "W3",
+            "answer_code": "W3_C"
+          },
+          {
+            "question_id": "W4",
+            "answer_code": "W4_C"
+          },
+          {
+            "question_id": "W5",
+            "answer_code": "W5_C"
+          },
+          {
+            "question_id": "C1",
+            "answer_code": "C1_C"
+          },
+          {
+            "question_id": "C2",
+            "answer_code": "C2_C"
+          },
+          {
+            "question_id": "C3",
+            "answer_code": "C3_C"
+          },
+          {
+            "question_id": "C4",
+            "answer_code": "C4_C"
+          },
+          {
+            "question_id": "C5",
+            "answer_code": "C5_C"
+          }
+        ]
+      },
+      "error_code": "ANSWER_NOT_PERMITTED_FOR_QUESTION"
+    },
+    {
+      "case_id": "RISK-GOLD-015",
+      "title": "An answer without an answer code fails closed",
+      "request": {
+        "questionnaire_id": "risk_questionnaire_v1",
+        "questionnaire_version": "v1",
+        "answers": [
+          {
+            "question_id": "W1"
+          },
+          {
+            "question_id": "W2",
+            "answer_code": "W2_C"
+          },
+          {
+            "question_id": "W3",
+            "answer_code": "W3_C"
+          },
+          {
+            "question_id": "W4",
+            "answer_code": "W4_C"
+          },
+          {
+            "question_id": "W5",
+            "answer_code": "W5_C"
+          },
+          {
+            "question_id": "C1",
+            "answer_code": "C1_C"
+          },
+          {
+            "question_id": "C2",
+            "answer_code": "C2_C"
+          },
+          {
+            "question_id": "C3",
+            "answer_code": "C3_C"
+          },
+          {
+            "question_id": "C4",
+            "answer_code": "C4_C"
+          },
+          {
+            "question_id": "C5",
+            "answer_code": "C5_C"
+          }
+        ]
+      },
+      "error_code": "MALFORMED_ANSWER"
+    },
+    {
+      "case_id": "RISK-GOLD-016",
+      "title": "An unsupported questionnaire version fails before answer validation",
+      "request": {
+        "questionnaire_id": "risk_questionnaire_v1",
+        "questionnaire_version": "v2",
+        "answers": [
+          {
+            "question_id": "W1",
+            "answer_code": "W1_C"
+          },
+          {
+            "question_id": "W2",
+            "answer_code": "W2_C"
+          },
+          {
+            "question_id": "W3",
+            "answer_code": "W3_C"
+          },
+          {
+            "question_id": "W4",
+            "answer_code": "W4_C"
+          },
+          {
+            "question_id": "W5",
+            "answer_code": "W5_C"
+          },
+          {
+            "question_id": "C1",
+            "answer_code": "C1_C"
+          },
+          {
+            "question_id": "C2",
+            "answer_code": "C2_C"
+          },
+          {
+            "question_id": "C3",
+            "answer_code": "C3_C"
+          },
+          {
+            "question_id": "C4",
+            "answer_code": "C4_C"
+          },
+          {
+            "question_id": "C5",
+            "answer_code": "C5_C"
+          }
+        ]
+      },
+      "error_code": "UNSUPPORTED_QUESTIONNAIRE_VERSION"
+    }
+  ]
+}

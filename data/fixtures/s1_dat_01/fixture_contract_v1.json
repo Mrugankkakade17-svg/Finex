@@ -1,0 +1,243 @@
+{
+  "fixture_contract_schema_version": "s1-dat-01.fixture.v1",
+  "fixture_name": "s1_dat_01_local_identity_fixtures",
+  "fixture_scope": "local_test_only",
+  "supported_consent_version": "consent.v1",
+  "supported_profile_schema_version": "profile.v1",
+  "timestamp_rules": {
+    "format": "ISO 8601 UTC",
+    "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$",
+    "deterministic": true,
+    "runtime_clock_allowed": false
+  },
+  "deterministic_id_rules": {
+    "required": true,
+    "format": "lowercase ASCII slug",
+    "pattern": "^[a-z0-9]+(?:_[a-z0-9]+)+$",
+    "stable_across_runs": true,
+    "random_uuid_allowed": false
+  },
+  "ownership_rules": {
+    "user_id_required_on_every_record": true,
+    "user_id_must_match_synthetic_user_fixture": true,
+    "cross_user_references_allowed": false,
+    "client_owned_persistence": false
+  },
+  "allowed_fixture_states": [
+    "new",
+    "partial-draft",
+    "completed",
+    "validation-failure",
+    "revoked/changed-consent"
+  ],
+  "synthetic_data_rules": {
+    "test_only": true,
+    "real_personal_data_allowed": false,
+    "real_financial_data_allowed": false,
+    "credentials_allowed": false,
+    "oauth_tokens_allowed": false,
+    "production_data_allowed": false,
+    "cloud_endpoints_allowed": false,
+    "contact_values": "synthetic labels only",
+    "financial_values": "not represented"
+  },
+  "record_types": {
+    "synthetic_users": {
+      "required_fields": [
+        "user_id",
+        "is_synthetic"
+      ],
+      "fields": {
+        "user_id": {
+          "type": "string",
+          "id_rule": "deterministic_id_rules"
+        },
+        "is_synthetic": {
+          "type": "boolean",
+          "const": true
+        }
+      }
+    },
+    "consent": {
+      "required_fields": [
+        "consent_id",
+        "user_id",
+        "consent_version",
+        "consent_status",
+        "recorded_at",
+        "is_synthetic"
+      ],
+      "fields": {
+        "consent_id": {
+          "type": "string",
+          "id_rule": "deterministic_id_rules"
+        },
+        "user_id": {
+          "type": "string",
+          "ownership": "synthetic_users.user_id"
+        },
+        "consent_version": {
+          "type": "string",
+          "supported_values": [
+            "consent.v1"
+          ]
+        },
+        "consent_status": {
+          "type": "string",
+          "allowed_values": [
+            "accepted",
+            "revoked",
+            "changed"
+          ]
+        },
+        "recorded_at": {
+          "type": "string",
+          "format": "timestamp_rules"
+        },
+        "is_synthetic": {
+          "type": "boolean",
+          "const": true
+        }
+      }
+    },
+    "profile": {
+      "required_fields": [
+        "profile_id",
+        "user_id",
+        "profile_schema_version",
+        "profile_state",
+        "profile_label",
+        "recorded_at",
+        "is_synthetic"
+      ],
+      "fields": {
+        "profile_id": {
+          "type": "string",
+          "id_rule": "deterministic_id_rules"
+        },
+        "user_id": {
+          "type": "string",
+          "ownership": "synthetic_users.user_id"
+        },
+        "profile_schema_version": {
+          "type": "string",
+          "supported_values": [
+            "profile.v1"
+          ]
+        },
+        "profile_state": {
+          "type": "string",
+          "allowed_values": [
+            "new",
+            "partial-draft",
+            "completed",
+            "validation-failure"
+          ]
+        },
+        "profile_label": {
+          "type": "string",
+          "description": "Synthetic label; must not contain personal data"
+        },
+        "recorded_at": {
+          "type": "string",
+          "format": "timestamp_rules"
+        },
+        "is_synthetic": {
+          "type": "boolean",
+          "const": true
+        }
+      }
+    },
+    "onboarding": {
+      "required_fields": [
+        "onboarding_id",
+        "user_id",
+        "onboarding_state",
+        "completed",
+        "recorded_at",
+        "is_synthetic"
+      ],
+      "fields": {
+        "onboarding_id": {
+          "type": "string",
+          "id_rule": "deterministic_id_rules"
+        },
+        "user_id": {
+          "type": "string",
+          "ownership": "synthetic_users.user_id"
+        },
+        "onboarding_state": {
+          "type": "string",
+          "allowed_values": [
+            "new",
+            "partial-draft",
+            "completed",
+            "validation-failure"
+          ]
+        },
+        "completed": {
+          "type": "boolean"
+        },
+        "recorded_at": {
+          "type": "string",
+          "format": "timestamp_rules"
+        },
+        "is_synthetic": {
+          "type": "boolean",
+          "const": true
+        }
+      }
+    },
+    "audit": {
+      "required_fields": [
+        "audit_id",
+        "user_id",
+        "event_type",
+        "event_state",
+        "source",
+        "recorded_at",
+        "is_synthetic"
+      ],
+      "fields": {
+        "audit_id": {
+          "type": "string",
+          "id_rule": "deterministic_id_rules"
+        },
+        "user_id": {
+          "type": "string",
+          "ownership": "synthetic_users.user_id"
+        },
+        "event_type": {
+          "type": "string",
+          "allowed_values": [
+            "fixture_loaded",
+            "validation_failed",
+            "consent_changed"
+          ]
+        },
+        "event_state": {
+          "type": "string",
+          "allowed_values": [
+            "new",
+            "partial-draft",
+            "completed",
+            "validation-failure",
+            "revoked/changed-consent"
+          ]
+        },
+        "source": {
+          "type": "string",
+          "const": "local_fixture"
+        },
+        "recorded_at": {
+          "type": "string",
+          "format": "timestamp_rules"
+        },
+        "is_synthetic": {
+          "type": "boolean",
+          "const": true
+        }
+      }
+    }
+  }
+}

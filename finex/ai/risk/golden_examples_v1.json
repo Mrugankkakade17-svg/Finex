@@ -1,0 +1,1536 @@
+{
+  "schema_version": "v1.0.0",
+  "total_examples": 10,
+  "examples": [
+    {
+      "example_id": "profile_01_extreme_conservative",
+      "title": "Extreme Conservative (All 1s)",
+      "input_weights": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "answers": [
+        {
+          "question_id": "W1",
+          "answer_code": "W1_A"
+        },
+        {
+          "question_id": "W2",
+          "answer_code": "W2_A"
+        },
+        {
+          "question_id": "W3",
+          "answer_code": "W3_A"
+        },
+        {
+          "question_id": "W4",
+          "answer_code": "W4_A"
+        },
+        {
+          "question_id": "W5",
+          "answer_code": "W5_A"
+        },
+        {
+          "question_id": "C1",
+          "answer_code": "C1_A"
+        },
+        {
+          "question_id": "C2",
+          "answer_code": "C2_A"
+        },
+        {
+          "question_id": "C3",
+          "answer_code": "C3_A"
+        },
+        {
+          "question_id": "C4",
+          "answer_code": "C4_A"
+        },
+        {
+          "question_id": "C5",
+          "answer_code": "C5_A"
+        }
+      ],
+      "deterministic_assessment": {
+        "questionnaire_id": "risk_questionnaire_v1",
+        "version": "v1",
+        "willingness_score": 0.0,
+        "capacity_score": 0.0,
+        "composite_score": 0.0,
+        "risk_category": "Conservative",
+        "risk_category_code": "CONSERVATIVE",
+        "breakdown": {
+          "willingness": {
+            "dimension": "willingness",
+            "raw_score": 5,
+            "min_raw": 5,
+            "max_raw": 25,
+            "normalized_score": 0.0,
+            "weight": 0.5
+          },
+          "capacity": {
+            "dimension": "capacity",
+            "raw_score": 5,
+            "min_raw": 5,
+            "max_raw": 25,
+            "normalized_score": 0.0,
+            "weight": 0.5
+          }
+        },
+        "explanation": {
+          "summary": "You have been categorized as a Conservative investor (Composite Risk Score: 0.0/100), reflecting a Willingness Score of 0.0/100 and a Capacity Score of 0.0/100.",
+          "willingness_rationale": "Your responses reflect a low tolerance for market volatility, indicating an emotional preference for capital preservation over rapid growth.",
+          "capacity_rationale": "Your current financial profile suggests a shorter investment horizon, liquidity needs, or lower emergency reserves, limiting your capacity to absorb capital losses.",
+          "alignment_note": "Your psychological risk willingness and objective financial capacity are harmoniously aligned in the Conservative tier.",
+          "is_fallback": true
+        },
+        "model_version": "deterministic_v1.0.0",
+        "schema_version": "v1.0.0",
+        "calculated_at": "2026-08-29T12:00:00Z"
+      },
+      "structured_explanation": {
+        "summary": "Based on your questionnaire responses, your overall risk profile is classified as Conservative with a composite risk score of 0.0 out of 100. This score combines your psychological willingness to navigate market movements (0.0/100) with your objective financial capacity to absorb potential losses (0.0/100).",
+        "willingness_explanation": "Your Willingness Score of 0.0/100 indicates a conservative emotional tolerance for market swings. You feel most confident when your investments maintain steady, predictable value, and significant temporary market declines causes you discomfort.",
+        "capacity_explanation": "Your Capacity Score of 0.0/100 suggests a conservative financial ability to bear investment risk. Factors such as a shorter investment timeframe, low emergency reserves, or near-term liquidity requirements mean preserving your principal is critical.",
+        "alignment_analysis": "Your psychological comfort and financial capacity are in strong harmony within the Conservative tier. This clear alignment makes it straightforward to structure an investment strategy that fits both your emotional mindset and financial realities.",
+        "key_influencing_factors": [
+          {
+            "dimension": "willingness",
+            "question_id": "W1",
+            "question_text": "If your investment portfolio suddenly dropped 20% in value over a few weeks, what would you most likely do?",
+            "answer_code": "W1_A",
+            "answer_label": "Sell all investments immediately to avoid further loss",
+            "score": 1,
+            "impact": "Conservative Drawdown Anchor",
+            "explanation": "Your preference to sell investments during a 20% market dip signals low psychological tolerance for short-term loss."
+          },
+          {
+            "dimension": "willingness",
+            "question_id": "W2",
+            "question_text": "How comfortable are you with your investment value going up and down significantly from month to month?",
+            "answer_code": "W2_A",
+            "answer_label": "Very uncomfortable \u2014 I prefer stable, predictable value",
+            "score": 1,
+            "impact": "Stability Preference",
+            "explanation": "Comfort prioritizing predictable value over sharp month-to-month portfolio fluctuations."
+          },
+          {
+            "dimension": "capacity",
+            "question_id": "C1",
+            "question_text": "When do you expect to need to withdraw a significant portion of this invested money?",
+            "answer_code": "C1_A",
+            "answer_label": "Within 1 year",
+            "score": 1,
+            "impact": "Short Horizon Constraint",
+            "explanation": "Need to withdraw funds within 1-3 years necessitates lower volatility to preserve capital."
+          },
+          {
+            "dimension": "capacity",
+            "question_id": "C3",
+            "question_text": "Do you have separate emergency savings (outside of this investment) that could cover unexpected expenses?",
+            "answer_code": "C3_A",
+            "answer_label": "No emergency savings",
+            "score": 1,
+            "impact": "Liquidity Buffer Bottleneck",
+            "explanation": "Limited emergency savings (<1 month) limits capacity to absorb sudden financial shocks."
+          }
+        ],
+        "limitations_and_disclaimers": [
+          "This risk profile is an educational assessment based strictly on self-reported questionnaire responses and does not constitute individualized financial, legal, or tax advice.",
+          "Investments in financial markets carry inherent risks, including the potential loss of principal. Past performance does not guarantee future results, and no specific returns are guaranteed.",
+          "Your financial situation and risk tolerance can evolve over time. You should revisit this assessment periodically or whenever significant life events occur."
+        ],
+        "is_fallback": true,
+        "model_version": "deterministic_rule_v1.0.0",
+        "prompt_version": "v1.0.0",
+        "schema_version": "v1.0.0",
+        "generated_at": "2026-08-29T12:00:00Z"
+      }
+    },
+    {
+      "example_id": "profile_02_steady_conservative",
+      "title": "Steady Low-Risk Conservative (All 2s)",
+      "input_weights": [
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2
+      ],
+      "answers": [
+        {
+          "question_id": "W1",
+          "answer_code": "W1_B"
+        },
+        {
+          "question_id": "W2",
+          "answer_code": "W2_B"
+        },
+        {
+          "question_id": "W3",
+          "answer_code": "W3_B"
+        },
+        {
+          "question_id": "W4",
+          "answer_code": "W4_B"
+        },
+        {
+          "question_id": "W5",
+          "answer_code": "W5_B"
+        },
+        {
+          "question_id": "C1",
+          "answer_code": "C1_B"
+        },
+        {
+          "question_id": "C2",
+          "answer_code": "C2_B"
+        },
+        {
+          "question_id": "C3",
+          "answer_code": "C3_B"
+        },
+        {
+          "question_id": "C4",
+          "answer_code": "C4_B"
+        },
+        {
+          "question_id": "C5",
+          "answer_code": "C5_B"
+        }
+      ],
+      "deterministic_assessment": {
+        "questionnaire_id": "risk_questionnaire_v1",
+        "version": "v1",
+        "willingness_score": 25.0,
+        "capacity_score": 25.0,
+        "composite_score": 25.0,
+        "risk_category": "Conservative",
+        "risk_category_code": "CONSERVATIVE",
+        "breakdown": {
+          "willingness": {
+            "dimension": "willingness",
+            "raw_score": 10,
+            "min_raw": 5,
+            "max_raw": 25,
+            "normalized_score": 25.0,
+            "weight": 0.5
+          },
+          "capacity": {
+            "dimension": "capacity",
+            "raw_score": 10,
+            "min_raw": 5,
+            "max_raw": 25,
+            "normalized_score": 25.0,
+            "weight": 0.5
+          }
+        },
+        "explanation": {
+          "summary": "You have been categorized as a Conservative investor (Composite Risk Score: 25.0/100), reflecting a Willingness Score of 25.0/100 and a Capacity Score of 25.0/100.",
+          "willingness_rationale": "Your responses reflect a low tolerance for market volatility, indicating an emotional preference for capital preservation over rapid growth.",
+          "capacity_rationale": "Your current financial profile suggests a shorter investment horizon, liquidity needs, or lower emergency reserves, limiting your capacity to absorb capital losses.",
+          "alignment_note": "Your psychological risk willingness and objective financial capacity are harmoniously aligned in the Conservative tier.",
+          "is_fallback": true
+        },
+        "model_version": "deterministic_v1.0.0",
+        "schema_version": "v1.0.0",
+        "calculated_at": "2026-08-29T12:00:00Z"
+      },
+      "structured_explanation": {
+        "summary": "Based on your questionnaire responses, your overall risk profile is classified as Conservative with a composite risk score of 25.0 out of 100. This score combines your psychological willingness to navigate market movements (25.0/100) with your objective financial capacity to absorb potential losses (25.0/100).",
+        "willingness_explanation": "Your Willingness Score of 25.0/100 indicates a conservative emotional tolerance for market swings. You feel most confident when your investments maintain steady, predictable value, and significant temporary market declines causes you discomfort.",
+        "capacity_explanation": "Your Capacity Score of 25.0/100 suggests a conservative financial ability to bear investment risk. Factors such as a shorter investment timeframe, low emergency reserves, or near-term liquidity requirements mean preserving your principal is critical.",
+        "alignment_analysis": "Your psychological comfort and financial capacity are in strong harmony within the Conservative tier. This clear alignment makes it straightforward to structure an investment strategy that fits both your emotional mindset and financial realities.",
+        "key_influencing_factors": [
+          {
+            "dimension": "willingness",
+            "question_id": "W1",
+            "question_text": "If your investment portfolio suddenly dropped 20% in value over a few weeks, what would you most likely do?",
+            "answer_code": "W1_B",
+            "answer_label": "Sell some investments to reduce risk",
+            "score": 2,
+            "impact": "Conservative Drawdown Anchor",
+            "explanation": "Your preference to sell investments during a 20% market dip signals low psychological tolerance for short-term loss."
+          },
+          {
+            "dimension": "willingness",
+            "question_id": "W2",
+            "question_text": "How comfortable are you with your investment value going up and down significantly from month to month?",
+            "answer_code": "W2_B",
+            "answer_label": "Somewhat uncomfortable",
+            "score": 2,
+            "impact": "Stability Preference",
+            "explanation": "Comfort prioritizing predictable value over sharp month-to-month portfolio fluctuations."
+          },
+          {
+            "dimension": "capacity",
+            "question_id": "C1",
+            "question_text": "When do you expect to need to withdraw a significant portion of this invested money?",
+            "answer_code": "C1_B",
+            "answer_label": "1\u20133 years",
+            "score": 2,
+            "impact": "Short Horizon Constraint",
+            "explanation": "Need to withdraw funds within 1-3 years necessitates lower volatility to preserve capital."
+          },
+          {
+            "dimension": "capacity",
+            "question_id": "C3",
+            "question_text": "Do you have separate emergency savings (outside of this investment) that could cover unexpected expenses?",
+            "answer_code": "C3_B",
+            "answer_label": "Less than 1 month of expenses saved",
+            "score": 2,
+            "impact": "Liquidity Buffer Bottleneck",
+            "explanation": "Limited emergency savings (<1 month) limits capacity to absorb sudden financial shocks."
+          }
+        ],
+        "limitations_and_disclaimers": [
+          "This risk profile is an educational assessment based strictly on self-reported questionnaire responses and does not constitute individualized financial, legal, or tax advice.",
+          "Investments in financial markets carry inherent risks, including the potential loss of principal. Past performance does not guarantee future results, and no specific returns are guaranteed.",
+          "Your financial situation and risk tolerance can evolve over time. You should revisit this assessment periodically or whenever significant life events occur."
+        ],
+        "is_fallback": true,
+        "model_version": "deterministic_rule_v1.0.0",
+        "prompt_version": "v1.0.0",
+        "schema_version": "v1.0.0",
+        "generated_at": "2026-08-29T12:00:00Z"
+      }
+    },
+    {
+      "example_id": "profile_03_conservative_upper_bound",
+      "title": "Conservative Upper Boundary (Score: 32.5)",
+      "input_weights": [
+        3,
+        2,
+        2,
+        2,
+        2,
+        3,
+        3,
+        2,
+        2,
+        2
+      ],
+      "answers": [
+        {
+          "question_id": "W1",
+          "answer_code": "W1_C"
+        },
+        {
+          "question_id": "W2",
+          "answer_code": "W2_B"
+        },
+        {
+          "question_id": "W3",
+          "answer_code": "W3_B"
+        },
+        {
+          "question_id": "W4",
+          "answer_code": "W4_B"
+        },
+        {
+          "question_id": "W5",
+          "answer_code": "W5_B"
+        },
+        {
+          "question_id": "C1",
+          "answer_code": "C1_C"
+        },
+        {
+          "question_id": "C2",
+          "answer_code": "C2_C"
+        },
+        {
+          "question_id": "C3",
+          "answer_code": "C3_B"
+        },
+        {
+          "question_id": "C4",
+          "answer_code": "C4_B"
+        },
+        {
+          "question_id": "C5",
+          "answer_code": "C5_B"
+        }
+      ],
+      "deterministic_assessment": {
+        "questionnaire_id": "risk_questionnaire_v1",
+        "version": "v1",
+        "willingness_score": 30.0,
+        "capacity_score": 35.0,
+        "composite_score": 32.5,
+        "risk_category": "Conservative",
+        "risk_category_code": "CONSERVATIVE",
+        "breakdown": {
+          "willingness": {
+            "dimension": "willingness",
+            "raw_score": 11,
+            "min_raw": 5,
+            "max_raw": 25,
+            "normalized_score": 30.0,
+            "weight": 0.5
+          },
+          "capacity": {
+            "dimension": "capacity",
+            "raw_score": 12,
+            "min_raw": 5,
+            "max_raw": 25,
+            "normalized_score": 35.0,
+            "weight": 0.5
+          }
+        },
+        "explanation": {
+          "summary": "You have been categorized as a Conservative investor (Composite Risk Score: 32.5/100), reflecting a Willingness Score of 30.0/100 and a Capacity Score of 35.0/100.",
+          "willingness_rationale": "Your responses reflect a low tolerance for market volatility, indicating an emotional preference for capital preservation over rapid growth.",
+          "capacity_rationale": "Your financial position shows an adequate investment horizon, stable income, and sufficient emergency buffer to support a balanced investment strategy.",
+          "alignment_note": "Your profile balances a conservative willingness with a moderate capacity, yielding an overall Conservative classification.",
+          "is_fallback": true
+        },
+        "model_version": "deterministic_v1.0.0",
+        "schema_version": "v1.0.0",
+        "calculated_at": "2026-08-29T12:00:00Z"
+      },
+      "structured_explanation": {
+        "summary": "Based on your questionnaire responses, your overall risk profile is classified as Conservative with a composite risk score of 32.5 out of 100. This score combines your psychological willingness to navigate market movements (30.0/100) with your objective financial capacity to absorb potential losses (35.0/100).",
+        "willingness_explanation": "Your Willingness Score of 30.0/100 indicates a conservative emotional tolerance for market swings. You feel most confident when your investments maintain steady, predictable value, and significant temporary market declines causes you discomfort.",
+        "capacity_explanation": "Your Capacity Score of 35.0/100 reflects a sound, moderate financial foundation. With an intermediate investment timeline and reasonable emergency savings buffer, your finances can comfortably support a balanced mix of growth and stability.",
+        "alignment_analysis": "Your profile balances a conservative psychological willingness with a moderate financial capacity, resulting in an overall balanced Conservative classification.",
+        "key_influencing_factors": [
+          {
+            "dimension": "willingness",
+            "question_id": "W1",
+            "question_text": "If your investment portfolio suddenly dropped 20% in value over a few weeks, what would you most likely do?",
+            "answer_code": "W1_C",
+            "answer_label": "Do nothing and wait it out",
+            "score": 3,
+            "impact": "Balanced Volatility Stance",
+            "explanation": "Your willingness to wait out market dips reflects a steady, patient attitude towards market cycles."
+          },
+          {
+            "dimension": "willingness",
+            "question_id": "W2",
+            "question_text": "How comfortable are you with your investment value going up and down significantly from month to month?",
+            "answer_code": "W2_B",
+            "answer_label": "Somewhat uncomfortable",
+            "score": 2,
+            "impact": "Stability Preference",
+            "explanation": "Comfort prioritizing predictable value over sharp month-to-month portfolio fluctuations."
+          },
+          {
+            "dimension": "capacity",
+            "question_id": "C1",
+            "question_text": "When do you expect to need to withdraw a significant portion of this invested money?",
+            "answer_code": "C1_C",
+            "answer_label": "3\u20135 years",
+            "score": 3,
+            "impact": "Intermediate Horizon",
+            "explanation": "A 3-5 year investment horizon provides moderate room for balanced market exposure."
+          },
+          {
+            "dimension": "capacity",
+            "question_id": "C3",
+            "question_text": "Do you have separate emergency savings (outside of this investment) that could cover unexpected expenses?",
+            "answer_code": "C3_B",
+            "answer_label": "Less than 1 month of expenses saved",
+            "score": 2,
+            "impact": "Liquidity Buffer Bottleneck",
+            "explanation": "Limited emergency savings (<1 month) limits capacity to absorb sudden financial shocks."
+          }
+        ],
+        "limitations_and_disclaimers": [
+          "This risk profile is an educational assessment based strictly on self-reported questionnaire responses and does not constitute individualized financial, legal, or tax advice.",
+          "Investments in financial markets carry inherent risks, including the potential loss of principal. Past performance does not guarantee future results, and no specific returns are guaranteed.",
+          "Your financial situation and risk tolerance can evolve over time. You should revisit this assessment periodically or whenever significant life events occur."
+        ],
+        "is_fallback": true,
+        "model_version": "deterministic_rule_v1.0.0",
+        "prompt_version": "v1.0.0",
+        "schema_version": "v1.0.0",
+        "generated_at": "2026-08-29T12:00:00Z"
+      }
+    },
+    {
+      "example_id": "profile_04_moderate_lower_bound",
+      "title": "Moderate Lower Boundary (Score: 35.0)",
+      "input_weights": [
+        3,
+        3,
+        2,
+        2,
+        2,
+        3,
+        3,
+        2,
+        2,
+        2
+      ],
+      "answers": [
+        {
+          "question_id": "W1",
+          "answer_code": "W1_C"
+        },
+        {
+          "question_id": "W2",
+          "answer_code": "W2_C"
+        },
+        {
+          "question_id": "W3",
+          "answer_code": "W3_B"
+        },
+        {
+          "question_id": "W4",
+          "answer_code": "W4_B"
+        },
+        {
+          "question_id": "W5",
+          "answer_code": "W5_B"
+        },
+        {
+          "question_id": "C1",
+          "answer_code": "C1_C"
+        },
+        {
+          "question_id": "C2",
+          "answer_code": "C2_C"
+        },
+        {
+          "question_id": "C3",
+          "answer_code": "C3_B"
+        },
+        {
+          "question_id": "C4",
+          "answer_code": "C4_B"
+        },
+        {
+          "question_id": "C5",
+          "answer_code": "C5_B"
+        }
+      ],
+      "deterministic_assessment": {
+        "questionnaire_id": "risk_questionnaire_v1",
+        "version": "v1",
+        "willingness_score": 35.0,
+        "capacity_score": 35.0,
+        "composite_score": 35.0,
+        "risk_category": "Moderate",
+        "risk_category_code": "MODERATE",
+        "breakdown": {
+          "willingness": {
+            "dimension": "willingness",
+            "raw_score": 12,
+            "min_raw": 5,
+            "max_raw": 25,
+            "normalized_score": 35.0,
+            "weight": 0.5
+          },
+          "capacity": {
+            "dimension": "capacity",
+            "raw_score": 12,
+            "min_raw": 5,
+            "max_raw": 25,
+            "normalized_score": 35.0,
+            "weight": 0.5
+          }
+        },
+        "explanation": {
+          "summary": "You have been categorized as a Moderate investor (Composite Risk Score: 35.0/100), reflecting a Willingness Score of 35.0/100 and a Capacity Score of 35.0/100.",
+          "willingness_rationale": "Your responses indicate a moderate comfort level with market fluctuations, seeking balanced growth without taking excessive emotional stress.",
+          "capacity_rationale": "Your financial position shows an adequate investment horizon, stable income, and sufficient emergency buffer to support a balanced investment strategy.",
+          "alignment_note": "Your psychological risk willingness and objective financial capacity are harmoniously aligned in the Moderate tier.",
+          "is_fallback": true
+        },
+        "model_version": "deterministic_v1.0.0",
+        "schema_version": "v1.0.0",
+        "calculated_at": "2026-08-29T12:00:00Z"
+      },
+      "structured_explanation": {
+        "summary": "Based on your questionnaire responses, your overall risk profile is classified as Moderate with a composite risk score of 35.0 out of 100. This score combines your psychological willingness to navigate market movements (35.0/100) with your objective financial capacity to absorb potential losses (35.0/100).",
+        "willingness_explanation": "Your Willingness Score of 35.0/100 demonstrates a moderate emotional tolerance. You understand that investments experience occasional ups and downs and are willing to accept modest fluctuations in return for balanced potential growth.",
+        "capacity_explanation": "Your Capacity Score of 35.0/100 reflects a sound, moderate financial foundation. With an intermediate investment timeline and reasonable emergency savings buffer, your finances can comfortably support a balanced mix of growth and stability.",
+        "alignment_analysis": "Your psychological comfort and financial capacity are in strong harmony within the Moderate tier. This clear alignment makes it straightforward to structure an investment strategy that fits both your emotional mindset and financial realities.",
+        "key_influencing_factors": [
+          {
+            "dimension": "willingness",
+            "question_id": "W1",
+            "question_text": "If your investment portfolio suddenly dropped 20% in value over a few weeks, what would you most likely do?",
+            "answer_code": "W1_C",
+            "answer_label": "Do nothing and wait it out",
+            "score": 3,
+            "impact": "Balanced Volatility Stance",
+            "explanation": "Your willingness to wait out market dips reflects a steady, patient attitude towards market cycles."
+          },
+          {
+            "dimension": "willingness",
+            "question_id": "W2",
+            "question_text": "How comfortable are you with your investment value going up and down significantly from month to month?",
+            "answer_code": "W2_C",
+            "answer_label": "Neutral",
+            "score": 3,
+            "impact": "Moderate Fluctuation Tolerance",
+            "explanation": "Balanced comfort with moderate monthly movements."
+          },
+          {
+            "dimension": "capacity",
+            "question_id": "C1",
+            "question_text": "When do you expect to need to withdraw a significant portion of this invested money?",
+            "answer_code": "C1_C",
+            "answer_label": "3\u20135 years",
+            "score": 3,
+            "impact": "Intermediate Horizon",
+            "explanation": "A 3-5 year investment horizon provides moderate room for balanced market exposure."
+          },
+          {
+            "dimension": "capacity",
+            "question_id": "C3",
+            "question_text": "Do you have separate emergency savings (outside of this investment) that could cover unexpected expenses?",
+            "answer_code": "C3_B",
+            "answer_label": "Less than 1 month of expenses saved",
+            "score": 2,
+            "impact": "Liquidity Buffer Bottleneck",
+            "explanation": "Limited emergency savings (<1 month) limits capacity to absorb sudden financial shocks."
+          }
+        ],
+        "limitations_and_disclaimers": [
+          "This risk profile is an educational assessment based strictly on self-reported questionnaire responses and does not constitute individualized financial, legal, or tax advice.",
+          "Investments in financial markets carry inherent risks, including the potential loss of principal. Past performance does not guarantee future results, and no specific returns are guaranteed.",
+          "Your financial situation and risk tolerance can evolve over time. You should revisit this assessment periodically or whenever significant life events occur."
+        ],
+        "is_fallback": true,
+        "model_version": "deterministic_rule_v1.0.0",
+        "prompt_version": "v1.0.0",
+        "schema_version": "v1.0.0",
+        "generated_at": "2026-08-29T12:00:00Z"
+      }
+    },
+    {
+      "example_id": "profile_05_balanced_moderate",
+      "title": "Balanced Moderate Investor (All 3s, Score: 50.0)",
+      "input_weights": [
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3
+      ],
+      "answers": [
+        {
+          "question_id": "W1",
+          "answer_code": "W1_C"
+        },
+        {
+          "question_id": "W2",
+          "answer_code": "W2_C"
+        },
+        {
+          "question_id": "W3",
+          "answer_code": "W3_C"
+        },
+        {
+          "question_id": "W4",
+          "answer_code": "W4_C"
+        },
+        {
+          "question_id": "W5",
+          "answer_code": "W5_C"
+        },
+        {
+          "question_id": "C1",
+          "answer_code": "C1_C"
+        },
+        {
+          "question_id": "C2",
+          "answer_code": "C2_C"
+        },
+        {
+          "question_id": "C3",
+          "answer_code": "C3_C"
+        },
+        {
+          "question_id": "C4",
+          "answer_code": "C4_C"
+        },
+        {
+          "question_id": "C5",
+          "answer_code": "C5_C"
+        }
+      ],
+      "deterministic_assessment": {
+        "questionnaire_id": "risk_questionnaire_v1",
+        "version": "v1",
+        "willingness_score": 50.0,
+        "capacity_score": 50.0,
+        "composite_score": 50.0,
+        "risk_category": "Moderate",
+        "risk_category_code": "MODERATE",
+        "breakdown": {
+          "willingness": {
+            "dimension": "willingness",
+            "raw_score": 15,
+            "min_raw": 5,
+            "max_raw": 25,
+            "normalized_score": 50.0,
+            "weight": 0.5
+          },
+          "capacity": {
+            "dimension": "capacity",
+            "raw_score": 15,
+            "min_raw": 5,
+            "max_raw": 25,
+            "normalized_score": 50.0,
+            "weight": 0.5
+          }
+        },
+        "explanation": {
+          "summary": "You have been categorized as a Moderate investor (Composite Risk Score: 50.0/100), reflecting a Willingness Score of 50.0/100 and a Capacity Score of 50.0/100.",
+          "willingness_rationale": "Your responses indicate a moderate comfort level with market fluctuations, seeking balanced growth without taking excessive emotional stress.",
+          "capacity_rationale": "Your financial position shows an adequate investment horizon, stable income, and sufficient emergency buffer to support a balanced investment strategy.",
+          "alignment_note": "Your psychological risk willingness and objective financial capacity are harmoniously aligned in the Moderate tier.",
+          "is_fallback": true
+        },
+        "model_version": "deterministic_v1.0.0",
+        "schema_version": "v1.0.0",
+        "calculated_at": "2026-08-29T12:00:00Z"
+      },
+      "structured_explanation": {
+        "summary": "Based on your questionnaire responses, your overall risk profile is classified as Moderate with a composite risk score of 50.0 out of 100. This score combines your psychological willingness to navigate market movements (50.0/100) with your objective financial capacity to absorb potential losses (50.0/100).",
+        "willingness_explanation": "Your Willingness Score of 50.0/100 demonstrates a moderate emotional tolerance. You understand that investments experience occasional ups and downs and are willing to accept modest fluctuations in return for balanced potential growth.",
+        "capacity_explanation": "Your Capacity Score of 50.0/100 reflects a sound, moderate financial foundation. With an intermediate investment timeline and reasonable emergency savings buffer, your finances can comfortably support a balanced mix of growth and stability.",
+        "alignment_analysis": "Your psychological comfort and financial capacity are in strong harmony within the Moderate tier. This clear alignment makes it straightforward to structure an investment strategy that fits both your emotional mindset and financial realities.",
+        "key_influencing_factors": [
+          {
+            "dimension": "willingness",
+            "question_id": "W1",
+            "question_text": "If your investment portfolio suddenly dropped 20% in value over a few weeks, what would you most likely do?",
+            "answer_code": "W1_C",
+            "answer_label": "Do nothing and wait it out",
+            "score": 3,
+            "impact": "Balanced Volatility Stance",
+            "explanation": "Your willingness to wait out market dips reflects a steady, patient attitude towards market cycles."
+          },
+          {
+            "dimension": "willingness",
+            "question_id": "W2",
+            "question_text": "How comfortable are you with your investment value going up and down significantly from month to month?",
+            "answer_code": "W2_C",
+            "answer_label": "Neutral",
+            "score": 3,
+            "impact": "Moderate Fluctuation Tolerance",
+            "explanation": "Balanced comfort with moderate monthly movements."
+          },
+          {
+            "dimension": "capacity",
+            "question_id": "C1",
+            "question_text": "When do you expect to need to withdraw a significant portion of this invested money?",
+            "answer_code": "C1_C",
+            "answer_label": "3\u20135 years",
+            "score": 3,
+            "impact": "Intermediate Horizon",
+            "explanation": "A 3-5 year investment horizon provides moderate room for balanced market exposure."
+          },
+          {
+            "dimension": "capacity",
+            "question_id": "C3",
+            "question_text": "Do you have separate emergency savings (outside of this investment) that could cover unexpected expenses?",
+            "answer_code": "C3_C",
+            "answer_label": "1\u20133 months of expenses saved",
+            "score": 3,
+            "impact": "Adequate Emergency Buffer",
+            "explanation": "1-3 months of emergency reserves offers reasonable protection against unplanned cash needs."
+          }
+        ],
+        "limitations_and_disclaimers": [
+          "This risk profile is an educational assessment based strictly on self-reported questionnaire responses and does not constitute individualized financial, legal, or tax advice.",
+          "Investments in financial markets carry inherent risks, including the potential loss of principal. Past performance does not guarantee future results, and no specific returns are guaranteed.",
+          "Your financial situation and risk tolerance can evolve over time. You should revisit this assessment periodically or whenever significant life events occur."
+        ],
+        "is_fallback": true,
+        "model_version": "deterministic_rule_v1.0.0",
+        "prompt_version": "v1.0.0",
+        "schema_version": "v1.0.0",
+        "generated_at": "2026-08-29T12:00:00Z"
+      }
+    },
+    {
+      "example_id": "profile_06_high_willingness_low_capacity",
+      "title": "High Psychological Risk / Low Financial Capacity Tension",
+      "input_weights": [
+        5,
+        5,
+        5,
+        5,
+        5,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "answers": [
+        {
+          "question_id": "W1",
+          "answer_code": "W1_E"
+        },
+        {
+          "question_id": "W2",
+          "answer_code": "W2_E"
+        },
+        {
+          "question_id": "W3",
+          "answer_code": "W3_E"
+        },
+        {
+          "question_id": "W4",
+          "answer_code": "W4_E"
+        },
+        {
+          "question_id": "W5",
+          "answer_code": "W5_E"
+        },
+        {
+          "question_id": "C1",
+          "answer_code": "C1_A"
+        },
+        {
+          "question_id": "C2",
+          "answer_code": "C2_A"
+        },
+        {
+          "question_id": "C3",
+          "answer_code": "C3_A"
+        },
+        {
+          "question_id": "C4",
+          "answer_code": "C4_A"
+        },
+        {
+          "question_id": "C5",
+          "answer_code": "C5_A"
+        }
+      ],
+      "deterministic_assessment": {
+        "questionnaire_id": "risk_questionnaire_v1",
+        "version": "v1",
+        "willingness_score": 100.0,
+        "capacity_score": 0.0,
+        "composite_score": 50.0,
+        "risk_category": "Moderate",
+        "risk_category_code": "MODERATE",
+        "breakdown": {
+          "willingness": {
+            "dimension": "willingness",
+            "raw_score": 25,
+            "min_raw": 5,
+            "max_raw": 25,
+            "normalized_score": 100.0,
+            "weight": 0.5
+          },
+          "capacity": {
+            "dimension": "capacity",
+            "raw_score": 5,
+            "min_raw": 5,
+            "max_raw": 25,
+            "normalized_score": 0.0,
+            "weight": 0.5
+          }
+        },
+        "explanation": {
+          "summary": "You have been categorized as a Moderate investor (Composite Risk Score: 50.0/100), reflecting a Willingness Score of 100.0/100 and a Capacity Score of 0.0/100.",
+          "willingness_rationale": "Your responses demonstrate a strong psychological resilience to short-term drawdowns, with an appetite for aggressive growth opportunities.",
+          "capacity_rationale": "Your current financial profile suggests a shorter investment horizon, liquidity needs, or lower emergency reserves, limiting your capacity to absorb capital losses.",
+          "alignment_note": "Important Guidance: Your personal appetite for risk is high, but your current financial capacity is conservative. In financial planning, objective capacity must guard against excessive downside risk.",
+          "is_fallback": true
+        },
+        "model_version": "deterministic_v1.0.0",
+        "schema_version": "v1.0.0",
+        "calculated_at": "2026-08-29T12:00:00Z"
+      },
+      "structured_explanation": {
+        "summary": "Based on your questionnaire responses, your overall risk profile is classified as Moderate with a composite risk score of 50.0 out of 100. This score combines your psychological willingness to navigate market movements (100.0/100) with your objective financial capacity to absorb potential losses (0.0/100).",
+        "willingness_explanation": "Your Willingness Score of 100.0/100 demonstrates an aggressive appetite for growth. You have strong emotional comfort with market volatility and view temporary price pullbacks as normal opportunities rather than reasons to exit.",
+        "capacity_explanation": "Your Capacity Score of 0.0/100 suggests a conservative financial ability to bear investment risk. Factors such as a shorter investment timeframe, low emergency reserves, or near-term liquidity requirements mean preserving your principal is critical.",
+        "alignment_analysis": "Important Tension: Your psychological desire for high growth is aggressive, but your objective financial capacity is conservative. In responsible wealth planning, objective financial capacity must take precedence to prevent cash shortages during market downturns.",
+        "key_influencing_factors": [
+          {
+            "dimension": "willingness",
+            "question_id": "W1",
+            "question_text": "If your investment portfolio suddenly dropped 20% in value over a few weeks, what would you most likely do?",
+            "answer_code": "W1_E",
+            "answer_label": "Buy more while prices are low",
+            "score": 5,
+            "impact": "High Resilience Growth Driver",
+            "explanation": "Your readiness to hold or buy more during market drops indicates strong emotional resilience to volatility."
+          },
+          {
+            "dimension": "willingness",
+            "question_id": "W2",
+            "question_text": "How comfortable are you with your investment value going up and down significantly from month to month?",
+            "answer_code": "W2_E",
+            "answer_label": "Very comfortable \u2014 I expect and accept ups and downs",
+            "score": 5,
+            "impact": "Fluctuation Acceptance",
+            "explanation": "Comfort accepting frequent portfolio value swings in pursuit of longer-term upside."
+          },
+          {
+            "dimension": "capacity",
+            "question_id": "C1",
+            "question_text": "When do you expect to need to withdraw a significant portion of this invested money?",
+            "answer_code": "C1_A",
+            "answer_label": "Within 1 year",
+            "score": 1,
+            "impact": "Short Horizon Constraint",
+            "explanation": "Need to withdraw funds within 1-3 years necessitates lower volatility to preserve capital."
+          },
+          {
+            "dimension": "capacity",
+            "question_id": "C3",
+            "question_text": "Do you have separate emergency savings (outside of this investment) that could cover unexpected expenses?",
+            "answer_code": "C3_A",
+            "answer_label": "No emergency savings",
+            "score": 1,
+            "impact": "Liquidity Buffer Bottleneck",
+            "explanation": "Limited emergency savings (<1 month) limits capacity to absorb sudden financial shocks."
+          }
+        ],
+        "limitations_and_disclaimers": [
+          "This risk profile is an educational assessment based strictly on self-reported questionnaire responses and does not constitute individualized financial, legal, or tax advice.",
+          "Investments in financial markets carry inherent risks, including the potential loss of principal. Past performance does not guarantee future results, and no specific returns are guaranteed.",
+          "Your financial situation and risk tolerance can evolve over time. You should revisit this assessment periodically or whenever significant life events occur."
+        ],
+        "is_fallback": true,
+        "model_version": "deterministic_rule_v1.0.0",
+        "prompt_version": "v1.0.0",
+        "schema_version": "v1.0.0",
+        "generated_at": "2026-08-29T12:00:00Z"
+      }
+    },
+    {
+      "example_id": "profile_07_low_willingness_high_capacity",
+      "title": "Low Psychological Risk / High Financial Capacity Tension",
+      "input_weights": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        5,
+        5,
+        5,
+        5,
+        5
+      ],
+      "answers": [
+        {
+          "question_id": "W1",
+          "answer_code": "W1_A"
+        },
+        {
+          "question_id": "W2",
+          "answer_code": "W2_A"
+        },
+        {
+          "question_id": "W3",
+          "answer_code": "W3_A"
+        },
+        {
+          "question_id": "W4",
+          "answer_code": "W4_A"
+        },
+        {
+          "question_id": "W5",
+          "answer_code": "W5_A"
+        },
+        {
+          "question_id": "C1",
+          "answer_code": "C1_E"
+        },
+        {
+          "question_id": "C2",
+          "answer_code": "C2_E"
+        },
+        {
+          "question_id": "C3",
+          "answer_code": "C3_E"
+        },
+        {
+          "question_id": "C4",
+          "answer_code": "C4_E"
+        },
+        {
+          "question_id": "C5",
+          "answer_code": "C5_E"
+        }
+      ],
+      "deterministic_assessment": {
+        "questionnaire_id": "risk_questionnaire_v1",
+        "version": "v1",
+        "willingness_score": 0.0,
+        "capacity_score": 100.0,
+        "composite_score": 50.0,
+        "risk_category": "Moderate",
+        "risk_category_code": "MODERATE",
+        "breakdown": {
+          "willingness": {
+            "dimension": "willingness",
+            "raw_score": 5,
+            "min_raw": 5,
+            "max_raw": 25,
+            "normalized_score": 0.0,
+            "weight": 0.5
+          },
+          "capacity": {
+            "dimension": "capacity",
+            "raw_score": 25,
+            "min_raw": 5,
+            "max_raw": 25,
+            "normalized_score": 100.0,
+            "weight": 0.5
+          }
+        },
+        "explanation": {
+          "summary": "You have been categorized as a Moderate investor (Composite Risk Score: 50.0/100), reflecting a Willingness Score of 0.0/100 and a Capacity Score of 100.0/100.",
+          "willingness_rationale": "Your responses reflect a low tolerance for market volatility, indicating an emotional preference for capital preservation over rapid growth.",
+          "capacity_rationale": "Your financial profile indicates a long-term investment horizon, strong income stability, and robust emergency savings capable of weathering economic cycles.",
+          "alignment_note": "Guidance: While your strong financial position can technically absorb market risk, your psychological preference is conservative. Your portfolio strategy should honor your comfort zone to prevent panic-selling.",
+          "is_fallback": true
+        },
+        "model_version": "deterministic_v1.0.0",
+        "schema_version": "v1.0.0",
+        "calculated_at": "2026-08-29T12:00:00Z"
+      },
+      "structured_explanation": {
+        "summary": "Based on your questionnaire responses, your overall risk profile is classified as Moderate with a composite risk score of 50.0 out of 100. This score combines your psychological willingness to navigate market movements (0.0/100) with your objective financial capacity to absorb potential losses (100.0/100).",
+        "willingness_explanation": "Your Willingness Score of 0.0/100 indicates a conservative emotional tolerance for market swings. You feel most confident when your investments maintain steady, predictable value, and significant temporary market declines causes you discomfort.",
+        "capacity_explanation": "Your Capacity Score of 100.0/100 indicates strong financial resilience. A long-term investment horizon, stable income, and robust emergency savings allow you to weather extended market downturns without risking your daily financial security.",
+        "alignment_analysis": "Important Note: Even though your strong financial position could absorb aggressive market risk, your psychological preference is conservative. Your investment strategy should respect your comfort zone so you never feel pressured to make emotional decisions during volatile periods.",
+        "key_influencing_factors": [
+          {
+            "dimension": "willingness",
+            "question_id": "W1",
+            "question_text": "If your investment portfolio suddenly dropped 20% in value over a few weeks, what would you most likely do?",
+            "answer_code": "W1_A",
+            "answer_label": "Sell all investments immediately to avoid further loss",
+            "score": 1,
+            "impact": "Conservative Drawdown Anchor",
+            "explanation": "Your preference to sell investments during a 20% market dip signals low psychological tolerance for short-term loss."
+          },
+          {
+            "dimension": "willingness",
+            "question_id": "W2",
+            "question_text": "How comfortable are you with your investment value going up and down significantly from month to month?",
+            "answer_code": "W2_A",
+            "answer_label": "Very uncomfortable \u2014 I prefer stable, predictable value",
+            "score": 1,
+            "impact": "Stability Preference",
+            "explanation": "Comfort prioritizing predictable value over sharp month-to-month portfolio fluctuations."
+          },
+          {
+            "dimension": "capacity",
+            "question_id": "C1",
+            "question_text": "When do you expect to need to withdraw a significant portion of this invested money?",
+            "answer_code": "C1_E",
+            "answer_label": "More than 10 years",
+            "score": 5,
+            "impact": "Long Horizon Enabler",
+            "explanation": "A 5+ year investment timeline allows adequate time to recover from temporary market pullbacks."
+          },
+          {
+            "dimension": "capacity",
+            "question_id": "C3",
+            "question_text": "Do you have separate emergency savings (outside of this investment) that could cover unexpected expenses?",
+            "answer_code": "C3_E",
+            "answer_label": "More than 6 months of expenses saved",
+            "score": 5,
+            "impact": "Strong Safety Buffer",
+            "explanation": "Substantial emergency savings (3-6+ months) protects your investment portfolio from forced early liquidation."
+          }
+        ],
+        "limitations_and_disclaimers": [
+          "This risk profile is an educational assessment based strictly on self-reported questionnaire responses and does not constitute individualized financial, legal, or tax advice.",
+          "Investments in financial markets carry inherent risks, including the potential loss of principal. Past performance does not guarantee future results, and no specific returns are guaranteed.",
+          "Your financial situation and risk tolerance can evolve over time. You should revisit this assessment periodically or whenever significant life events occur."
+        ],
+        "is_fallback": true,
+        "model_version": "deterministic_rule_v1.0.0",
+        "prompt_version": "v1.0.0",
+        "schema_version": "v1.0.0",
+        "generated_at": "2026-08-29T12:00:00Z"
+      }
+    },
+    {
+      "example_id": "profile_08_moderate_upper_bound",
+      "title": "Moderate Upper Boundary (Score: 65.0)",
+      "input_weights": [
+        4,
+        4,
+        4,
+        3,
+        3,
+        4,
+        4,
+        4,
+        3,
+        3
+      ],
+      "answers": [
+        {
+          "question_id": "W1",
+          "answer_code": "W1_D"
+        },
+        {
+          "question_id": "W2",
+          "answer_code": "W2_D"
+        },
+        {
+          "question_id": "W3",
+          "answer_code": "W3_D"
+        },
+        {
+          "question_id": "W4",
+          "answer_code": "W4_C"
+        },
+        {
+          "question_id": "W5",
+          "answer_code": "W5_C"
+        },
+        {
+          "question_id": "C1",
+          "answer_code": "C1_D"
+        },
+        {
+          "question_id": "C2",
+          "answer_code": "C2_D"
+        },
+        {
+          "question_id": "C3",
+          "answer_code": "C3_D"
+        },
+        {
+          "question_id": "C4",
+          "answer_code": "C4_C"
+        },
+        {
+          "question_id": "C5",
+          "answer_code": "C5_C"
+        }
+      ],
+      "deterministic_assessment": {
+        "questionnaire_id": "risk_questionnaire_v1",
+        "version": "v1",
+        "willingness_score": 65.0,
+        "capacity_score": 65.0,
+        "composite_score": 65.0,
+        "risk_category": "Moderate",
+        "risk_category_code": "MODERATE",
+        "breakdown": {
+          "willingness": {
+            "dimension": "willingness",
+            "raw_score": 18,
+            "min_raw": 5,
+            "max_raw": 25,
+            "normalized_score": 65.0,
+            "weight": 0.5
+          },
+          "capacity": {
+            "dimension": "capacity",
+            "raw_score": 18,
+            "min_raw": 5,
+            "max_raw": 25,
+            "normalized_score": 65.0,
+            "weight": 0.5
+          }
+        },
+        "explanation": {
+          "summary": "You have been categorized as a Moderate investor (Composite Risk Score: 65.0/100), reflecting a Willingness Score of 65.0/100 and a Capacity Score of 65.0/100.",
+          "willingness_rationale": "Your responses indicate a moderate comfort level with market fluctuations, seeking balanced growth without taking excessive emotional stress.",
+          "capacity_rationale": "Your financial position shows an adequate investment horizon, stable income, and sufficient emergency buffer to support a balanced investment strategy.",
+          "alignment_note": "Your psychological risk willingness and objective financial capacity are harmoniously aligned in the Moderate tier.",
+          "is_fallback": true
+        },
+        "model_version": "deterministic_v1.0.0",
+        "schema_version": "v1.0.0",
+        "calculated_at": "2026-08-29T12:00:00Z"
+      },
+      "structured_explanation": {
+        "summary": "Based on your questionnaire responses, your overall risk profile is classified as Moderate with a composite risk score of 65.0 out of 100. This score combines your psychological willingness to navigate market movements (65.0/100) with your objective financial capacity to absorb potential losses (65.0/100).",
+        "willingness_explanation": "Your Willingness Score of 65.0/100 demonstrates a moderate emotional tolerance. You understand that investments experience occasional ups and downs and are willing to accept modest fluctuations in return for balanced potential growth.",
+        "capacity_explanation": "Your Capacity Score of 65.0/100 reflects a sound, moderate financial foundation. With an intermediate investment timeline and reasonable emergency savings buffer, your finances can comfortably support a balanced mix of growth and stability.",
+        "alignment_analysis": "Your psychological comfort and financial capacity are in strong harmony within the Moderate tier. This clear alignment makes it straightforward to structure an investment strategy that fits both your emotional mindset and financial realities.",
+        "key_influencing_factors": [
+          {
+            "dimension": "willingness",
+            "question_id": "W1",
+            "question_text": "If your investment portfolio suddenly dropped 20% in value over a few weeks, what would you most likely do?",
+            "answer_code": "W1_D",
+            "answer_label": "Hold and consider it a normal part of investing",
+            "score": 4,
+            "impact": "High Resilience Growth Driver",
+            "explanation": "Your readiness to hold or buy more during market drops indicates strong emotional resilience to volatility."
+          },
+          {
+            "dimension": "willingness",
+            "question_id": "W2",
+            "question_text": "How comfortable are you with your investment value going up and down significantly from month to month?",
+            "answer_code": "W2_D",
+            "answer_label": "Somewhat comfortable",
+            "score": 4,
+            "impact": "Fluctuation Acceptance",
+            "explanation": "Comfort accepting frequent portfolio value swings in pursuit of longer-term upside."
+          },
+          {
+            "dimension": "capacity",
+            "question_id": "C1",
+            "question_text": "When do you expect to need to withdraw a significant portion of this invested money?",
+            "answer_code": "C1_D",
+            "answer_label": "5\u201310 years",
+            "score": 4,
+            "impact": "Long Horizon Enabler",
+            "explanation": "A 5+ year investment timeline allows adequate time to recover from temporary market pullbacks."
+          },
+          {
+            "dimension": "capacity",
+            "question_id": "C3",
+            "question_text": "Do you have separate emergency savings (outside of this investment) that could cover unexpected expenses?",
+            "answer_code": "C3_D",
+            "answer_label": "3\u20136 months of expenses saved",
+            "score": 4,
+            "impact": "Strong Safety Buffer",
+            "explanation": "Substantial emergency savings (3-6+ months) protects your investment portfolio from forced early liquidation."
+          }
+        ],
+        "limitations_and_disclaimers": [
+          "This risk profile is an educational assessment based strictly on self-reported questionnaire responses and does not constitute individualized financial, legal, or tax advice.",
+          "Investments in financial markets carry inherent risks, including the potential loss of principal. Past performance does not guarantee future results, and no specific returns are guaranteed.",
+          "Your financial situation and risk tolerance can evolve over time. You should revisit this assessment periodically or whenever significant life events occur."
+        ],
+        "is_fallback": true,
+        "model_version": "deterministic_rule_v1.0.0",
+        "prompt_version": "v1.0.0",
+        "schema_version": "v1.0.0",
+        "generated_at": "2026-08-29T12:00:00Z"
+      }
+    },
+    {
+      "example_id": "profile_09_aggressive_lower_bound",
+      "title": "Aggressive Lower Boundary (Score: 67.5)",
+      "input_weights": [
+        4,
+        4,
+        4,
+        4,
+        3,
+        4,
+        4,
+        4,
+        3,
+        3
+      ],
+      "answers": [
+        {
+          "question_id": "W1",
+          "answer_code": "W1_D"
+        },
+        {
+          "question_id": "W2",
+          "answer_code": "W2_D"
+        },
+        {
+          "question_id": "W3",
+          "answer_code": "W3_D"
+        },
+        {
+          "question_id": "W4",
+          "answer_code": "W4_D"
+        },
+        {
+          "question_id": "W5",
+          "answer_code": "W5_C"
+        },
+        {
+          "question_id": "C1",
+          "answer_code": "C1_D"
+        },
+        {
+          "question_id": "C2",
+          "answer_code": "C2_D"
+        },
+        {
+          "question_id": "C3",
+          "answer_code": "C3_D"
+        },
+        {
+          "question_id": "C4",
+          "answer_code": "C4_C"
+        },
+        {
+          "question_id": "C5",
+          "answer_code": "C5_C"
+        }
+      ],
+      "deterministic_assessment": {
+        "questionnaire_id": "risk_questionnaire_v1",
+        "version": "v1",
+        "willingness_score": 70.0,
+        "capacity_score": 65.0,
+        "composite_score": 67.5,
+        "risk_category": "Aggressive",
+        "risk_category_code": "AGGRESSIVE",
+        "breakdown": {
+          "willingness": {
+            "dimension": "willingness",
+            "raw_score": 19,
+            "min_raw": 5,
+            "max_raw": 25,
+            "normalized_score": 70.0,
+            "weight": 0.5
+          },
+          "capacity": {
+            "dimension": "capacity",
+            "raw_score": 18,
+            "min_raw": 5,
+            "max_raw": 25,
+            "normalized_score": 65.0,
+            "weight": 0.5
+          }
+        },
+        "explanation": {
+          "summary": "You have been categorized as a Aggressive investor (Composite Risk Score: 67.5/100), reflecting a Willingness Score of 70.0/100 and a Capacity Score of 65.0/100.",
+          "willingness_rationale": "Your responses demonstrate a strong psychological resilience to short-term drawdowns, with an appetite for aggressive growth opportunities.",
+          "capacity_rationale": "Your financial position shows an adequate investment horizon, stable income, and sufficient emergency buffer to support a balanced investment strategy.",
+          "alignment_note": "Your profile balances a aggressive willingness with a moderate capacity, yielding an overall Aggressive classification.",
+          "is_fallback": true
+        },
+        "model_version": "deterministic_v1.0.0",
+        "schema_version": "v1.0.0",
+        "calculated_at": "2026-08-29T12:00:00Z"
+      },
+      "structured_explanation": {
+        "summary": "Based on your questionnaire responses, your overall risk profile is classified as Aggressive with a composite risk score of 67.5 out of 100. This score combines your psychological willingness to navigate market movements (70.0/100) with your objective financial capacity to absorb potential losses (65.0/100).",
+        "willingness_explanation": "Your Willingness Score of 70.0/100 demonstrates an aggressive appetite for growth. You have strong emotional comfort with market volatility and view temporary price pullbacks as normal opportunities rather than reasons to exit.",
+        "capacity_explanation": "Your Capacity Score of 65.0/100 reflects a sound, moderate financial foundation. With an intermediate investment timeline and reasonable emergency savings buffer, your finances can comfortably support a balanced mix of growth and stability.",
+        "alignment_analysis": "Your profile balances a aggressive psychological willingness with a moderate financial capacity, resulting in an overall balanced Aggressive classification.",
+        "key_influencing_factors": [
+          {
+            "dimension": "willingness",
+            "question_id": "W1",
+            "question_text": "If your investment portfolio suddenly dropped 20% in value over a few weeks, what would you most likely do?",
+            "answer_code": "W1_D",
+            "answer_label": "Hold and consider it a normal part of investing",
+            "score": 4,
+            "impact": "High Resilience Growth Driver",
+            "explanation": "Your readiness to hold or buy more during market drops indicates strong emotional resilience to volatility."
+          },
+          {
+            "dimension": "willingness",
+            "question_id": "W2",
+            "question_text": "How comfortable are you with your investment value going up and down significantly from month to month?",
+            "answer_code": "W2_D",
+            "answer_label": "Somewhat comfortable",
+            "score": 4,
+            "impact": "Fluctuation Acceptance",
+            "explanation": "Comfort accepting frequent portfolio value swings in pursuit of longer-term upside."
+          },
+          {
+            "dimension": "capacity",
+            "question_id": "C1",
+            "question_text": "When do you expect to need to withdraw a significant portion of this invested money?",
+            "answer_code": "C1_D",
+            "answer_label": "5\u201310 years",
+            "score": 4,
+            "impact": "Long Horizon Enabler",
+            "explanation": "A 5+ year investment timeline allows adequate time to recover from temporary market pullbacks."
+          },
+          {
+            "dimension": "capacity",
+            "question_id": "C3",
+            "question_text": "Do you have separate emergency savings (outside of this investment) that could cover unexpected expenses?",
+            "answer_code": "C3_D",
+            "answer_label": "3\u20136 months of expenses saved",
+            "score": 4,
+            "impact": "Strong Safety Buffer",
+            "explanation": "Substantial emergency savings (3-6+ months) protects your investment portfolio from forced early liquidation."
+          }
+        ],
+        "limitations_and_disclaimers": [
+          "This risk profile is an educational assessment based strictly on self-reported questionnaire responses and does not constitute individualized financial, legal, or tax advice.",
+          "Investments in financial markets carry inherent risks, including the potential loss of principal. Past performance does not guarantee future results, and no specific returns are guaranteed.",
+          "Your financial situation and risk tolerance can evolve over time. You should revisit this assessment periodically or whenever significant life events occur."
+        ],
+        "is_fallback": true,
+        "model_version": "deterministic_rule_v1.0.0",
+        "prompt_version": "v1.0.0",
+        "schema_version": "v1.0.0",
+        "generated_at": "2026-08-29T12:00:00Z"
+      }
+    },
+    {
+      "example_id": "profile_10_extreme_aggressive",
+      "title": "Extreme High-Growth Aggressive (All 5s, Score: 100.0)",
+      "input_weights": [
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5
+      ],
+      "answers": [
+        {
+          "question_id": "W1",
+          "answer_code": "W1_E"
+        },
+        {
+          "question_id": "W2",
+          "answer_code": "W2_E"
+        },
+        {
+          "question_id": "W3",
+          "answer_code": "W3_E"
+        },
+        {
+          "question_id": "W4",
+          "answer_code": "W4_E"
+        },
+        {
+          "question_id": "W5",
+          "answer_code": "W5_E"
+        },
+        {
+          "question_id": "C1",
+          "answer_code": "C1_E"
+        },
+        {
+          "question_id": "C2",
+          "answer_code": "C2_E"
+        },
+        {
+          "question_id": "C3",
+          "answer_code": "C3_E"
+        },
+        {
+          "question_id": "C4",
+          "answer_code": "C4_E"
+        },
+        {
+          "question_id": "C5",
+          "answer_code": "C5_E"
+        }
+      ],
+      "deterministic_assessment": {
+        "questionnaire_id": "risk_questionnaire_v1",
+        "version": "v1",
+        "willingness_score": 100.0,
+        "capacity_score": 100.0,
+        "composite_score": 100.0,
+        "risk_category": "Aggressive",
+        "risk_category_code": "AGGRESSIVE",
+        "breakdown": {
+          "willingness": {
+            "dimension": "willingness",
+            "raw_score": 25,
+            "min_raw": 5,
+            "max_raw": 25,
+            "normalized_score": 100.0,
+            "weight": 0.5
+          },
+          "capacity": {
+            "dimension": "capacity",
+            "raw_score": 25,
+            "min_raw": 5,
+            "max_raw": 25,
+            "normalized_score": 100.0,
+            "weight": 0.5
+          }
+        },
+        "explanation": {
+          "summary": "You have been categorized as a Aggressive investor (Composite Risk Score: 100.0/100), reflecting a Willingness Score of 100.0/100 and a Capacity Score of 100.0/100.",
+          "willingness_rationale": "Your responses demonstrate a strong psychological resilience to short-term drawdowns, with an appetite for aggressive growth opportunities.",
+          "capacity_rationale": "Your financial profile indicates a long-term investment horizon, strong income stability, and robust emergency savings capable of weathering economic cycles.",
+          "alignment_note": "Your psychological risk willingness and objective financial capacity are harmoniously aligned in the Aggressive tier.",
+          "is_fallback": true
+        },
+        "model_version": "deterministic_v1.0.0",
+        "schema_version": "v1.0.0",
+        "calculated_at": "2026-08-29T12:00:00Z"
+      },
+      "structured_explanation": {
+        "summary": "Based on your questionnaire responses, your overall risk profile is classified as Aggressive with a composite risk score of 100.0 out of 100. This score combines your psychological willingness to navigate market movements (100.0/100) with your objective financial capacity to absorb potential losses (100.0/100).",
+        "willingness_explanation": "Your Willingness Score of 100.0/100 demonstrates an aggressive appetite for growth. You have strong emotional comfort with market volatility and view temporary price pullbacks as normal opportunities rather than reasons to exit.",
+        "capacity_explanation": "Your Capacity Score of 100.0/100 indicates strong financial resilience. A long-term investment horizon, stable income, and robust emergency savings allow you to weather extended market downturns without risking your daily financial security.",
+        "alignment_analysis": "Your psychological comfort and financial capacity are in strong harmony within the Aggressive tier. This clear alignment makes it straightforward to structure an investment strategy that fits both your emotional mindset and financial realities.",
+        "key_influencing_factors": [
+          {
+            "dimension": "willingness",
+            "question_id": "W1",
+            "question_text": "If your investment portfolio suddenly dropped 20% in value over a few weeks, what would you most likely do?",
+            "answer_code": "W1_E",
+            "answer_label": "Buy more while prices are low",
+            "score": 5,
+            "impact": "High Resilience Growth Driver",
+            "explanation": "Your readiness to hold or buy more during market drops indicates strong emotional resilience to volatility."
+          },
+          {
+            "dimension": "willingness",
+            "question_id": "W2",
+            "question_text": "How comfortable are you with your investment value going up and down significantly from month to month?",
+            "answer_code": "W2_E",
+            "answer_label": "Very comfortable \u2014 I expect and accept ups and downs",
+            "score": 5,
+            "impact": "Fluctuation Acceptance",
+            "explanation": "Comfort accepting frequent portfolio value swings in pursuit of longer-term upside."
+          },
+          {
+            "dimension": "capacity",
+            "question_id": "C1",
+            "question_text": "When do you expect to need to withdraw a significant portion of this invested money?",
+            "answer_code": "C1_E",
+            "answer_label": "More than 10 years",
+            "score": 5,
+            "impact": "Long Horizon Enabler",
+            "explanation": "A 5+ year investment timeline allows adequate time to recover from temporary market pullbacks."
+          },
+          {
+            "dimension": "capacity",
+            "question_id": "C3",
+            "question_text": "Do you have separate emergency savings (outside of this investment) that could cover unexpected expenses?",
+            "answer_code": "C3_E",
+            "answer_label": "More than 6 months of expenses saved",
+            "score": 5,
+            "impact": "Strong Safety Buffer",
+            "explanation": "Substantial emergency savings (3-6+ months) protects your investment portfolio from forced early liquidation."
+          }
+        ],
+        "limitations_and_disclaimers": [
+          "This risk profile is an educational assessment based strictly on self-reported questionnaire responses and does not constitute individualized financial, legal, or tax advice.",
+          "Investments in financial markets carry inherent risks, including the potential loss of principal. Past performance does not guarantee future results, and no specific returns are guaranteed.",
+          "Your financial situation and risk tolerance can evolve over time. You should revisit this assessment periodically or whenever significant life events occur."
+        ],
+        "is_fallback": true,
+        "model_version": "deterministic_rule_v1.0.0",
+        "prompt_version": "v1.0.0",
+        "schema_version": "v1.0.0",
+        "generated_at": "2026-08-29T12:00:00Z"
+      }
+    }
+  ]
+}

@@ -1,0 +1,306 @@
+name: S1 UAT Evidence
+
+on:
+  push:
+    paths:
+      - "backend/**"
+      - "data/fixtures/s1_dat_01/**"
+      - "data/fixtures/local_s1/**"
+      - "scripts/verify-s1.ps1"
+      - "scripts/verify-owned-s2.ps1"
+      - "scripts/serve-s1-web-probe.py"
+      - "frontend-react/**"
+      - "frontend_flutter/**"
+      - "docs/evidence/s1-uat-01-onboarding-pilot.md"
+      - "docs/evidence/s1-full-acceptance.md"
+      - "docs/evidence/s2-full-acceptance.md"
+      - "docs/evidence/s3-api-validation.md"
+      - "docs/evidence/s3-owned-flutter-validation.md"
+      - ".github/workflows/s1-uat-evidence.yml"
+  pull_request:
+    paths:
+      - "backend/**"
+      - "data/fixtures/s1_dat_01/**"
+      - "data/fixtures/local_s1/**"
+      - "scripts/verify-s1.ps1"
+      - "scripts/verify-owned-s2.ps1"
+      - "scripts/serve-s1-web-probe.py"
+      - "frontend-react/**"
+      - "frontend_flutter/**"
+      - "docs/evidence/s1-uat-01-onboarding-pilot.md"
+      - "docs/evidence/s1-full-acceptance.md"
+      - "docs/evidence/s2-full-acceptance.md"
+      - "docs/evidence/s3-api-validation.md"
+      - "docs/evidence/s3-owned-flutter-validation.md"
+      - ".github/workflows/s1-uat-evidence.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  backend-contract:
+    name: Compatibility pilot contract and fixture proof
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      - name: Verify the controlled contract slice
+        run: |
+          python verify_r0_thin_slice.py --format json
+          python -m pytest -q --no-cov tests/test_s1_api_01_consent_profile.py tests/test_r0_thin_slice.py
+
+  owned-native:
+    name: Owned S1 and S2 native TCP, restart, expiry and wire capture
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    env:
+      PYTHONPATH: ".."
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - name: Checkout exact tested candidate
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - name: Set up Python
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: "3.13"
+      - name: Install native dependencies
+        run: python -m pip install -r requirements.txt
+      - name: Verify fail-closed harness and documented API contract
+        run: >-
+          python -m pytest -q --no-cov tests/unit/test_s1_acceptance_harness.py
+          tests/unit/test_s1_ci_contract.py tests/unit/test_s1_web_probe_server.py
+          tests/contract/test_local_s1_openapi.py
+          tests/unit/test_owned_s2_acceptance_launcher.py tests/unit/test_owned_s2_acceptance_ci.py
+          tests/unit/test_local_s2_shared_evidence.py tests/unit/test_s2_saved_risk_corpus.py
+          tests/unit/test_local_s2_portfolio_expiry_risk.py
+          tests/unit/test_s2_evidence_pair_validation.py
+          tests/unit/test_s2_saved_risk_harness.py tests/unit/test_local_s2_portfolio_native_harness.py
+      - name: Create owned evidence directory outside the source checkout
+        shell: bash
+        run: |
+          set -euo pipefail
+          evidence_directory="$RUNNER_TEMP/finex-owned-local-wire"
+          mkdir -p "$evidence_directory"
+          echo "FINEX_OWNED_EVIDENCE_DIR=$evidence_directory" >> "$GITHUB_ENV"
+      - name: Prove the actual owned local API and capture safe wire envelopes
+        shell: bash
+        run: |
+          set -euo pipefail
+          python verify_s1_application.py --report "$FINEX_OWNED_EVIDENCE_DIR/s1-owned-proof.json" --corpus "$FINEX_OWNED_EVIDENCE_DIR/s1-owned-corpus.json" --tested-sha "$GITHUB_SHA" --tested-tree "$(git rev-parse 'HEAD^{tree}')" --format json
+      - name: Prove saved-risk native TCP and capture original safe wire envelopes
+        shell: bash
+        run: |
+          set -euo pipefail
+          python verify_s2_saved_risk.py --report "$FINEX_OWNED_EVIDENCE_DIR/s2-saved-risk-proof.json" --corpus "$FINEX_OWNED_EVIDENCE_DIR/s2-saved-risk-corpus.json" --tested-sha "$GITHUB_SHA" --tested-tree "$(git rev-parse 'HEAD^{tree}')" --format json
+      - name: Prove manual-portfolio native TCP and capture original safe wire envelopes
+        shell: bash
+        run: |
+          set -euo pipefail
+          python verify_s2_manual_portfolio.py --report "$FINEX_OWNED_EVIDENCE_DIR/s2-manual-portfolio-proof.json" --corpus "$FINEX_OWNED_EVIDENCE_DIR/s2-manual-portfolio-corpus.json" --tested-sha "$GITHUB_SHA" --tested-tree "$(git rev-parse 'HEAD^{tree}')" --format json
+      - name: Passively validate complete current S2 report and corpus pairs
+        shell: bash
+        run: |
+          set -euo pipefail
+          python verify_s2_evidence_pair.py --risk-report "$FINEX_OWNED_EVIDENCE_DIR/s2-saved-risk-proof.json" --risk-corpus "$FINEX_OWNED_EVIDENCE_DIR/s2-saved-risk-corpus.json" --portfolio-report "$FINEX_OWNED_EVIDENCE_DIR/s2-manual-portfolio-proof.json" --portfolio-corpus "$FINEX_OWNED_EVIDENCE_DIR/s2-manual-portfolio-corpus.json" --tested-sha "$GITHUB_SHA" --tested-tree "$(git rev-parse 'HEAD^{tree}')"
+      - name: Retain only successful sanitized proof and shared response bytes
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: owned-s1-s2-wire-${{ github.run_id }}
+          retention-days: 7
+          if-no-files-found: error
+          path: |
+            ${{ runner.temp }}/finex-owned-local-wire/s1-owned-proof.json
+            ${{ runner.temp }}/finex-owned-local-wire/s1-owned-corpus.json
+            ${{ runner.temp }}/finex-owned-local-wire/s2-saved-risk-proof.json
+            ${{ runner.temp }}/finex-owned-local-wire/s2-saved-risk-corpus.json
+            ${{ runner.temp }}/finex-owned-local-wire/s2-manual-portfolio-proof.json
+            ${{ runner.temp }}/finex-owned-local-wire/s2-manual-portfolio-corpus.json
+
+  owned-s3-native:
+    name: Owned S3 synthetic API native TCP and durable foundation
+    needs: [owned-native]
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    env:
+      PYTHONPATH: ".."
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - name: Checkout exact tested candidate
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - name: Set up Python
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: "3.13"
+      - name: Install native dependencies
+        run: python -m pip install -r requirements.txt
+      - name: Verify S3 fail-closed tools and documented API contract
+        run: >-
+          python -m pytest -q --no-cov tests/unit/test_verify_s3_foundation.py
+          tests/unit/test_s3_native_ci.py tests/unit/test_s3_flutter_native_ci.py
+          tests/contract/test_local_s3_openapi.py
+      - name: Create owned S3 evidence directory outside the source checkout
+        shell: bash
+        run: |
+          set -euo pipefail
+          evidence_directory="$RUNNER_TEMP/finex-owned-s3-wire"
+          mkdir -p "$evidence_directory"
+          echo "FINEX_S3_EVIDENCE_DIR=$evidence_directory" >> "$GITHUB_ENV"
+      - name: Prove default synthetic S3 API over owned native TCP
+        shell: bash
+        run: |
+          set -euo pipefail
+          python verify_s3_foundation.py --report "$FINEX_S3_EVIDENCE_DIR/s3-foundation-proof.json" --corpus "$FINEX_S3_EVIDENCE_DIR/s3-foundation-corpus.json" --tested-sha "$GITHUB_SHA" --tested-tree "$(git rev-parse 'HEAD^{tree}')" --format text
+      - name: Passively validate the complete current S3 report and corpus
+        shell: bash
+        run: |
+          set -euo pipefail
+          python verify_s3_evidence.py --report "$FINEX_S3_EVIDENCE_DIR/s3-foundation-proof.json" --corpus "$FINEX_S3_EVIDENCE_DIR/s3-foundation-corpus.json" --tested-sha "$GITHUB_SHA" --tested-tree "$(git rev-parse 'HEAD^{tree}')"
+      - name: Retain only successful sanitized S3 API proof and original wire bytes
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: owned-s3-wire-${{ github.run_id }}
+          retention-days: 7
+          if-no-files-found: error
+          path: |
+            ${{ runner.temp }}/finex-owned-s3-wire/s3-foundation-proof.json
+            ${{ runner.temp }}/finex-owned-s3-wire/s3-foundation-corpus.json
+
+  react-journey:
+    name: React journey and accessibility proof
+    needs: [owned-native]
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend-react
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+          cache-dependency-path: frontend-react/package-lock.json
+      - name: Install dependencies
+        run: npm ci
+      - name: Download the successful native wire capture
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: owned-s1-s2-wire-${{ github.run_id }}
+          path: ${{ runner.temp }}/finex-owned-local-wire
+      - name: Require React typed S1 and S2 parity with actual native response bytes
+        run: npm test -- --watchAll=false --runInBand --no-cache --runTestsByPath src/services/localS1ContractParity.test.ts src/services/localS2NativeParity.test.ts
+        env:
+          CI: "true"
+          FINEX_LOCAL_S1_CORPUS: ${{ runner.temp }}/finex-owned-local-wire/s1-owned-corpus.json
+          FINEX_REQUIRE_LOCAL_S1_CORPUS: "1"
+          FINEX_LOCAL_S2_RISK_CORPUS: ${{ runner.temp }}/finex-owned-local-wire/s2-saved-risk-corpus.json
+          FINEX_LOCAL_S2_RISK_REPORT: ${{ runner.temp }}/finex-owned-local-wire/s2-saved-risk-proof.json
+          FINEX_LOCAL_S2_PORTFOLIO_CORPUS: ${{ runner.temp }}/finex-owned-local-wire/s2-manual-portfolio-corpus.json
+          FINEX_LOCAL_S2_PORTFOLIO_REPORT: ${{ runner.temp }}/finex-owned-local-wire/s2-manual-portfolio-proof.json
+          FINEX_REQUIRE_LOCAL_S2_CORPUS: "1"
+      - name: Verify the consent and profile journey
+        run: npm test -- --watchAll=false --runInBand
+        env:
+          CI: "true"
+      - name: Build the production bundle
+        run: npm run build
+
+  flutter-journey:
+    name: Flutter journey and accessibility proof
+    needs: [owned-native, owned-s3-native]
+    runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: frontend_flutter
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: "3.47.2"
+          channel: stable
+      - name: Resolve dependencies
+        run: flutter pub get
+      - name: Analyze the client
+        run: flutter analyze --fatal-infos
+      - name: Download the successful native wire capture
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: owned-s1-s2-wire-${{ github.run_id }}
+          path: ${{ runner.temp }}/finex-owned-local-wire
+      - name: Require Flutter typed S1 and S2 parity with actual native response bytes
+        run: flutter test --no-pub test/local_contract_parity_test.dart test/local_s2_corpus_loader_test.dart test/local_s2_risk_contract_parity_test.dart test/local_s2_portfolio_contract_parity_test.dart
+        env:
+          FINEX_LOCAL_S1_CORPUS: ${{ runner.temp }}/finex-owned-local-wire/s1-owned-corpus.json
+          FINEX_REQUIRE_LOCAL_S1_CORPUS: "1"
+          FINEX_LOCAL_S2_RISK_CORPUS: ${{ runner.temp }}/finex-owned-local-wire/s2-saved-risk-corpus.json
+          FINEX_LOCAL_S2_RISK_REPORT: ${{ runner.temp }}/finex-owned-local-wire/s2-saved-risk-proof.json
+          FINEX_LOCAL_S2_PORTFOLIO_CORPUS: ${{ runner.temp }}/finex-owned-local-wire/s2-manual-portfolio-corpus.json
+          FINEX_LOCAL_S2_PORTFOLIO_REPORT: ${{ runner.temp }}/finex-owned-local-wire/s2-manual-portfolio-proof.json
+          FINEX_REQUIRE_LOCAL_S2_CORPUS: "1"
+      - name: Download the successful original S3 native wire capture
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: owned-s3-wire-${{ github.run_id }}
+          path: ${{ runner.temp }}/finex-owned-s3-wire
+      - name: Require Flutter typed S3 parity with original native response bytes
+        run: flutter test --no-pub --concurrency=1 test/local_s3_corpus_loader_test.dart test/local_s3_contract_parity_test.dart
+        env:
+          FINEX_LOCAL_S3_CORPUS: ${{ runner.temp }}/finex-owned-s3-wire/s3-foundation-corpus.json
+          FINEX_LOCAL_S3_REPORT: ${{ runner.temp }}/finex-owned-s3-wire/s3-foundation-proof.json
+          FINEX_REQUIRE_LOCAL_S3_CORPUS: "1"
+      - name: Verify the consent and profile journey
+        run: flutter test
+
+  summary:
+    name: Publish S1 UAT evidence summary
+    needs: [backend-contract, owned-native, owned-s3-native, react-journey, flutter-journey]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Write immutable evidence summary
+        shell: bash
+        env:
+          CANDIDATE_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          {
+            echo "# S1/S2 clients, S3 API and Flutter parity technical evidence (not human UAT)"
+            echo
+            echo "- Tested checkout: \`${GITHUB_SHA}\`; candidate head: \`${CANDIDATE_HEAD}\`"
+            echo "- Owned S1 native TCP, real expiry, restart, revocation and shared wire parity: passed"
+            echo "- Owned S2 saved risk and manual portfolio native TCP, persisted snapshots, ownership, restarts and both-client wire parity: passed"
+            echo "- S3 default synthetic API native TCP, owned watchlists, simulated opening, restarts, real expiry and passive original-wire validation: passed"
+            echo "- Flutter S3 typed parity with original native response bytes: passed"
+            echo "- Full S3 acceptance and controlled provider-fault journeys remain separate acceptance gates; React S3 parity follows its client delivery"
+            echo "- Separately scoped compatibility pilot contract proof: passed"
+            echo "- React success, validation, retry, accessibility, and build proof: passed"
+            echo "- Flutter success, validation, retry, accessibility, and analysis proof: passed"
+            echo "- Scope: synthetic local data only; no Docker, cloud credentials, real PII, or production deployment"
+            echo "- Browser-controlled transport probes, native-device GUI, fresh-laptop and human UAT are separate recorded gates; this CI does not claim them"
+          } >> "$GITHUB_STEP_SUMMARY"

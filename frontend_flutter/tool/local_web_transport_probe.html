@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>FinEx S1 controlled web transport checks</title>
+  <style>
+    body { max-width: 52rem; margin: 2rem auto; padding: 0 1rem; font: 1rem/1.6 system-ui, sans-serif; color: #172033; background: #f8fafc; }
+    button { min-height: 48px; padding: .6rem 1.2rem; background: #047857; color: white; border: 2px solid #065f46; border-radius: .35rem; font: inherit; }
+    button:focus-visible { outline: 3px solid #172033; outline-offset: 3px; }
+    li { overflow-wrap: anywhere; }
+  </style>
+</head>
+<body>
+  <h1>S1 controlled web transport checks</h1>
+  <p>This test-only page executes the production conditional Dart JS transport using controlled browser responses. It is not real TCP, cookie, network, persistent-session, or native-device evidence. It never contacts the actual API and does not use browser storage.</p>
+  <button id="run" type="button" disabled>Run controlled transport checks</button>
+  <p id="status" role="status" aria-live="polite">Compiled probe loading; checks have not run.</p>
+  <ol id="results" aria-label="Controlled transport check results"></ol>
+  <script>
+    (() => {
+      'use strict';
+      const allowed = new Set([
+        'options_utf8_state', 'draft_nullable_json', 'consent_true_json',
+        'consent_false_json', 'completion_json', 'logout_empty_json',
+        'me_typed_identity', 'full_body_timeout_aborts', 'current_401_skips_body',
+        'failed_mutation_explicit_retry', 'non401_cannot_claim_revocation',
+        'authorization_guard_empty', 'authorization_guard_wrong',
+        'stream_cap_then_stall', 'stream_below_cap', 'stream_exact_cap'
+      ]);
+      const time = '2030-01-01T00:00:00.000000+00:00';
+      const scoped = data => ({ scope: 'local_educational_application', contract_version: 'local.v1', ...data });
+      const state = (accepted = null, completed = false, level = null) => scoped({
+        profile_schema_version: 'profile.v1', consent_version: 'consent.v1',
+        consent: accepted === null ? null : { accepted, version: 'consent.v1', recorded_at: time },
+        draft: { display_name: 'Café 学習', experience_level: level, updated_at: time },
+        onboarding_completed: completed, completed_at: completed ? time : null
+      });
+      const envelope = data => ({ success: true, message: 'Controlled synthetic result', data,
+        meta: { apiVersion: 'v1', dataStatus: 'CACHED', dataAsOf: null, correlationId: 'probe-synthetic' } });
+      let active = null;
+      let expectedAuthorization = null;
+      let restoreFetch = null;
+      let passed = 0;
+      let total = 0;
+      const cleanup = () => {
+        if (restoreFetch) { window.fetch = restoreFetch; restoreFetch = null; }
+        expectedAuthorization = null;
+        if (active) {
+          for (const remove of active.listeners) remove();
+          for (const stream of active.streams) {
+            try { stream.error(new Error('Controlled stream closed.')); } catch (_) { /* already closed */ }
+          }
+          active.listeners.length = 0;
+          active.streams.length = 0;
+          active = null;
+        }
+      };
+      const response = (body, status = 200, unreadable = false, stalled = false, size = null) => {
+        let value;
+        if (stalled || size !== null) {
+          const current = active;
+          const stream = new ReadableStream({ start(controller) {
+            current.streams.push(controller);
+            if (size !== null) {
+              const encoded = new TextEncoder().encode(JSON.stringify(body));
+              if (encoded.length > size) throw new Error('Invalid controlled size.');
+              const bytes = new Uint8Array(size).fill(32); bytes.set(encoded);
+              controller.enqueue(bytes);
+            }
+            if (!stalled) controller.close();
+          }, cancel() { current.cancelled = true; } });
+          value = new Response(stream, { status, headers: { 'Content-Type': 'application/json; charset=utf-8' } });
+        } else {
+          value = new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json; charset=utf-8' } });
+        }
+        const read = value.arrayBuffer.bind(value);
+        Object.defineProperty(value, 'arrayBuffer', { value: () => {
+          active.body_reads++;
+          active.array_buffer_reads++;
+          if (unreadable) return Promise.reject(new Error('probe-raw-diagnostic'));
+          return read();
+        } });
+        const getReader = value.body.getReader.bind(value.body);
+        Object.defineProperty(value.body, 'getReader', { value: () => {
+          const current=active; current.body_reads++;
+          const reader=getReader();
+          const readChunk=reader.read.bind(reader);
+          Object.defineProperty(reader,'read',{value:()=>unreadable?Promise.reject(new Error('probe-raw-diagnostic')):readChunk()});
+          const cancel=reader.cancel.bind(reader);
+          Object.defineProperty(reader,'cancel',{value:()=>{current.cancelled=true;return cancel();}});
+          return reader;
+        }});
+        return value;
+      };
+      window.finexProbe = Object.freeze({
+        begin() {
+          cleanup(); passed = 0; total = 0;
+          document.querySelector('#results').replaceChildren();
+          document.querySelector('#status').textContent = 'Controlled checks running; no real API request is sent.';
+        },
+        install(id, expectedBearer) {
+          cleanup();
+          if (!allowed.has(id) || typeof expectedBearer !== 'string' || !/^[A-Za-z0-9_-]{43}$/.test(expectedBearer)) throw new Error('Invalid controlled case.');
+          // Closure-only authority; never copy it into snapshots or diagnostics.
+          expectedAuthorization = 'Bearer ' + expectedBearer;
+          active = { calls: 0, body_reads: 0, array_buffer_reads: 0, cancelled: false, aborted: false, listeners: [], streams: [] };
+          restoreFetch = window.fetch;
+          window.fetch = async (input, init) => {
+            const url = new URL(String(input));
+            if (url.origin !== 'http://127.0.0.1:1' || url.search || url.hash) throw new Error('Unexpected controlled target.');
+            const headers = new Headers(init.headers);
+            const body = init.body == null ? null : JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(init.body));
+            // Deliberate negative checker inputs. Normal cases compare the
+            // actual header against the exact selected in-memory input.
+            const authorization = id === 'authorization_guard_empty' ? ''
+              : id === 'authorization_guard_wrong' ? 'Bearer controlled-invalid-authority'
+              : headers.get('Authorization');
+            Object.assign(active, { calls: active.calls + 1, method: init.method, path: url.pathname,
+              credentials: init.credentials, cache: init.cache, redirect: init.redirect,
+              authorization_matches: authorization === expectedAuthorization, accept: headers.get('Accept'),
+              content_type: headers.get('Content-Type'), request_body: body });
+            const current = active;
+            const aborted = () => {
+              current.aborted = true;
+              for (const stream of current.streams) {
+                try { stream.error(new Error('Controlled request aborted.')); } catch (_) { /* already closed */ }
+              }
+            };
+            init.signal.addEventListener('abort', aborted, { once: true });
+            active.listeners.push(() => init.signal.removeEventListener('abort', aborted));
+            if (id === 'full_body_timeout_aborts') return response(null, 200, false, true);
+            if (id === 'stream_cap_then_stall') return response(envelope(state()), 200, false, true, 262145);
+            if (id === 'stream_below_cap') return response(envelope(state()), 200, false, false, 262143);
+            if (id === 'stream_exact_cap') return response(envelope(state()), 200, false, false, 262144);
+            if (id === 'current_401_skips_body') return response(null, 401, true, true);
+            if (id === 'failed_mutation_explicit_retry' && active.calls === 1) throw new Error('probe-raw-diagnostic');
+            if (id === 'non401_cannot_claim_revocation') return response({ success: false, error_code: 'SESSION_INVALID', message: 'probe-raw-diagnostic' }, 503);
+            if (id === 'me_typed_identity') return response(envelope(scoped({ user: { id: 'probe-synthetic-a', alias: 'learner-a' } })));
+            if (id === 'logout_empty_json') return response(envelope(scoped({ signed_out: true })));
+            if (id === 'completion_json') return response(envelope(state(true, true, 'beginner')));
+            if (id === 'consent_true_json' || id === 'failed_mutation_explicit_retry') return response(envelope(state(true)));
+            if (id === 'consent_false_json') return response(envelope(state(false)));
+            return response(envelope(state()));
+          };
+        },
+        snapshot() {
+          if (!active) throw new Error('No controlled case.');
+          const { listeners, streams, ...safe } = active;
+          return safe;
+        },
+        restore: cleanup,
+        report(id, ok) {
+          if (!allowed.has(id) || typeof ok !== 'boolean') throw new Error('Invalid safe result.');
+          total++; if (ok) passed++;
+          const row = document.createElement('li');
+          row.textContent = id + ': ' + (ok ? 'PASS' : 'FAIL');
+          document.querySelector('#results').append(row);
+        },
+        finish() {
+          document.querySelector('#status').textContent = passed + '/' + total + ' controlled-response checks passed. Real network and device acceptance are separate.';
+        }
+      });
+    })();
+  </script>
+  <script defer src="../build/qa/local_web_transport_probe.js"></script>
+</body>
+</html>

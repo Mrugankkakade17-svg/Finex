@@ -1,0 +1,114 @@
+name: Backend Quality Gates
+
+on:
+  push:
+    paths:
+      - "backend/**"
+      - "data/fixtures/s1_dat_01/**"
+      - "data/fixtures/local_s1/**"
+      - "scripts/verify-s1.ps1"
+      - "scripts/verify-owned-s2.ps1"
+      - "docs/evidence/s2-full-acceptance.md"
+      - "docs/evidence/s3-api-validation.md"
+      - "docs/evidence/s3-owned-flutter-validation.md"
+      - "scripts/serve-s1-web-probe.py"
+      - "scripts/seed_s1_dat_01.py"
+      - "ai/risk/**"
+      - "data/fixtures/s2_dat_01/**"
+      - "docs/features/risk-profiling/**"
+      - ".github/workflows/backend-quality.yml"
+  pull_request:
+    paths:
+      - "backend/**"
+      - "data/fixtures/s1_dat_01/**"
+      - "data/fixtures/local_s1/**"
+      - "scripts/verify-s1.ps1"
+      - "scripts/verify-owned-s2.ps1"
+      - "docs/evidence/s2-full-acceptance.md"
+      - "docs/evidence/s3-api-validation.md"
+      - "docs/evidence/s3-owned-flutter-validation.md"
+      - "scripts/serve-s1-web-probe.py"
+      - "scripts/seed_s1_dat_01.py"
+      - "ai/risk/**"
+      - "data/fixtures/s2_dat_01/**"
+      - "docs/features/risk-profiling/**"
+      - ".github/workflows/backend-quality.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: backend
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: S1 data-quality report
+        shell: bash
+        run: |
+          set -o pipefail
+          python -m app.fixtures.s1_dat_01 --format json | tee data-quality-report.json
+
+      - name: Publish S1 data-quality report
+        if: always()
+        shell: bash
+        run: |
+          echo "## S1 data-quality report" >> "$GITHUB_STEP_SUMMARY"
+          if [ -f data-quality-report.json ]; then
+            echo '```json' >> "$GITHUB_STEP_SUMMARY"
+            cat data-quality-report.json >> "$GITHUB_STEP_SUMMARY"
+            echo '```' >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "The data-quality command did not produce a report." >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: R0 thin-slice local proof
+        shell: bash
+        run: |
+          set -o pipefail
+          python verify_r0_thin_slice.py --format json | tee r0-thin-slice-report.json
+
+      - name: Publish R0 thin-slice proof
+        if: always()
+        shell: bash
+        run: |
+          echo "## R0 thin-slice local proof" >> "$GITHUB_STEP_SUMMARY"
+          if [ -f r0-thin-slice-report.json ]; then
+            echo '```json' >> "$GITHUB_STEP_SUMMARY"
+            cat r0-thin-slice-report.json >> "$GITHUB_STEP_SUMMARY"
+            echo '```' >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "The thin-slice command did not produce an evidence record." >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Ruff lint
+        run: python -m ruff check . ../scripts/serve-s1-web-probe.py
+
+      - name: Ruff format check
+        run: python -m ruff format --check . ../scripts/serve-s1-web-probe.py
+
+      - name: Mypy type check
+        run: |
+          python -m mypy app verify_s1_application.py verify_s2_saved_risk.py verify_s2_manual_portfolio.py verify_s2_evidence_pair.py local_s2_evidence.py verify_s3_foundation.py verify_s3_evidence.py verify_r0_thin_slice.py verify_s2_risk.py verify_secret_snapshot.py --platform linux --python-version 3.13
+          python -m mypy app verify_s1_application.py verify_s2_saved_risk.py verify_s2_manual_portfolio.py verify_s2_evidence_pair.py local_s2_evidence.py verify_s3_foundation.py verify_s3_evidence.py verify_r0_thin_slice.py verify_s2_risk.py verify_secret_snapshot.py --platform win32 --python-version 3.13
+
+      - name: Pytest
+        run: python -m pytest

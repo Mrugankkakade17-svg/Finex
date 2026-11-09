@@ -1,0 +1,4 @@
+user_id,email,password_hash,name,role,risk_profile,is_active,created_at,updated_at
+1,alice@example.com,hash1,Alice,user,moderate,true,2026-08-20 10:00:00,2026-08-20 10:00:00
+2,bob@example.com,hash2,Bob,user,conservative,true,2026-08-20 10:01:00,2026-08-20 10:01:00
+3,alice@example.com,hash3,Alice Duplicate,user,moderate,true,2026-08-20 10:02:00,2026-08-20 10:02:00

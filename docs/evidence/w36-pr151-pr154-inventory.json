@@ -1,0 +1,986 @@
+{
+  "pr151": {
+    "files": [
+      {
+        "filename": ".github/workflows/backend-quality.yml",
+        "status": "modified",
+        "additions": 9,
+        "deletions": 2,
+        "disposition": "Foundation concept covered by approved W40 implementation and evidence; do not merge original mixed-scope release.",
+        "recovery_story_ids": [
+          135,
+          133,
+          166
+        ]
+      },
+      {
+        "filename": "ai/portfolio/__init__.py",
+        "status": "added",
+        "additions": 22,
+        "deletions": 0,
+        "disposition": "Future market/watchlist/portfolio/migration scope; UNTRACKED by this S2 recovery. Do not transplant wholesale.",
+        "recovery_story_ids": []
+      },
+      {
+        "filename": "ai/portfolio/explanation.py",
+        "status": "added",
+        "additions": 283,
+        "deletions": 0,
+        "disposition": "Future market/watchlist/portfolio/migration scope; UNTRACKED by this S2 recovery. Do not transplant wholesale.",
+        "recovery_story_ids": []
+      },
+      {
+        "filename": "ai/portfolio/golden_examples_v1.json",
+        "status": "added",
+        "additions": 59,
+        "deletions": 0,
+        "disposition": "Future market/watchlist/portfolio/migration scope; UNTRACKED by this S2 recovery. Do not transplant wholesale.",
+        "recovery_story_ids": []
+      },
+      {
+        "filename": "ai/portfolio/prompts/__init__.py",
+        "status": "added",
+        "additions": 15,
+        "deletions": 0,
+        "disposition": "Future market/watchlist/portfolio/migration scope; UNTRACKED by this S2 recovery. Do not transplant wholesale.",
+        "recovery_story_ids": []
+      },
+      {
+        "filename": "ai/portfolio/prompts/explanation_prompt_v1.py",
+        "status": "added",
+        "additions": 44,
+        "deletions": 0,
+        "disposition": "Future market/watchlist/portfolio/migration scope; UNTRACKED by this S2 recovery. Do not transplant wholesale.",
+        "recovery_story_ids": []
+      },
+      {
+        "filename": "ai/portfolio/schemas.py",
+        "status": "added",
+        "additions": 86,
+        "deletions": 0,
+        "disposition": "Future market/watchlist/portfolio/migration scope; UNTRACKED by this S2 recovery. Do not transplant wholesale.",
+        "recovery_story_ids": []
+      },
+      {
+        "filename": "ai/portfolio/test_explanation.py",
+        "status": "added",
+        "additions": 215,
+        "deletions": 0,
+        "disposition": "Future market/watchlist/portfolio/migration scope; UNTRACKED by this S2 recovery. Do not transplant wholesale.",
+        "recovery_story_ids": []
+      },
+      {
+        "filename": "backend/alembic/versions/002_s3_dat_01_operational_watchlists.py",
+        "status": "added",
+        "additions": 91,
+        "deletions": 0,
+        "disposition": "Future market/watchlist/portfolio/migration scope; UNTRACKED by this S2 recovery. Do not transplant wholesale.",
+        "recovery_story_ids": []
+      },
+      {
+        "filename": "backend/alembic/versions/742b718c2bea_create_watchlist_tables.py",
+        "status": "added",
+        "additions": 67,
+        "deletions": 0,
+        "disposition": "Future market/watchlist/portfolio/migration scope; UNTRACKED by this S2 recovery. Do not transplant wholesale.",
+        "recovery_story_ids": []
+      },
+      {
+        "filename": "backend/alembic/versions/bae6d0f89468_create_securities_table.py",
+        "status": "added",
+        "additions": 31,
+        "deletions": 0,
+        "disposition": "Future market/watchlist/portfolio/migration scope; UNTRACKED by this S2 recovery. Do not transplant wholesale.",
+        "recovery_story_ids": []
+      },
+      {
+        "filename": "backend/app/adapters/yfinance_adapter.py",
+        "status": "added",
+        "additions": 153,
+        "deletions": 0,
+        "disposition": "UNTRACKED / quarantined: requires a dedicated later approved feature story and tests.",
+        "recovery_story_ids": []
+      },
+      {
+        "filename": "backend/app/auth/schemas.py",
+        "status": "added",
+        "additions": 26,
+        "deletions": 0,
+        "disposition": "UNTRACKED / quarantined: requires a dedicated later approved feature story and tests.",
+        "recovery_story_ids": []
+      },
+      {
+        "filename": "backend/app/core/responses.py",
+        "status": "modified",
+        "additions": 3,
+        "deletions": 2,
+        "disposition": "Security/API concepts reimplemented and verified in scoped W40 recovery; original W36 diff is not promoted.",
+        "recovery_story_ids": [
+          132,
+          133,
+          135
+        ]
+      },
+      {
+        "filename": "backend/app/main.py",
+        "status": "modified",
+        "additions": 10,
+        "deletions": 5,
+        "disposition": "Foundation concept covered by approved W40 implementation and evidence; do not merge original mixed-scope release.",
+        "recovery_story_ids": [
+          135,
+          133,
+          166
+        ]
+      },
+      {
+        "filename": "backend/app/repositories/market_repository.py",
+        "status": "added",
+        "additions": 52,
+        "deletions": 0,
+        "disposition": "Future market/watchlist/portfolio/migration scope; UNTRACKED by this S2 recovery. Do not transplant wholesale.",
+        "recovery_story_ids": []
+      },
+      {
+        "filename": "backend/app/repositories/watchlist_repository.py",
+        "status": "added",
+        "additions": 279,
+        "deletions": 0,
+        "disposition": "Future market/watchlist/portfolio/migration scope; UNTRACKED by this S2 recovery. Do not transplant wholesale.",
+        "recovery_story_ids": []
+      },
+      {
+        "filename": "backend/app/routers/market.py",
+        "status": "added",
+        "additions": 83,
+        "deletions": 0,
+        "disposition": "Future market/watchlist/portfolio/migration scope; UNTRACKED by this S2 recovery. Do not transplant wholesale.",
+        "recovery_story_ids": []
+      },
+      {
+        "filename": "backend/app/routers/risk.py",
+        "status": "modified",
+        "additions": 7,
+        "deletions": 5,
+        "disposition": "UNTRACKED / quarantined: requires a dedicated later approved feature story and tests.",
+        "recovery_story_ids": []
+      },
+      {
+        "filename": "backend/app/routers/watchlists.py",
+        "status": "added",
+        "additions": 301,
+        "deletions": 0,
+        "disposition": "Future market/watchlist/portfolio/migration scope; UNTRACKED by this S2 recovery. Do not transplant wholesale.",
+        "recovery_story_ids": []
+      },
+      {
+        "filename": "backend/app/schemas/market.py",
+        "status": "added",
+        "additions": 35,
+        "deletions": 0,
+        "disposition": "Future market/watchlist/portfolio/migration scope; UNTRACKED by this S2 recovery. Do not transplant wholesale.",
+        "recovery_story_ids": []
+      },
+      {
+        "filename": "backend/app/schemas/risk.py",
+        "status": "modified",
+        "additions": 20,
+        "deletions": 8,
+        "disposition": "UNTRACKED / quarantined: requires a dedicated later approved feature story and tests.",
+        "recovery_story_ids": []
+      },
+      {
+        "filename": "backend/app/schemas/watchlist.py",
+        "status": "added",
+        "additions": 34,
+        "deletions": 0,
+        "disposition": "Future market/watchlist/portfolio/migration scope; UNTRACKED by this S2 recovery. Do not transplant wholesale.",
+        "recovery_story_ids": []
+      },
+      {
+        "filename": "backend/app/services/db_watchlist_service.py",
+        "status": "added",
+        "additions": 69,
+        "deletions": 0,
+        "disposition": "Future market/watchlist/portfolio/migration scope; UNTRACKED by this S2 recovery. Do not transplant wholesale.",
+        "recovery_story_ids": []
+      },
+      {
+        "filename": "backend/app/services/market_data_provider.py",
+        "status": "added",
+        "additions": 95,
+        "deletions": 0,
+        "disposition": "Future market/watchlist/portfolio/migration scope; UNTRACKED by this S2 recovery. Do not transplant wholesale.",
+        "recovery_story_ids": []
+      },
+      {
+        "filename": "backend/app/services/market_service.py",
+        "status": "added",
+        "additions": 66,
+        "deletions": 0,
+        "disposition": "Future market/watchlist/portfolio/migration scope; UNTRACKED by this S2 recovery. Do not transplant wholesale.",
+        "recovery_story_ids": []
+      },
+      {
+        "filename": "backend/tests/test_market.py",
+        "status": "added",
+        "additions": 100,
+        "deletions": 0,
+        "disposition": "Future market/watchlist/portfolio/migration scope; UNTRACKED by this S2 recovery. Do not transplant wholesale.",
+        "recovery_story_ids": []
+      },
+      {
+        "filename": "backend/tests/test_watchlist.py",
+        "status": "added",
+        "additions": 178,
+        "deletions": 0,
+        "disposition": "Future market/watchlist/portfolio/migration scope; UNTRACKED by this S2 recovery. Do not transplant wholesale.",
+        "recovery_story_ids": []
+      },
+      {
+        "filename": "backend/tests/test_watchlists_router.py",
+        "status": "added",
+        "additions": 335,
+        "deletions": 0,
+        "disposition": "Future market/watchlist/portfolio/migration scope; UNTRACKED by this S2 recovery. Do not transplant wholesale.",
+        "recovery_story_ids": []
+      },
+      {
+        "filename": "data/ddl/020_market.sql",
+        "status": "added",
+        "additions": 127,
+        "deletions": 0,
+        "disposition": "Future market/watchlist/portfolio/migration scope; UNTRACKED by this S2 recovery. Do not transplant wholesale.",
+        "recovery_story_ids": []
+      },
+      {
+        "filename": "data/fixtures/market/dq_rules.md",
+        "status": "added",
+        "additions": 14,
+        "deletions": 0,
+        "disposition": "Future market/watchlist/portfolio/migration scope; UNTRACKED by this S2 recovery. Do not transplant wholesale.",
+        "recovery_story_ids": []
+      },
+      {
+        "filename": "data/fixtures/market/market_price_history_fixture.csv",
+        "status": "added",
+        "additions": 6,
+        "deletions": 0,
+        "disposition": "Future market/watchlist/portfolio/migration scope; UNTRACKED by this S2 recovery. Do not transplant wholesale.",
+        "recovery_story_ids": []
+      },
+      {
+        "filename": "data/fixtures/market/market_quotes_fixture.csv",
+        "status": "added",
+        "additions": 11,
+        "deletions": 0,
+        "disposition": "Future market/watchlist/portfolio/migration scope; UNTRACKED by this S2 recovery. Do not transplant wholesale.",
+        "recovery_story_ids": []
+      },
+      {
+        "filename": "data/fixtures/market/securities_fixture.csv",
+        "status": "added",
+        "additions": 11,
+        "deletions": 0,
+        "disposition": "Future market/watchlist/portfolio/migration scope; UNTRACKED by this S2 recovery. Do not transplant wholesale.",
+        "recovery_story_ids": []
+      },
+      {
+        "filename": "data/fixtures/market/watchlist_items_fixture.csv",
+        "status": "added",
+        "additions": 7,
+        "deletions": 0,
+        "disposition": "Future market/watchlist/portfolio/migration scope; UNTRACKED by this S2 recovery. Do not transplant wholesale.",
+        "recovery_story_ids": []
+      },
+      {
+        "filename": "data/fixtures/market/watchlists_fixture.csv",
+        "status": "added",
+        "additions": 4,
+        "deletions": 0,
+        "disposition": "Future market/watchlist/portfolio/migration scope; UNTRACKED by this S2 recovery. Do not transplant wholesale.",
+        "recovery_story_ids": []
+      },
+      {
+        "filename": "docs/S2-PRD-03_Analytics_Event_Evidence_Table.md",
+        "status": "added",
+        "additions": 132,
+        "deletions": 0,
+        "disposition": "Classify against approved S1 contracts before selective reuse; controlled W40 implementation is independently verified, not accepted by association.",
+        "recovery_story_ids": [
+          159,
+          166,
+          139,
+          140,
+          145
+        ]
+      },
+      {
+        "filename": "docs/S2-PRD-03_Onboarding_Specification.html",
+        "status": "added",
+        "additions": 427,
+        "deletions": 0,
+        "disposition": "Classify against approved S1 contracts before selective reuse; controlled W40 implementation is independently verified, not accepted by association.",
+        "recovery_story_ids": [
+          159,
+          166,
+          139,
+          140,
+          145
+        ]
+      },
+      {
+        "filename": "docs/S2-PRD-03_PR_Verification_and_Handbook_Compliance.md",
+        "status": "added",
+        "additions": 116,
+        "deletions": 0,
+        "disposition": "UNTRACKED / quarantined: requires a dedicated later approved feature story and tests.",
+        "recovery_story_ids": []
+      },
+      {
+        "filename": "docs/evidence/r0-api-01-evidence.md",
+        "status": "added",
+        "additions": 94,
+        "deletions": 0,
+        "disposition": "UNTRACKED / quarantined: requires a dedicated later approved feature story and tests.",
+        "recovery_story_ids": []
+      },
+      {
+        "filename": "docs/evidence/r0-api-01-openapi.json",
+        "status": "added",
+        "additions": 1462,
+        "deletions": 0,
+        "disposition": "Foundation concept covered by approved W40 implementation and evidence; do not merge original mixed-scope release.",
+        "recovery_story_ids": [
+          135,
+          133,
+          166
+        ]
+      },
+      {
+        "filename": "docs/handoffs/S3-AI-02/S3-AI-02.md",
+        "status": "added",
+        "additions": 81,
+        "deletions": 0,
+        "disposition": "UNTRACKED / quarantined: requires a dedicated later approved feature story and tests.",
+        "recovery_story_ids": []
+      },
+      {
+        "filename": "docs/handoffs/S3-DAT-01/README.md",
+        "status": "added",
+        "additions": 146,
+        "deletions": 0,
+        "disposition": "UNTRACKED / quarantined: requires a dedicated later approved feature story and tests.",
+        "recovery_story_ids": []
+      },
+      {
+        "filename": "docs/handoffs/S3-DAT-01/S3_DAT_01_COMPLETE_GUIDE.html",
+        "status": "added",
+        "additions": 242,
+        "deletions": 0,
+        "disposition": "UNTRACKED / quarantined: requires a dedicated later approved feature story and tests.",
+        "recovery_story_ids": []
+      },
+      {
+        "filename": "docs/handoffs/S3-DAT-01/S3_DAT_01_COMPLETE_GUIDE.md",
+        "status": "added",
+        "additions": 252,
+        "deletions": 0,
+        "disposition": "UNTRACKED / quarantined: requires a dedicated later approved feature story and tests.",
+        "recovery_story_ids": []
+      },
+      {
+        "filename": "docs/openapi_onboarding_spec.yaml",
+        "status": "added",
+        "additions": 281,
+        "deletions": 0,
+        "disposition": "Classify against approved S1 contracts before selective reuse; controlled W40 implementation is independently verified, not accepted by association.",
+        "recovery_story_ids": [
+          159,
+          166,
+          139,
+          140,
+          145
+        ]
+      },
+      {
+        "filename": "frontend-react/react.d.ts",
+        "status": "added",
+        "additions": 30,
+        "deletions": 0,
+        "disposition": "Legacy client files remain quarantined; accepted React flows are the separately tested W40 implementation.",
+        "recovery_story_ids": [
+          139,
+          162
+        ]
+      },
+      {
+        "filename": "frontend-react/src/pages/React_OnboardingFlow.tsx",
+        "status": "added",
+        "additions": 621,
+        "deletions": 0,
+        "disposition": "Legacy client files remain quarantined; accepted React flows are the separately tested W40 implementation.",
+        "recovery_story_ids": [
+          139,
+          162
+        ]
+      },
+      {
+        "filename": "frontend-react/src/services/React_onboardingAnalyticstest.tsx",
+        "status": "added",
+        "additions": 349,
+        "deletions": 0,
+        "disposition": "Legacy client files remain quarantined; accepted React flows are the separately tested W40 implementation.",
+        "recovery_story_ids": [
+          139,
+          162
+        ]
+      },
+      {
+        "filename": "frontend-react/src/services/React_onboardingService.ts",
+        "status": "added",
+        "additions": 148,
+        "deletions": 0,
+        "disposition": "Legacy client files remain quarantined; accepted React flows are the separately tested W40 implementation.",
+        "recovery_story_ids": [
+          139,
+          162
+        ]
+      },
+      {
+        "filename": "frontend-react/src/services/React_onboarding_integration_test.tsx",
+        "status": "added",
+        "additions": 261,
+        "deletions": 0,
+        "disposition": "Legacy client files remain quarantined; accepted React flows are the separately tested W40 implementation.",
+        "recovery_story_ids": [
+          139,
+          162
+        ]
+      },
+      {
+        "filename": "frontend-react/src/services/React_openapi_client.ts",
+        "status": "added",
+        "additions": 173,
+        "deletions": 0,
+        "disposition": "Legacy client files remain quarantined; accepted React flows are the separately tested W40 implementation.",
+        "recovery_story_ids": [
+          139,
+          162
+        ]
+      },
+      {
+        "filename": "frontend-react/src/services/React_tokenStorage.ts",
+        "status": "added",
+        "additions": 143,
+        "deletions": 0,
+        "disposition": "Legacy client files remain quarantined; accepted React flows are the separately tested W40 implementation.",
+        "recovery_story_ids": [
+          139,
+          162
+        ]
+      },
+      {
+        "filename": "frontend-react/src/services/react_onboarding_analytics.tsx",
+        "status": "added",
+        "additions": 126,
+        "deletions": 0,
+        "disposition": "Legacy client files remain quarantined; accepted React flows are the separately tested W40 implementation.",
+        "recovery_story_ids": [
+          139,
+          162
+        ]
+      },
+      {
+        "filename": "frontend_flutter/integration_test/onboarding_integration_test.dart",
+        "status": "added",
+        "additions": 245,
+        "deletions": 0,
+        "disposition": "Legacy client files remain quarantined; accepted Flutter flows are the separately tested W40 implementation.",
+        "recovery_story_ids": [
+          140,
+          163
+        ]
+      },
+      {
+        "filename": "frontend_flutter/lib/features/onboarding/Flutter_OnboardingFlow.dart",
+        "status": "added",
+        "additions": 549,
+        "deletions": 0,
+        "disposition": "Legacy client files remain quarantined; accepted Flutter flows are the separately tested W40 implementation.",
+        "recovery_story_ids": [
+          140,
+          163
+        ]
+      },
+      {
+        "filename": "frontend_flutter/lib/features/onboarding/Flutter_onboarding_analytics.dart",
+        "status": "added",
+        "additions": 66,
+        "deletions": 0,
+        "disposition": "Legacy client files remain quarantined; accepted Flutter flows are the separately tested W40 implementation.",
+        "recovery_story_ids": [
+          140,
+          163
+        ]
+      },
+      {
+        "filename": "frontend_flutter/lib/features/onboarding/Flutter_onboarding_analytics_test.dart",
+        "status": "added",
+        "additions": 398,
+        "deletions": 0,
+        "disposition": "Legacy client files remain quarantined; accepted Flutter flows are the separately tested W40 implementation.",
+        "recovery_story_ids": [
+          140,
+          163
+        ]
+      },
+      {
+        "filename": "frontend_flutter/lib/features/onboarding/Flutter_onboarding_service.dart",
+        "status": "added",
+        "additions": 102,
+        "deletions": 0,
+        "disposition": "Legacy client files remain quarantined; accepted Flutter flows are the separately tested W40 implementation.",
+        "recovery_story_ids": [
+          140,
+          163
+        ]
+      },
+      {
+        "filename": "frontend_flutter/lib/features/onboarding/Flutter_onboarding_widget_test.dart",
+        "status": "added",
+        "additions": 577,
+        "deletions": 0,
+        "disposition": "Legacy client files remain quarantined; accepted Flutter flows are the separately tested W40 implementation.",
+        "recovery_story_ids": [
+          140,
+          163
+        ]
+      },
+      {
+        "filename": "frontend_flutter/lib/features/onboarding/Flutter_openapi_client.dart",
+        "status": "added",
+        "additions": 272,
+        "deletions": 0,
+        "disposition": "Legacy client files remain quarantined; accepted Flutter flows are the separately tested W40 implementation.",
+        "recovery_story_ids": [
+          140,
+          163
+        ]
+      },
+      {
+        "filename": "frontend_flutter/lib/features/onboarding/Flutter_secure_token_storage.dart",
+        "status": "added",
+        "additions": 122,
+        "deletions": 0,
+        "disposition": "Legacy client files remain quarantined; accepted Flutter flows are the separately tested W40 implementation.",
+        "recovery_story_ids": [
+          140,
+          163
+        ]
+      },
+      {
+        "filename": "frontend_flutter/pubspec.lock",
+        "status": "modified",
+        "additions": 55,
+        "deletions": 0,
+        "disposition": "Legacy client files remain quarantined; accepted Flutter flows are the separately tested W40 implementation.",
+        "recovery_story_ids": [
+          140,
+          163
+        ]
+      },
+      {
+        "filename": "frontend_flutter/pubspec.yaml",
+        "status": "modified",
+        "additions": 2,
+        "deletions": 13,
+        "disposition": "Legacy client files remain quarantined; accepted Flutter flows are the separately tested W40 implementation.",
+        "recovery_story_ids": [
+          140,
+          163
+        ]
+      },
+      {
+        "filename": "notebooks/20_create_market_tables.sql",
+        "status": "added",
+        "additions": 225,
+        "deletions": 0,
+        "disposition": "Future market/watchlist/portfolio/migration scope; UNTRACKED by this S2 recovery. Do not transplant wholesale.",
+        "recovery_story_ids": []
+      },
+      {
+        "filename": "test_runner_s2_prd_03.py",
+        "status": "added",
+        "additions": 319,
+        "deletions": 0,
+        "disposition": "UNTRACKED / quarantined: requires a dedicated later approved feature story and tests.",
+        "recovery_story_ids": []
+      },
+      {
+        "filename": "tests/data_quality/test_market_tables_dq.py",
+        "status": "added",
+        "additions": 136,
+        "deletions": 0,
+        "disposition": "Future market/watchlist/portfolio/migration scope; UNTRACKED by this S2 recovery. Do not transplant wholesale.",
+        "recovery_story_ids": []
+      }
+    ],
+    "base": "release/2026-W36",
+    "merge": "cd384b639982b4e6fe4b1997b8140ebb9b7a55de",
+    "reviews": [],
+    "head": "02dfdd3ab74682caf9d15f36078d7a782abb2988"
+  },
+  "main": "fef387cd81f5753416a14fad89ead263c4ac5f6b",
+  "w36": "2cb2f0e859d33105e37015cf9e36168babde8cb8",
+  "pr154": {
+    "files": [
+      {
+        "filename": "R0-SEC-01/.env.example",
+        "status": "added",
+        "additions": 102,
+        "deletions": 0,
+        "disposition": "Standalone duplicated application, not imported by the root backend launcher. No deletion/revert authorized.",
+        "recovery_story_ids": []
+      },
+      {
+        "filename": "R0-SEC-01/DETAILED_TEST_REPORT.md",
+        "status": "added",
+        "additions": 233,
+        "deletions": 0,
+        "disposition": "Standalone duplicated application, not imported by the root backend launcher. No deletion/revert authorized.",
+        "recovery_story_ids": []
+      },
+      {
+        "filename": "R0-SEC-01/ENVIRONMENT_MATRIX.md",
+        "status": "added",
+        "additions": 63,
+        "deletions": 0,
+        "disposition": "Standalone duplicated application, not imported by the root backend launcher. No deletion/revert authorized.",
+        "recovery_story_ids": []
+      },
+      {
+        "filename": "R0-SEC-01/PULL_REQUEST.md",
+        "status": "added",
+        "additions": 119,
+        "deletions": 0,
+        "disposition": "Standalone duplicated application, not imported by the root backend launcher. No deletion/revert authorized.",
+        "recovery_story_ids": []
+      },
+      {
+        "filename": "R0-SEC-01/README.md",
+        "status": "added",
+        "additions": 135,
+        "deletions": 0,
+        "disposition": "Standalone duplicated application, not imported by the root backend launcher. No deletion/revert authorized.",
+        "recovery_story_ids": []
+      },
+      {
+        "filename": "R0-SEC-01/ROLLBACK_PLAN.md",
+        "status": "added",
+        "additions": 75,
+        "deletions": 0,
+        "disposition": "Standalone duplicated application, not imported by the root backend launcher. No deletion/revert authorized.",
+        "recovery_story_ids": []
+      },
+      {
+        "filename": "R0-SEC-01/SECRET_SCAN_REPORT.md",
+        "status": "added",
+        "additions": 61,
+        "deletions": 0,
+        "disposition": "Standalone duplicated application, not imported by the root backend launcher. No deletion/revert authorized.",
+        "recovery_story_ids": []
+      },
+      {
+        "filename": "R0-SEC-01/TEST_EVIDENCE.md",
+        "status": "added",
+        "additions": 130,
+        "deletions": 0,
+        "disposition": "Standalone duplicated application, not imported by the root backend launcher. No deletion/revert authorized.",
+        "recovery_story_ids": []
+      },
+      {
+        "filename": "R0-SEC-01/app/__init__.py",
+        "status": "added",
+        "additions": 5,
+        "deletions": 0,
+        "disposition": "Standalone duplicated application, not imported by the root backend launcher. No deletion/revert authorized.",
+        "recovery_story_ids": []
+      },
+      {
+        "filename": "R0-SEC-01/app/config/__init__.py",
+        "status": "added",
+        "additions": 19,
+        "deletions": 0,
+        "disposition": "Standalone duplicated application, not imported by the root backend launcher. No deletion/revert authorized.",
+        "recovery_story_ids": []
+      },
+      {
+        "filename": "R0-SEC-01/app/config/cors.py",
+        "status": "added",
+        "additions": 84,
+        "deletions": 0,
+        "disposition": "Standalone duplicated application, not imported by the root backend launcher. No deletion/revert authorized.",
+        "recovery_story_ids": []
+      },
+      {
+        "filename": "R0-SEC-01/app/config/database.py",
+        "status": "added",
+        "additions": 78,
+        "deletions": 0,
+        "disposition": "Standalone duplicated application, not imported by the root backend launcher. No deletion/revert authorized.",
+        "recovery_story_ids": []
+      },
+      {
+        "filename": "R0-SEC-01/app/config/logging.py",
+        "status": "added",
+        "additions": 97,
+        "deletions": 0,
+        "disposition": "Standalone duplicated application, not imported by the root backend launcher. No deletion/revert authorized.",
+        "recovery_story_ids": []
+      },
+      {
+        "filename": "R0-SEC-01/app/config/settings.py",
+        "status": "added",
+        "additions": 338,
+        "deletions": 0,
+        "disposition": "Standalone duplicated application, not imported by the root backend launcher. No deletion/revert authorized.",
+        "recovery_story_ids": []
+      },
+      {
+        "filename": "R0-SEC-01/app/core/__init__.py",
+        "status": "added",
+        "additions": 19,
+        "deletions": 0,
+        "disposition": "Standalone duplicated application, not imported by the root backend launcher. No deletion/revert authorized.",
+        "recovery_story_ids": []
+      },
+      {
+        "filename": "R0-SEC-01/app/core/exceptions.py",
+        "status": "added",
+        "additions": 72,
+        "deletions": 0,
+        "disposition": "Standalone duplicated application, not imported by the root backend launcher. No deletion/revert authorized.",
+        "recovery_story_ids": []
+      },
+      {
+        "filename": "R0-SEC-01/app/main.py",
+        "status": "added",
+        "additions": 84,
+        "deletions": 0,
+        "disposition": "Standalone duplicated application, not imported by the root backend launcher. No deletion/revert authorized.",
+        "recovery_story_ids": []
+      },
+      {
+        "filename": "R0-SEC-01/frontend/env.example",
+        "status": "added",
+        "additions": 28,
+        "deletions": 0,
+        "disposition": "Standalone duplicated application, not imported by the root backend launcher. No deletion/revert authorized.",
+        "recovery_story_ids": []
+      },
+      {
+        "filename": "R0-SEC-01/frontend/public_config.ts",
+        "status": "added",
+        "additions": 71,
+        "deletions": 0,
+        "disposition": "Standalone duplicated application, not imported by the root backend launcher. No deletion/revert authorized.",
+        "recovery_story_ids": []
+      },
+      {
+        "filename": "R0-SEC-01/pyproject.toml",
+        "status": "added",
+        "additions": 13,
+        "deletions": 0,
+        "disposition": "Standalone duplicated application, not imported by the root backend launcher. No deletion/revert authorized.",
+        "recovery_story_ids": []
+      },
+      {
+        "filename": "R0-SEC-01/tests/__init__.py",
+        "status": "added",
+        "additions": 3,
+        "deletions": 0,
+        "disposition": "Standalone duplicated application, not imported by the root backend launcher. No deletion/revert authorized.",
+        "recovery_story_ids": []
+      },
+      {
+        "filename": "R0-SEC-01/tests/conftest.py",
+        "status": "added",
+        "additions": 59,
+        "deletions": 0,
+        "disposition": "Standalone duplicated application, not imported by the root backend launcher. No deletion/revert authorized.",
+        "recovery_story_ids": []
+      },
+      {
+        "filename": "R0-SEC-01/tests/test_cors.py",
+        "status": "added",
+        "additions": 149,
+        "deletions": 0,
+        "disposition": "Standalone duplicated application, not imported by the root backend launcher. No deletion/revert authorized.",
+        "recovery_story_ids": []
+      },
+      {
+        "filename": "R0-SEC-01/tests/test_secret_safety.py",
+        "status": "added",
+        "additions": 117,
+        "deletions": 0,
+        "disposition": "Standalone duplicated application, not imported by the root backend launcher. No deletion/revert authorized.",
+        "recovery_story_ids": []
+      },
+      {
+        "filename": "R0-SEC-01/tests/test_settings.py",
+        "status": "added",
+        "additions": 205,
+        "deletions": 0,
+        "disposition": "Standalone duplicated application, not imported by the root backend launcher. No deletion/revert authorized.",
+        "recovery_story_ids": []
+      },
+      {
+        "filename": "backend/.env.example",
+        "status": "modified",
+        "additions": 40,
+        "deletions": 8,
+        "disposition": "UNTRACKED / quarantined: requires a dedicated later approved feature story and tests.",
+        "recovery_story_ids": []
+      },
+      {
+        "filename": "backend/alembic/versions/778763e97790_merge_migration_heads.py",
+        "status": "added",
+        "additions": 24,
+        "deletions": 0,
+        "disposition": "Future market/watchlist/portfolio/migration scope; UNTRACKED by this S2 recovery. Do not transplant wholesale.",
+        "recovery_story_ids": []
+      },
+      {
+        "filename": "backend/app/adapters/yfinance_adapter.py",
+        "status": "modified",
+        "additions": 86,
+        "deletions": 55,
+        "disposition": "UNTRACKED / quarantined: requires a dedicated later approved feature story and tests.",
+        "recovery_story_ids": []
+      },
+      {
+        "filename": "backend/app/config/cors.py",
+        "status": "added",
+        "additions": 84,
+        "deletions": 0,
+        "disposition": "Security/API concepts reimplemented and verified in scoped W40 recovery; original W36 diff is not promoted.",
+        "recovery_story_ids": [
+          132,
+          133,
+          135
+        ]
+      },
+      {
+        "filename": "backend/app/config/settings.py",
+        "status": "modified",
+        "additions": 315,
+        "deletions": 10,
+        "disposition": "Security/API concepts reimplemented and verified in scoped W40 recovery; original W36 diff is not promoted.",
+        "recovery_story_ids": [
+          132,
+          133,
+          135
+        ]
+      },
+      {
+        "filename": "backend/app/core/exceptions.py",
+        "status": "modified",
+        "additions": 77,
+        "deletions": 0,
+        "disposition": "Security/API concepts reimplemented and verified in scoped W40 recovery; original W36 diff is not promoted.",
+        "recovery_story_ids": [
+          132,
+          133,
+          135
+        ]
+      },
+      {
+        "filename": "backend/app/main.py",
+        "status": "modified",
+        "additions": 80,
+        "deletions": 49,
+        "disposition": "Foundation concept covered by approved W40 implementation and evidence; do not merge original mixed-scope release.",
+        "recovery_story_ids": [
+          135,
+          133,
+          166
+        ]
+      },
+      {
+        "filename": "backend/tests/conftest.py",
+        "status": "modified",
+        "additions": 65,
+        "deletions": 0,
+        "disposition": "UNTRACKED / quarantined: requires a dedicated later approved feature story and tests.",
+        "recovery_story_ids": []
+      },
+      {
+        "filename": "backend/tests/test_health.py",
+        "status": "modified",
+        "additions": 1,
+        "deletions": 1,
+        "disposition": "Foundation concept covered by approved W40 implementation and evidence; do not merge original mixed-scope release.",
+        "recovery_story_ids": [
+          135,
+          133,
+          166
+        ]
+      },
+      {
+        "filename": "backend/tests/test_migration_lineage.py",
+        "status": "modified",
+        "additions": 22,
+        "deletions": 8,
+        "disposition": "Future market/watchlist/portfolio/migration scope; UNTRACKED by this S2 recovery. Do not transplant wholesale.",
+        "recovery_story_ids": []
+      },
+      {
+        "filename": "backend/tests/test_r0_cors.py",
+        "status": "added",
+        "additions": 149,
+        "deletions": 0,
+        "disposition": "Security/API concepts reimplemented and verified in scoped W40 recovery; original W36 diff is not promoted.",
+        "recovery_story_ids": [
+          132,
+          133,
+          135
+        ]
+      },
+      {
+        "filename": "backend/tests/test_r0_settings.py",
+        "status": "added",
+        "additions": 205,
+        "deletions": 0,
+        "disposition": "Security/API concepts reimplemented and verified in scoped W40 recovery; original W36 diff is not promoted.",
+        "recovery_story_ids": [
+          132,
+          133,
+          135
+        ]
+      }
+    ],
+    "base": "release/2026-W36",
+    "merge": "d57af07ccc9b41f376428378eeecf03edd345302",
+    "reviews": [
+      {
+        "state": "COMMENTED",
+        "submitted_at": "2026-09-12T16:10:04Z"
+      }
+    ],
+    "head": "4c5d1d7097d400ea43a912ffb97d22108b61c87e"
+  },
+  "audit": {
+    "snapshot": "2cb2f0e859d33105e37015cf9e36168babde8cb8",
+    "decision": "NO_GO_W36_PROMOTION",
+    "native": {
+      "ruff": "PASS",
+      "format": "FAIL: 7 files",
+      "mypy": "PASS: 96 files",
+      "pytest": "PASS: 354 tests, 79.39% coverage",
+      "focused_security_health": "PASS: 52 tests"
+    },
+    "client_runs": "Not claimed: backend format/security/scope failures suffice to deny promotion.",
+    "review": "Codex technical audit under Anand delegated recovery authority; no independent human approval claimed."
+  }
+}
