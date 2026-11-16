@@ -3,11 +3,12 @@ Router for Sprint 6: Grounded AI Learning Assistant, Retrieval Citations, and Sa
 Enforces non-negotiable safety guardrails: refuses real-world personalized stock recommendations.
 """
 
-from typing import Dict, List
-from uuid import uuid4
 import re
+from typing import List
+from uuid import uuid4
 
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, Request
+
 from app.core.responses import APIResponse
 from app.schemas.sprint6_ai_alerts import (
     AIChatRequest,
@@ -25,21 +26,32 @@ GROUNDED_CORPUS = [
         source_title="FinEx Introduction to Asset Allocation",
         section="Core Diversification Principles",
         doc_date="2026-08-01",
-        excerpt="Asset allocation is an investment strategy that aims to balance risk and reward by apportioning a portfolio's assets according to an individual's goals, risk tolerance, and investment horizon.",
+        excerpt=(
+            "Asset allocation is an investment strategy that aims to balance risk and "
+            "reward by apportioning a portfolio's assets according to an individual's goals, "
+            "risk tolerance, and investment horizon."
+        ),
     ),
     Citation(
         chunk_id="chunk-edu-002",
         source_title="FinEx Global Equity Factsheet Q3",
         section="Risk vs Volatility",
         doc_date="2026-09-15",
-        excerpt="Volatility measures how widely prices fluctuate over time. High volatility does not necessarily equate to permanent loss of capital if the investment horizon allows for cycle recovery.",
+        excerpt=(
+            "Volatility measures how widely prices fluctuate over time. High volatility "
+            "does not necessarily equate to permanent loss of capital if the investment "
+            "horizon allows for cycle recovery."
+        ),
     ),
     Citation(
         chunk_id="chunk-edu-003",
         source_title="FinEx Retirement Planning Baseline",
         section="Compound Interest and DCA",
         doc_date="2026-08-20",
-        excerpt="Dollar-cost averaging (DCA) involves investing a fixed amount of money at regular intervals regardless of the price, smoothing the average cost per share over time.",
+        excerpt=(
+            "Dollar-cost averaging (DCA) involves investing a fixed amount of money at regular "
+            "intervals regardless of the price, smoothing the average cost per share over time."
+        ),
     ),
 ]
 
@@ -70,9 +82,17 @@ def chat_ai(req: AIChatRequest, request: Request):
                 conversation_id=conv_id,
                 message_id=msg_id,
                 intent="REFUSAL_FINANCIAL_ADVICE",
-                answer_text="As an educational assistant, FinEx cannot provide specific buy/sell recommendations or predict individual stock performance. We encourage reviewing asset allocation fundamentals and consulting a licensed financial advisor.",
+                answer_text=(
+                    "As an educational assistant, FinEx cannot provide specific buy/sell "
+                    "recommendations or predict individual stock performance. We encourage "
+                    "reviewing asset allocation fundamentals and consulting a licensed financial "
+                    "advisor."
+                ),
                 citations=[],
-                limitations_disclaimer="FinEx educational prototype: Not a licensed investment adviser. No personalized advice provided.",
+                limitations_disclaimer=(
+                    "FinEx educational prototype: Not a licensed investment adviser. "
+                    "No personalized advice provided."
+                ),
                 safe_fallback_used=True,
             )
             return APIResponse.success(
@@ -95,8 +115,8 @@ def chat_ai(req: AIChatRequest, request: Request):
 
     answer = (
         f"Based on FinEx educational curriculum: {matched_citations[0].excerpt} "
-        "When evaluating your holdings, remember that spreading capital across varying asset classes "
-        "helps manage systematic fluctuations without relying on market timing."
+        "When evaluating your holdings, remember that spreading capital across varying "
+        "asset classes helps manage systematic fluctuations without relying on market timing."
     )
 
     response = AIChatResponse(
@@ -105,7 +125,10 @@ def chat_ai(req: AIChatRequest, request: Request):
         intent="CONCEPT_EDUCATION",
         answer_text=answer,
         citations=matched_citations,
-        limitations_disclaimer="Educational insight only. Citing official FinEx curriculum sources. No real-time market prediction.",
+        limitations_disclaimer=(
+            "Educational insight only. Citing official FinEx curriculum sources. "
+            "No real-time market prediction."
+        ),
         safe_fallback_used=False,
     )
 
@@ -131,4 +154,3 @@ def submit_feedback(fb: AIFeedbackRequest, request: Request):
         data=record,
         correlation_id=correlation_id,
     )
-

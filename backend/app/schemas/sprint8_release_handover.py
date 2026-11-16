@@ -2,14 +2,19 @@
 
 from datetime import datetime
 from typing import Dict, List, Optional
+
 from pydantic import BaseModel, Field
 
 
 class ReleaseManifest(BaseModel):
     version: str = Field(default="1.0.0", description="SemVer version tag")
-    release_name: str = Field(default="FinEx Golden Master v1.0.0", description="Official release title")
+    release_name: str = Field(
+        default="FinEx Golden Master v1.0.0", description="Official release title"
+    )
     release_timestamp: datetime = Field(default_factory=datetime.utcnow)
-    status: str = Field(default="GA_READY", description="Release readiness status: CANDIDATE, GA_READY, DEPLOYED")
+    status: str = Field(
+        default="GA_READY", description="Release readiness status: CANDIDATE, GA_READY, DEPLOYED"
+    )
     git_commit: str = Field(default="c9f87e2b", description="HEAD git commit SHA")
     sprints_included: List[str] = Field(
         default_factory=lambda: [
@@ -56,7 +61,9 @@ class UATSignoffRecord(BaseModel):
 class DisasterRecoveryDrill(BaseModel):
     drill_name: str = Field(default="Zero-Downtime Rollback & Database Recovery Drill")
     drill_date: datetime = Field(default_factory=datetime.utcnow)
-    rto_minutes: float = Field(default=2.5, description="Recovery Time Objective achieved in minutes")
+    rto_minutes: float = Field(
+        default=2.5, description="Recovery Time Objective achieved in minutes"
+    )
     rpo_minutes: float = Field(default=0.0, description="Recovery Point Objective data loss")
     result: str = Field(default="SUCCESS")
     backup_snapshot_id: str = Field(default="snap-20261109-golden-01")
@@ -68,4 +75,3 @@ class HandoverSummary(BaseModel):
     recovery_drill: DisasterRecoveryDrill
     runbook_guides: List[Dict[str, str]]
     next_roadmap: List[str]
-

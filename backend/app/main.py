@@ -23,27 +23,27 @@ from app.ports.local_foundation_store import LocalFoundationStore
 from app.ports.local_portfolio_quotes import LocalPortfolioCatalogPort, LocalPortfolioQuotePort
 from app.ports.local_portfolio_store import LocalPortfolioStore
 from app.ports.local_risk_store import LocalRiskStore
+from app.routers.ai_assistant import router as ai_assistant_router
+from app.routers.alerts import router as alerts_router
 from app.routers.auth import router as auth_router
 from app.routers.consent_profile import router as consent_profile_router
 from app.routers.demo import router as demo_router
+from app.routers.goals import router as goals_router
 from app.routers.health import router as health_router
 from app.routers.local_application import router as local_application_router
 from app.routers.local_foundation import router as local_foundation_router
 from app.routers.local_portfolio import router as local_portfolio_router
 from app.routers.local_risk import router as local_risk_router
 from app.routers.onboarding import router as onboarding_router
+from app.routers.ops_hardening import router as ops_hardening_router
+from app.routers.paper_trading import router as paper_trading_router
+from app.routers.privacy import router as privacy_router
 from app.routers.profile import router as profile_router
+from app.routers.release_handover import router as release_handover_router
 from app.routers.risk import router as risk_router
 from app.routers.risk_contract import router as risk_contract_router
-from app.routers.users import router as users_router
-from app.routers.paper_trading import router as paper_trading_router
-from app.routers.goals import router as goals_router
-from app.routers.privacy import router as privacy_router
 from app.routers.spending import router as spending_router
-from app.routers.ai_assistant import router as ai_assistant_router
-from app.routers.alerts import router as alerts_router
-from app.routers.ops_hardening import router as ops_hardening_router
-from app.routers.release_handover import router as release_handover_router
+from app.routers.users import router as users_router
 
 
 def create_app(

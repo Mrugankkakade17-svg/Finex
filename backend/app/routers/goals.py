@@ -6,14 +6,14 @@ Applies deterministic compounding formulas outside the LLM.
 from decimal import Decimal
 from typing import Dict, List
 from uuid import uuid4
-from datetime import datetime, timezone
 
 from fastapi import APIRouter, HTTPException, Request
+
 from app.core.responses import APIResponse
 from app.schemas.sprint4_paper_goals import (
     GoalCreateRequest,
-    GoalResponse,
     GoalProjection,
+    GoalResponse,
 )
 
 router = APIRouter(prefix="/api/v1/goals", tags=["Sprint 4 - Goals & Planning"])
@@ -38,7 +38,7 @@ def _calculate_goal_projections(
         for _ in range(12):
             balance = (balance + monthly_contribution) * (Decimal("1") + r_monthly)
             total_contributions += monthly_contribution
-        
+
         growth = balance - total_contributions
         projections.append(
             GoalProjection(
@@ -80,7 +80,10 @@ def create_goal(goal_in: GoalCreateRequest, request: Request):
         projected_final_amount=final_bal,
         shortfall_or_surplus=diff.quantize(Decimal("0.01")),
         is_on_track=is_on_track,
-        assumptions_statement="Deterministic model based on constant monthly compounding. No guarantee of future performance.",
+        assumptions_statement=(
+            "Deterministic model based on constant monthly compounding. "
+            "No guarantee of future performance."
+        ),
         projections=projections,
     )
     _goals_db[goal_id] = goal
@@ -107,7 +110,7 @@ def get_goal(goal_id: str, request: Request):
     correlation_id = getattr(request.state, "correlation_id", str(uuid4()))
     if goal_id not in _goals_db:
         raise HTTPException(status_code=404, detail="Goal not found.")
-    
+
     return APIResponse.success(
         message="Goal details retrieved",
         data=_goals_db[goal_id].model_dump(mode="json"),

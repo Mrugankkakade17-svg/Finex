@@ -2,9 +2,9 @@
 Schemas for Sprint 5: Privacy Controls, Consent Audit/Export/Delete, and Spending Analytics.
 """
 
-from datetime import datetime, timezone
 from decimal import Decimal
-from typing import Any, List, Literal, Optional
+from typing import List, Literal, Optional
+
 from pydantic import BaseModel, Field
 
 PrivacyActionType = Literal["EXPORT", "DELETE", "REVOKE_CONSENT"]
@@ -72,5 +72,6 @@ class SpendingTrendResponse(BaseModel):
     total_spend: Decimal
     monthly_trends: List[MonthlyCategoryTrend] = Field(default_factory=list)
     top_categories: List[str] = Field(default_factory=list)
-    privacy_disclosure: str = "Raw descriptions masked before AI categorization. Calculations are deterministic."
-
+    privacy_disclosure: str = (
+        "Raw descriptions masked before AI categorization. Calculations are deterministic."
+    )

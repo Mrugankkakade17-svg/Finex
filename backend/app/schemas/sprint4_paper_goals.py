@@ -2,10 +2,8 @@
 Schemas for Sprint 4: Simulated Order Execution, Cash Ledger, Positions, and Goal Planning.
 """
 
-from datetime import datetime, timezone
 from decimal import Decimal
-from typing import Any, List, Literal, Optional
-from uuid import UUID, uuid4
+from typing import List, Literal
 
 from pydantic import BaseModel, Field
 
@@ -14,10 +12,17 @@ OrderStatus = Literal["PENDING", "FILLED", "REJECTED", "CANCELLED"]
 
 
 class PaperOrderRequest(BaseModel):
-    instrument_id: str = Field(..., min_length=1, max_length=20, description="Security symbol, e.g. AAPL, SPY")
+    instrument_id: str = Field(
+        ..., min_length=1, max_length=20, description="Security symbol, e.g. AAPL, SPY"
+    )
     side: OrderSide = Field(..., description="BUY or SELL")
     quantity: int = Field(..., gt=0, le=100000, description="Positive integer quantity")
-    idempotency_key: str = Field(..., min_length=10, max_length=100, description="Unique client key to prevent duplicate orders")
+    idempotency_key: str = Field(
+        ...,
+        min_length=10,
+        max_length=100,
+        description="Unique client key to prevent duplicate orders",
+    )
 
 
 class PaperOrderResponse(BaseModel):
@@ -90,6 +95,8 @@ class GoalResponse(BaseModel):
     projected_final_amount: Decimal
     shortfall_or_surplus: Decimal
     is_on_track: bool
-    assumptions_statement: str = "Deterministic model based on constant monthly compounding. No guarantee of future performance."
+    assumptions_statement: str = (
+        "Deterministic model based on constant monthly compounding. "
+        "No guarantee of future performance."
+    )
     projections: List[GoalProjection] = Field(default_factory=list)
-

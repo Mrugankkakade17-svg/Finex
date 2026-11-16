@@ -3,16 +3,17 @@ Router for Sprint 5: Privacy Controls, Consent Review, Data Export & Deletion Re
 Enforces non-destructive audit history and explicit confirmation.
 """
 
+from datetime import datetime, timezone
 from typing import Dict, List
 from uuid import uuid4
-from datetime import datetime, timezone
 
 from fastapi import APIRouter, HTTPException, Request
+
 from app.core.responses import APIResponse
 from app.schemas.sprint5_privacy_spending import (
+    ConsentAuditRecord,
     PrivacyActionRequest,
     PrivacyActionResponse,
-    ConsentAuditRecord,
 )
 
 router = APIRouter(prefix="/api/v1/privacy", tags=["Sprint 5 - Privacy Controls"])
@@ -66,7 +67,10 @@ def handle_privacy_action(action_req: PrivacyActionRequest, request: Request):
         msg = "Data export bundle queued. Ready for secure download."
         url = f"/api/v1/privacy/export-bundle/{req_id}.json"
     else:  # DELETE
-        msg = "Controlled account erasure requested. Retained under auditable quarantine per compliance rules."
+        msg = (
+            "Controlled account erasure requested. "
+            "Retained under auditable quarantine per compliance rules."
+        )
         url = None
 
     response_data = PrivacyActionResponse(
@@ -84,4 +88,3 @@ def handle_privacy_action(action_req: PrivacyActionRequest, request: Request):
         data=response_data.model_dump(),
         correlation_id=correlation_id,
     )
-

@@ -3,19 +3,19 @@ Router for Sprint 5: Spending Upload, Transaction Masking, Category Review, and 
 Applies description masking to protect raw PII before sending to any external services.
 """
 
+import re
 from decimal import Decimal
 from typing import Dict, List
 from uuid import uuid4
-import re
 
-from fastapi import APIRouter, HTTPException, Request, UploadFile, File
+from fastapi import APIRouter, HTTPException, Request
+
 from app.core.responses import APIResponse
 from app.schemas.sprint5_privacy_spending import (
-    SpendingTransaction,
-    SpendingUploadSummary,
     CategoryCorrectionRequest,
-    SpendingTrendResponse,
     MonthlyCategoryTrend,
+    SpendingTransaction,
+    SpendingTrendResponse,
 )
 
 router = APIRouter(prefix="/api/v1/spending", tags=["Sprint 5 - Spending & Trends"])
@@ -115,7 +115,9 @@ def get_spending_trends(request: Request):
         total_spend=total,
         monthly_trends=trends,
         top_categories=sorted(cat_totals.keys(), key=lambda c: cat_totals[c], reverse=True),
-        privacy_disclosure="Raw descriptions masked before AI categorization. Calculations are deterministic.",
+        privacy_disclosure=(
+            "Raw descriptions masked before AI categorization. Calculations are deterministic."
+        ),
     )
 
     return APIResponse.success(
@@ -123,4 +125,3 @@ def get_spending_trends(request: Request):
         data=res.model_dump(mode="json"),
         correlation_id=correlation_id,
     )
-

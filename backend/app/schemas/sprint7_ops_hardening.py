@@ -1,9 +1,8 @@
-"""
-Schemas for Sprint 7: Operations, Feature Flags, Health Observability, and Release Candidate Metadata.
-"""
+"""Schemas for Sprint 7: Operations, Feature Flags, Health Observability, and Release Candidate."""
 
-from typing import Any, Dict, List, Literal, Optional
-from pydantic import BaseModel, Field
+from typing import List, Literal, Optional
+
+from pydantic import BaseModel
 
 
 class FeatureFlagStatus(BaseModel):
@@ -41,4 +40,3 @@ class ReleasePreflightCheck(BaseModel):
     accessibility_pass_rate_pct: float
     anand_uat_approved: bool
     ready_for_promotion: bool
-

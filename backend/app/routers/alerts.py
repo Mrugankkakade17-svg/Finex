@@ -3,15 +3,16 @@ Router for Sprint 6: Smart Alert Rules, Evaluation, and In-App Notifications.
 In-app notification center is the authoritative record; FCM delivery is best-effort.
 """
 
+from datetime import datetime, timezone
 from typing import Dict, List
 from uuid import uuid4
-from datetime import datetime, timezone
 
 from fastapi import APIRouter, HTTPException, Request
+
 from app.core.responses import APIResponse
 from app.schemas.sprint6_ai_alerts import (
-    AlertRuleCreate,
     AlertRule,
+    AlertRuleCreate,
     NotificationItem,
 )
 
@@ -127,4 +128,3 @@ def mark_read(notif_id: str, request: Request):
                 correlation_id=correlation_id,
             )
     raise HTTPException(status_code=404, detail="Notification not found.")
-

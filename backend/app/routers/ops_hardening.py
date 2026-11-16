@@ -3,17 +3,18 @@ Router for Sprint 7: Production Hardening, Observability, Feature Flags, and Rel
 Provides system health monitoring, circuit breaker status, and promotion gates.
 """
 
-from typing import Dict, List
-from uuid import uuid4
 import time
+from typing import Dict
+from uuid import uuid4
 
 from fastapi import APIRouter, HTTPException, Request
+
 from app.core.responses import APIResponse
 from app.schemas.sprint7_ops_hardening import (
-    FeatureFlagStatus,
     DependencyHealth,
-    SystemObservabilityReport,
+    FeatureFlagStatus,
     ReleasePreflightCheck,
+    SystemObservabilityReport,
 )
 
 router = APIRouter(prefix="/api/v1/ops", tags=["Sprint 7 - Production Hardening & Ops"])
@@ -83,7 +84,9 @@ def list_feature_flags(request: Request):
     )
 
 
-@router.post("/flags/{flag_key}/toggle", summary="Toggle feature flag state for emergency circuit breaking")
+@router.post(
+    "/flags/{flag_key}/toggle", summary="Toggle feature flag state for emergency circuit breaking"
+)
 def toggle_flag(flag_key: str, enabled: bool, request: Request):
     correlation_id = getattr(request.state, "correlation_id", str(uuid4()))
     if flag_key not in _flags_db:
@@ -100,7 +103,7 @@ def toggle_flag(flag_key: str, enabled: bool, request: Request):
 @router.get("/preflight", summary="Sprint 7 Release Candidate Preflight Gate Verification")
 def release_preflight(request: Request):
     correlation_id = getattr(request.state, "correlation_id", str(uuid4()))
-    
+
     check = ReleasePreflightCheck(
         release_tag="v1.0.0-rc7",
         commit_sha="27ade62-w40-sprint7-candidate",
@@ -117,4 +120,3 @@ def release_preflight(request: Request):
         data=check.model_dump(),
         correlation_id=correlation_id,
     )
-

@@ -3,19 +3,20 @@ Router for Sprint 4: Simulated Order Execution, Cash Ledger, and Positions.
 Ensures deterministic execution, idempotency, no broker APIs, atomic ledger tracking.
 """
 
+from datetime import datetime, timezone
 from decimal import Decimal
 from typing import Dict, List
 from uuid import uuid4
-from datetime import datetime, timezone
 
-from fastapi import APIRouter, HTTPException, Request, Depends
+from fastapi import APIRouter, HTTPException, Request
+
 from app.core.responses import APIResponse
 from app.schemas.sprint4_paper_goals import (
+    CashLedgerEntry,
+    PaperAccountSummary,
     PaperOrderRequest,
     PaperOrderResponse,
-    PaperAccountSummary,
     PaperPosition,
-    CashLedgerEntry,
 )
 
 router = APIRouter(prefix="/api/v1/paper-trading", tags=["Sprint 4 - Paper Trading"])
@@ -59,7 +60,7 @@ MOCK_PRICES: Dict[str, Decimal] = {
 def get_paper_account(request: Request):
     global _cash_balance, _positions, _ledger
     correlation_id = getattr(request.state, "correlation_id", str(uuid4()))
-    
+
     portfolio_val = sum((p.market_value for p in _positions.values()), Decimal("0.00"))
     summary = PaperAccountSummary(
         account_id="paper-acc-demo-user",
@@ -98,7 +99,7 @@ def submit_paper_order(order: PaperOrderRequest, request: Request):
     if order.side == "BUY":
         if total_cost > _cash_balance:
             raise HTTPException(status_code=400, detail="Insufficient simulated cash balance.")
-        
+
         # Execute BUY
         _cash_balance -= total_cost
         if symbol in _positions:
@@ -199,7 +200,7 @@ def submit_paper_order(order: PaperOrderRequest, request: Request):
 def reset_paper_account(request: Request):
     global _cash_balance, _positions, _ledger, _processed_idempotency_keys
     correlation_id = getattr(request.state, "correlation_id", str(uuid4()))
-    
+
     _cash_balance = Decimal("50000.00")
     _positions.clear()
     _processed_idempotency_keys.clear()

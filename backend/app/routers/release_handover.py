@@ -1,9 +1,10 @@
 """Sprint 8 Router: Final Release, UAT Handover, and Platform Operations."""
 
-from datetime import datetime
 import uuid
+from datetime import datetime
 from typing import List
-from fastapi import APIRouter, HTTPException, status
+
+from fastapi import APIRouter, status
 
 from app.schemas.sprint8_release_handover import (
     DisasterRecoveryDrill,
@@ -22,7 +23,10 @@ _SIGNOFF_STORE: List[UATSignoffRecord] = [
         stakeholder_name="Anand Sharma",
         role="Primary Pilot Persona (Salaried Tech Professional)",
         decision="APPROVED",
-        comments="Completed end-to-end journey from onboarding to risk questionnaire, paper orders, AI chat safety checks, and spending review. UI is responsive and fast.",
+        comments=(
+            "Completed end-to-end journey from onboarding to risk questionnaire, paper orders, "
+            "AI chat safety checks, and spending review. UI is responsive and fast."
+        ),
         signed_at=datetime.utcnow(),
         verified=True,
     ),
@@ -31,7 +35,10 @@ _SIGNOFF_STORE: List[UATSignoffRecord] = [
         stakeholder_name="Priya Patel",
         role="Product Compliance & Risk Lead",
         decision="APPROVED",
-        comments="AI disclaimers and privacy data export/delete guarantees verified compliant with handbook rules.",
+        comments=(
+            "AI disclaimers and privacy data export/delete guarantees verified compliant "
+            "with handbook rules."
+        ),
         signed_at=datetime.utcnow(),
         verified=True,
     ),
@@ -78,10 +85,22 @@ async def get_handover_summary():
     manifest = ReleaseManifest()
     dr = DisasterRecoveryDrill()
     runbooks = [
-        {"title": "Operator Daily Health Runbook", "path": "docs/runbooks/RUNBOOK-01-DAILY-HEALTH.md"},
-        {"title": "Emergency Rollback Procedure", "path": "docs/runbooks/RUNBOOK-02-EMERGENCY-ROLLBACK.md"},
-        {"title": "Database Point-In-Time Restore", "path": "docs/runbooks/RUNBOOK-03-DATABASE-PITR.md"},
-        {"title": "Feature Flag Kill Switch Protocols", "path": "docs/runbooks/RUNBOOK-04-FEATURE-FLAGS.md"},
+        {
+            "title": "Operator Daily Health Runbook",
+            "path": "docs/runbooks/RUNBOOK-01-DAILY-HEALTH.md",
+        },
+        {
+            "title": "Emergency Rollback Procedure",
+            "path": "docs/runbooks/RUNBOOK-02-EMERGENCY-ROLLBACK.md",
+        },
+        {
+            "title": "Database Point-In-Time Restore",
+            "path": "docs/runbooks/RUNBOOK-03-DATABASE-PITR.md",
+        },
+        {
+            "title": "Feature Flag Kill Switch Protocols",
+            "path": "docs/runbooks/RUNBOOK-04-FEATURE-FLAGS.md",
+        },
     ]
     roadmap = [
         "v1.1: Live Broker API Integration (Zerodha Kite & Upstox sandboxes)",
@@ -96,4 +115,3 @@ async def get_handover_summary():
         runbook_guides=runbooks,
         next_roadmap=roadmap,
     )
-

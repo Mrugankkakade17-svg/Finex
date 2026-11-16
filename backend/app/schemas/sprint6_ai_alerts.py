@@ -1,9 +1,7 @@
-"""
-Schemas for Sprint 6: Grounded AI Learning Assistant, Feedback, and Smart Alert Rules / Notifications.
-"""
+"""Schemas for Sprint 6: Grounded AI Learning Assistant, Feedback, and Smart Alert Rules."""
 
-from datetime import datetime, timezone
-from typing import Any, List, Literal, Optional
+from typing import List, Literal, Optional
+
 from pydantic import BaseModel, Field
 
 IntentType = Literal[
@@ -50,7 +48,9 @@ class AIFeedbackRequest(BaseModel):
 
 class AlertRuleCreate(BaseModel):
     rule_name: str = Field(..., min_length=2, max_length=80)
-    condition_type: Literal["PRICE_THRESHOLD", "PCT_CHANGE", "CONCENTRATION_LIMIT", "GOAL_OFF_TRACK"]
+    condition_type: Literal[
+        "PRICE_THRESHOLD", "PCT_CHANGE", "CONCENTRATION_LIMIT", "GOAL_OFF_TRACK"
+    ]
     target_symbol_or_goal: str = Field(..., min_length=1, max_length=40)
     comparison_operator: Literal["GT", "LT", "GTE", "LTE", "EQ"]
     threshold_value: float
@@ -77,4 +77,3 @@ class NotificationItem(BaseModel):
     severity: Literal["INFO", "WARNING", "CRITICAL"]
     created_at: str
     is_read: bool = False
-

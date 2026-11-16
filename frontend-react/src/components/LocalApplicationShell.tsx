@@ -7,7 +7,7 @@ import './LocalApplication.css';
 const links = [
   { path: '/dashboard', label: 'Dashboard', sprint: 'S1' },
   { path: '/onboarding', label: 'Onboarding', sprint: 'S1' },
-  { path: '/risk', label: 'Risk Profile', sprint: 'S2' },
+  { path: '/risk', label: 'Risk profile', sprint: 'S2' },
   { path: '/portfolio', label: 'Portfolio', sprint: 'S2' },
   { path: '/market', label: 'Market Data', sprint: 'S3' },
   { path: '/watchlist', label: 'Watchlist', sprint: 'S3' },
