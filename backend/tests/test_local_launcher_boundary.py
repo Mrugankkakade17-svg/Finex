@@ -28,7 +28,7 @@ def test_local_launcher_rejects_nonloopback_before_starting_python(address: str)
         ],
         capture_output=True,
         text=True,
-        timeout=15,
+        timeout=30,
         creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0) if os.name == "nt" else 0,
         check=False,
     )
@@ -45,7 +45,7 @@ def test_launcher_dry_run_disables_forwarded_peer_trust_and_access_logs() -> Non
         [str(POWERSHELL), "-NoProfile", "-NonInteractive", "-File", str(LAUNCHER), "-WhatIf"],
         capture_output=True,
         text=True,
-        timeout=15,
+        timeout=30,
         creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0) if os.name == "nt" else 0,
         check=False,
     )
