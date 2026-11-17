@@ -4,6 +4,7 @@ param(
     [string]$BindAddress = '127.0.0.1',
     [ValidateRange(1, 65535)]
     [int]$Port = 8000,
+    [switch]$EnableLocalApplication,
     [switch]$Reload
 )
 
@@ -43,11 +44,17 @@ if (-not (Test-Path $venvPython)) {
 }
 
 $previousBindSetting = [Environment]::GetEnvironmentVariable('HOST', 'Process')
+$previousAppEnvSetting = [Environment]::GetEnvironmentVariable('APP_ENV', 'Process')
+$previousLocalAppSetting = [Environment]::GetEnvironmentVariable('LOCAL_APP_ENABLED', 'Process')
 Push-Location $repositoryRoot
 try {
     # Keep typed configuration consistent with the actual native launch binding.
     # Public deployment is a separate workflow; synthetic personas are local only.
     $env:HOST = $BindAddress
+    if ($EnableLocalApplication) {
+        $env:APP_ENV = 'local'
+        $env:LOCAL_APP_ENABLED = 'true'
+    }
     & $venvPython @uvicornArguments
     if ($LASTEXITCODE -ne 0) {
         throw 'FinEx backend stopped with an error.'
@@ -55,5 +62,7 @@ try {
 }
 finally {
     [Environment]::SetEnvironmentVariable('HOST', $previousBindSetting, 'Process')
+    [Environment]::SetEnvironmentVariable('APP_ENV', $previousAppEnvSetting, 'Process')
+    [Environment]::SetEnvironmentVariable('LOCAL_APP_ENABLED', $previousLocalAppSetting, 'Process')
     Pop-Location
 }

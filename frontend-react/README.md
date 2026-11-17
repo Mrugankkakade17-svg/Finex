@@ -11,16 +11,17 @@ Use the repository toolchain (Python 3.13, Node 24.20.0 from `.nvmrc`). At the r
 ```powershell
 .\scripts\bootstrap.ps1 -Component Backend
 $env:APP_ENV = 'local'
-$env:LOCAL_APP_ENABLED = 'true'
 $env:LOCAL_SESSION_TTL_MINUTES = '30'
 $env:LOCAL_DB_PATH = Join-Path $env:LOCALAPPDATA 'FinEx\development\finex.sqlite3'
 $env:ALLOWED_ORIGINS = 'http://127.0.0.1:3001'
 $env:ALLOW_CREDENTIALS = 'false'
 $env:LLM_PROVIDER = 'none'
 $env:MARKET_DATA_PROVIDER = 'mock'
-.\scripts\run-backend.ps1 -BindAddress '127.0.0.1' -Port 8000
+.\scripts\run-backend.ps1 -BindAddress '127.0.0.1' -Port 8000 -EnableLocalApplication
 ```
 
+The switch enables local application routes for this process only. Keep
+`APP_ENV=local` and the loopback binding; the backend rejects remote clients.
 Keep the database outside live OneDrive/Dropbox synchronization. Startup resumes saved data; it does not reset the database. See the [native application runbook](../docs/runbooks/native-local-application.md) for safe backup, troubleshooting and recovery. Never expose the simulator to a LAN, public binding or tunnel.
 
 ## Start React in a second terminal

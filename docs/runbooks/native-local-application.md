@@ -33,17 +33,16 @@ The existing [native setup guide](../local-development.md) contains installation
 
 ```powershell
 $env:APP_ENV = 'local'
-$env:LOCAL_APP_ENABLED = 'true'
 $env:LOCAL_SESSION_TTL_MINUTES = '30'
 $env:LOCAL_DB_PATH = Join-Path $env:LOCALAPPDATA 'FinEx\development\finex.sqlite3'
 $env:ALLOWED_ORIGINS = 'http://127.0.0.1:3001,http://127.0.0.1:3002'
 $env:ALLOW_CREDENTIALS = 'false'
 $env:LLM_PROVIDER = 'none'
 $env:MARKET_DATA_PROVIDER = 'mock'
-.\scripts\run-backend.ps1 -BindAddress '127.0.0.1' -Port 8000
+.\scripts\run-backend.ps1 -BindAddress '127.0.0.1' -Port 8000 -EnableLocalApplication
 ```
 
-Optional `-Reload` watches only backend and shared AI source. `-WhatIf` prints a safe dry-run command without launching Python. The launcher rejects public/LAN hosts before Python starts, passes the actual binding into typed settings, disables forwarded-peer trust and disables raw access logs (legacy query-based refresh could otherwise leak a token). Redacted correlation diagnostics remain available. Do not tunnel this app or manually override uvicorn with `--host 0.0.0.0`; if running uvicorn directly, include `--no-proxy-headers --no-access-log`. Synthetic persona selection is intentionally not proof of a real person's identity.
+`-EnableLocalApplication` sets `APP_ENV=local` and `LOCAL_APP_ENABLED=true` for this process, restoring both prior values after the server exits. Optional `-Reload` watches only backend and shared AI source. `-WhatIf` prints a safe dry-run command without launching Python. The launcher rejects public/LAN hosts before Python starts, passes the actual binding into typed settings, disables forwarded-peer trust and disables raw access logs (legacy query-based refresh could otherwise leak a token). Redacted correlation diagnostics remain available. Do not tunnel this app or manually override uvicorn with `--host 0.0.0.0`; if running uvicorn directly, include `--no-proxy-headers --no-access-log` and set `APP_ENV=local` and `LOCAL_APP_ENABLED=true` only for local development. Synthetic persona selection is intentionally not proof of a real person's identity.
 
 Default database when not configured: `backend/.local/finex.sqlite3`. The command above instead selects an unsynced Windows local-data folder: a checkout under OneDrive/Dropbox should not keep long-lived SQLite/WAL state inside its live sync tree. Do not sync/share an active database or treat file synchronization as a transactional backup. Choose a different exact path for a test/demo if needed; never point tests at your saved developer database. `LOCAL_APP_ENABLED=false` (or non-LOCAL environment) fails closed. This switch disables the new local routes but does not delete saved state.
 

@@ -18,13 +18,14 @@ project module.
 2. Start the API with the repository-aware helper:
 
 ```powershell
-.\scripts\run-backend.ps1 -Reload
+.\scripts\run-backend.ps1 -EnableLocalApplication -Reload
 ```
 
 The helper keeps the repository root available to Python, uses `backend` as the
 application directory, and watches only the Python source directories during
-reload. It is the supported command for Windows development machines; Docker
-is not required.
+reload. `-EnableLocalApplication` sets `APP_ENV=local` and opts this
+loopback-only run into the synthetic local persona API. It is the supported
+command for Windows development machines; Docker is not required.
 
 Confirm that it is running:
 

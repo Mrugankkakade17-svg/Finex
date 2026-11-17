@@ -20,8 +20,12 @@ for local development or tests.
 3. Start the backend with the repository-aware helper:
 
 ```powershell
-.\scripts\run-backend.ps1 -Reload
+.\scripts\run-backend.ps1 -EnableLocalApplication -Reload
 ```
+
+`-EnableLocalApplication` sets `APP_ENV=local` and opts this loopback-only run
+into the synthetic persona API; both settings are process-scoped, and the
+server still rejects non-loopback bindings.
 
 The full setup, test, and troubleshooting guide is in
 [docs/local-development.md](docs/local-development.md).

@@ -52,13 +52,15 @@ Use `-CheckOnly` to validate installed toolchains without downloading packages:
 Start the backend from the repository root:
 
 ```powershell
-.\scripts\run-backend.ps1 -Reload
+.\scripts\run-backend.ps1 -EnableLocalApplication -Reload
 ```
 
 The helper keeps the repository root on the Python import path and starts
 Uvicorn with `backend` as the app directory. Do not run `uvicorn app.main:app`
 from inside `backend`; that command cannot resolve the repository-level `ai`
-package.
+package. `-EnableLocalApplication` sets `APP_ENV=local` and opts into the
+synthetic persona API for this loopback-only process; without it, local
+application routes remain disabled.
 
 Confirm the API is live:
 
