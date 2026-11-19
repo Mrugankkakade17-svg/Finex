@@ -3,17 +3,17 @@
 - **Branch:** `feature/s0-mr01`
 - **Selected host:** Neon Serverless Postgres Free
 - **Target version:** PostgreSQL 16
-- **Evidence status:** Partially verified. The disposable host, pgvector check, migration round-trip, Ruff check, and backend tests passed. Neon provisioned PostgreSQL 18.7 instead of the requested PostgreSQL 16, so the task is not fully complete.
+- **Evidence status:** Verified. The disposable PostgreSQL 16 host, pgvector check, migration round-trip, Ruff check, and backend tests passed.
 
 > Complete this record after creating the disposable Neon project and running the commands in the repository-root `host.md`. Do not paste connection strings, passwords, tokens, or other secrets.
 
 ## 1. Host verification
 
-- Neon project created: `finex-s0-validation`
-- PostgreSQL server version output from `SELECT version();`: `PostgreSQL 18.7 (84da7d8)`
+- Neon project created: `finex-s0-validation-pg16`
+- PostgreSQL server version output from `SELECT version();`: `PostgreSQL 16.16 (b5be8fd)`
 - Database name (non-secret): `neondb`
 - Connection mode used for migrations (direct/pooled): `direct`
-- Version result: **FAIL for the S0-MR01 target**; the host is PostgreSQL 18.7, not PostgreSQL 16.
+- Version result: **PASS**; the host is PostgreSQL 16.
 
 ## 2. pgvector verification
 
@@ -65,9 +65,9 @@ Run from `backend/` against the disposable database.
 ## 6. Reviewer
 
 - Secondary reviewer: Payal
-- Review status: `[pending]`
+- Review status: `[pending reviewer approval]`
 - PR: [#113](https://github.com/Mrugankkakade17-svg/Finex/pull/113)
 
 ## Completion statement
 
-Do not mark S0-MR01 complete until the host is PostgreSQL 16 and the reviewer approves PR #113. The current Neon host is PostgreSQL 18.7, although pgvector, migrations, quality checks, and compatibility checks have passed.
+The technical implementation and verification for S0-MR01 are complete. Final task closure still depends on reviewer approval of PR #113.
