@@ -3,16 +3,17 @@
 - **Branch:** `feature/s0-mr01`
 - **Selected host:** Neon Serverless Postgres Free
 - **Target version:** PostgreSQL 16
-- **Evidence status:** Pending live execution — no successful host/SQL/migration output is claimed by this document.
+- **Evidence status:** Partially verified. The disposable host, pgvector check, migration round-trip, Ruff check, and backend tests passed. Neon provisioned PostgreSQL 18.7 instead of the requested PostgreSQL 16, so the task is not fully complete.
 
 > Complete this record after creating the disposable Neon project and running the commands in the repository-root `host.md`. Do not paste connection strings, passwords, tokens, or other secrets.
 
 ## 1. Host verification
 
-- Neon project created: `[pending]`
-- PostgreSQL server version output from `SELECT version();`: `[paste output]`
-- Database name (non-secret): `[record name]`
-- Connection mode used for migrations (direct/pooled): `[record mode]`
+- Neon project created: `finex-s0-validation`
+- PostgreSQL server version output from `SELECT version();`: `PostgreSQL 18.7 (84da7d8)`
+- Database name (non-secret): `neondb`
+- Connection mode used for migrations (direct/pooled): `direct`
+- Version result: **FAIL for the S0-MR01 target**; the host is PostgreSQL 18.7, not PostgreSQL 16.
 
 ## 2. pgvector verification
 
@@ -29,10 +30,10 @@ WHERE extname = 'vector';
 Actual output:
 
 ```text
-[paste the actual returned row showing extname=vector and extversion]
+vector 0.8.7
 ```
 
-Result: `[PASS only after the query returns the vector row / otherwise FAIL]`
+Result: **PASS**
 
 ## 3. Alembic reversible migration verification
 
@@ -40,33 +41,33 @@ Run from `backend/` against the disposable database.
 
 | Command | Actual result / output |
 | --- | --- |
-| `python -m alembic heads` | [paste output; expected one head c9e7b5a2566a] |
-| `python -m alembic upgrade head` | [paste output] |
-| `python -m alembic current` | [paste output; expected c9e7b5a2566a (head)] |
-| `python -m alembic downgrade base` | [paste output] |
-| `python -m alembic upgrade head` | [paste output] |
-| `python -m alembic current` | [paste output; expected c9e7b5a2566a (head)] |
+| `python -m alembic heads` | `c9e7b5a2566a (head)` |
+| `python -m alembic upgrade head` | **PASS**; all four migration steps applied |
+| `python -m alembic current` | `c9e7b5a2566a (head) (mergepoint)` |
+| `python -m alembic downgrade base` | **PASS**; all migration steps reverted |
+| `python -m alembic upgrade head` | **PASS**; all four migration steps reapplied |
+| `python -m alembic current` | `c9e7b5a2566a (head) (mergepoint)` |
 
 ## 4. Quality checks
 
 | Command | Actual result |
 | --- | --- |
-| `python -m ruff check .` | [paste exit code and summary] |
-| `python -m pytest -q` | [paste passed/failed/skipped counts and exit code] |
+| `python -m ruff check .` | **PASS** — All checks passed |
+| `python -m pytest -q` | **PASS** — 2625 passed, 2444 warnings, 85.52% coverage, exit code 0 |
 
 ## 5. Compatibility checks
 
-- Existing SQLite local persistence unchanged: `[verify and record]`
-- Frozen routes unchanged: `[record relevant regression/contract test result]`
-- No credentials or database dumps committed: `[verify]`
-- User isolation and existing tests: `[record relevant test results]`
+- Existing SQLite local persistence unchanged: **PASS** — no application persistence files or adapters changed
+- Frozen routes unchanged: **PASS** — backend contract and integration tests passed
+- No credentials or database dumps committed: **PASS** — `backend/.env` remains local and ignored
+- User isolation and existing tests: **PASS** — full backend suite passed
 
 ## 6. Reviewer
 
 - Secondary reviewer: Payal
 - Review status: `[pending]`
-- PR: `[add URL]`
+- PR: [#113](https://github.com/Mrugankkakade17-svg/Finex/pull/113)
 
 ## Completion statement
 
-Do not mark S0-MR01 complete until the PostgreSQL version, pgvector query, Alembic upgrade/downgrade/upgrade round-trip, required backend quality commands, compatibility checks, and reviewer approval have actual recorded results.
+Do not mark S0-MR01 complete until the host is PostgreSQL 16 and the reviewer approves PR #113. The current Neon host is PostgreSQL 18.7, although pgvector, migrations, quality checks, and compatibility checks have passed.
