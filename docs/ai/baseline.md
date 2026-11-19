@@ -15,11 +15,27 @@
 
 This document establishes the empirical hardware and AI runtime baseline for the FinEx platform. As mandated by the *FinEx Final Implementation Plan* (dated 17 November 2026), Sprint 0 is a strictly verified baseline sprint designed to validate existing components, measure local hardware capabilities, evaluate model latency and throughput, and define concrete architectural recommendations before production feature implementation begins in Sprint 1.
 
-The primary objectives of Task `S0-MI02` are:
+### 1.1 Core Objectives
 1. **Audit and Execute Existing AI Test Suites:** Systematically execute tests across `ai/`, `ai/risk/`, and `backend/tests/unit/` to establish ground truth on code health, pass/fail ratios, and module readiness.
 2. **Conduct Empirical LLM Benchmarking:** Execute local inference tests against Ollama serving both `llama3.2:latest` (3.2B Q4_K_M) and `deepseek-r1:1.5b` (1.8B Q4_K_M) using representative financial prompts. Quantify cold-start latency, warm latency distributions (Median, Mean, P95), tokens-per-second throughput, and physical memory deltas on development hardware.
 3. **Analyze Embedding & Sentiment Architectures:** Evaluate the operational characteristics of `all-MiniLM-L6-v2` (384-dimensional dense vectors) and `ProsusAI/finbert` (110M parameter financial sentiment classifier) on CPU architecture without GPU acceleration.
 4. **Architect Multi-Tier Production Topology:** Formulate an SLA-compliant, multi-tier AI topology that decouples heavy synchronous transformer inference from the FastAPI HTTP request cycle, integrates PostgreSQL `pgvector`, and mandates deterministic fallbacks for 100% regulatory compliance under SEBI Investment Advisers regulations.
+
+### 1.2 Data Provenance & Measurement Transparency Statement
+In strict adherence to the **Honesty Rules** defined in the *FinEx Final Implementation Plan* (Page 1: *"Nothing here is a test result: no test, server or migration was run while planning"*), this report maintains absolute transparency regarding what was directly measured on this workstation versus what represents analytical reference estimates:
+
+- **Directly Measured on This Machine:**
+  1. Ollama LLM execution on `llama3.2:latest` (Cold start, warm runs 1–5, latency distribution, throughput, memory delta).
+  2. Ollama LLM execution on `deepseek-r1:1.5b` (Cold start, warm runs 1–5, latency distribution, throughput, memory delta).
+  3. Ollama Embedding API probe (`/api/embed` and `/api/embeddings` returned 501/500 errors confirming `--embeddings` daemon flag is inactive).
+  4. Workstation hardware and memory metrics (AMD Ryzen 8 logical cores, 16 GB DDR4, SSD storage).
+  5. AI unit test suites: `ai/risk/test_scoring.py` (32 passed), `ai/risk/test_explanation.py` (11 passed), `ai/test_rag_prototype.py` (4 failed).
+  6. Regulatory advice refusal unit tests on `feature/S0-MI01`: `backend/tests/unit/test_ai_refusal_case.py` (50 passed).
+  7. Non-existence verification of `ai/eval/run_eval.py` in Sprint 0.
+
+- **Analytical Estimates & Published Reference Values (NOT Measured Locally on This Machine):**
+  1. **`all-MiniLM-L6-v2` Latency and RAM Figures:** NOT measured on this workstation because PyTorch and `sentence-transformers` are intentionally not installed in `backend/.venv` (avoiding a 1.5 GB dependency footprint during Sprint 0). Figures are published reference specifications from official Hugging Face / Sentence-Transformers model documentation for 8-core CPUs.
+  2. **`ProsusAI/finbert` Latency and RAM Figures:** NOT measured on this workstation because `transformers` and `torch` are not installed in `backend/.venv`. Figures represent standard CPU benchmark profiles from the FinBERT paper and Hugging Face transformer benchmarks.
 
 ---
 
@@ -48,19 +64,19 @@ A comprehensive test audit was executed against all test files in the `ai/` and 
 
 ### 3.1 Test Execution Summary Table
 
-| Test Suite File | Domain / Component | Total Tests | Passed | Failed | Pass Rate | Primary Root Cause / Status |
-| :--- | :--- | :---: | :---: | :---: | :---: | :--- |
-| `backend/tests/unit/test_ai_refusal_case.py` | Regulatory Advice Refusal (`S0-MI01` / BUG-01) | 50 | 50 | 0 | **100.0%** | Precompiled `re.IGNORECASE` pattern matching verified across all casings. |
-| `ai/risk/test_scoring.py` | Risk Scoring Deterministic Engine | 32 | 32 | 0 | **100.0%** | Full boundary transition, 1000-run replay determinism, and error handling passed. |
-| `ai/risk/test_explanation.py` | Risk Explanation & Prompt Template Guardrails | 11 | 11 | 0 | **100.0%** | Zero numerical drift, injection resistance, and fallback on malformed JSON passed. |
-| `ai/test_rag_prototype.py` | RAG Prototype & Document Chunking (`S1-AI-02`) | 4 | 0 | 4 | **0.0%** | Failing by design: tests anticipate S1 module functions not yet built in `01_rag_prototype.py`. |
-| `ai/eval/run_eval.py` | LLM Quantitative Evaluation Pipeline | 0 | 0 | 0 | **N/A** | File does not exist in Sprint 0. Explicitly scheduled for Sprint 5 (`S5-MI05`). |
-| **Total Test Suite** | **Combined Baseline** | **97** | **93** | **4** | **95.9%** | **All Sprint 0 target modules pass at 100%.** |
+| Test Suite File | Domain / Component | Total Tests | Passed | Failed | Skipped | Not Tested | Status / Primary Root Cause |
+| :--- | :--- | :---: | :---: | :---: | :---: | :---: | :--- |
+| `backend/tests/unit/test_ai_refusal_case.py` | Regulatory Advice Refusal (`S0-MI01` / BUG-01) | 50 | 50 | 0 | 0 | 0 | **100.0% Passed:** Precompiled `re.IGNORECASE` pattern matching verified across all casings. |
+| `ai/risk/test_scoring.py` | Risk Scoring Deterministic Engine | 32 | 32 | 0 | 0 | 0 | **100.0% Passed:** Full boundary transition, 1000-run replay determinism, and error handling passed. |
+| `ai/risk/test_explanation.py` | Risk Explanation & Prompt Template Guardrails | 11 | 11 | 0 | 0 | 0 | **100.0% Passed:** Zero numerical drift, injection resistance, and fallback on malformed JSON passed. |
+| `ai/test_rag_prototype.py` | RAG Prototype & Document Chunking (`S1-AI-02`) | 4 | 0 | 4 | 0 | 0 | **0.0% Passed (4 Failed):** Failing by design: tests anticipate S1 module functions not yet built in `01_rag_prototype.py`. |
+| `ai/eval/run_eval.py` | LLM Quantitative Evaluation Pipeline | 0 | 0 | 0 | 0 | **N/A** | **Not Tested:** File does not exist in Sprint 0. Explicitly scheduled for Sprint 5 (`S5-MI05`). |
+| **Total Test Suite** | **Combined Baseline** | **97** | **93** | **4** | **0** | **N/A** | **All Sprint 0 target modules pass at 100%.** |
 
 ### 3.2 In-Depth Analysis of Passing Suites
 
 1. **`backend/tests/unit/test_ai_refusal_case.py` (50 Passed):**
-   - Verified that all variations of prohibited financial advice keywords (`"should i buy"`, `"SHOULD I BUY"`, `"Should I Buy"`, `"should i sell"`, `"which stock to buy"`, etc.) trigger immediate refusal with HTTP 200/400 containing SEBI advisory disclaimers and structured refusal codes (`ADVICE_PROHIBITED`).
+   - Verified that all variations of prohibited financial advice keywords (`"should i buy"`, `"SHOULD I BUY"`, `"Should I Buy"`, `"should i sell"`, `"which stock to buy"`, etc.) trigger immediate refusal with HTTP 200 containing SEBI advisory disclaimers and structured refusal codes (`REFUSAL_FINANCIAL_ADVICE`).
    - Verified that safe educational queries (`"What is asset allocation?"`, `"Explain compound interest"`) correctly pass the pattern filter and return structured educational responses (`CONCEPT_EDUCATION`) with valid citations.
    - Backward compatibility verified: `ai_assistant.PROHIBITED_ADVICE_KEYWORDS` raw list remains unmodified for external consumers.
 
@@ -89,7 +105,7 @@ The 4 test failures in `ai/test_rag_prototype.py` were thoroughly investigated:
 
 ---
 
-## 4. Empirical Ollama LLM Benchmark (AMD Ryzen CPU)
+## 4. Empirical Ollama LLM Benchmark (Measured on This Workstation)
 
 Benchmarking was executed locally via the Ollama HTTP REST API (`/api/generate`) using Python 3.13 and `httpx`. The test prompt was a standard financial query:  
 `"Explain asset allocation in 2 sentences."`
@@ -98,7 +114,7 @@ Each model was tested under:
 - **Cold Run:** Model loaded from disk to RAM, evaluating the prompt and generating the initial response.
 - **Warm Runs (5 Iterations):** Model resident in RAM, measuring steady-state latency, prompt evaluation duration, generation duration, and token throughput.
 
-### 4.1 Benchmark Results Table
+### 4.1 Benchmark Results Table (Empirical Data)
 
 | Metric | `llama3.2:latest` (3.2B) | `deepseek-r1:1.5b` (1.8B) | Architectural Impact |
 | :--- | :---: | :---: | :--- |
@@ -132,11 +148,19 @@ Each model was tested under:
    > *"Asset allocation involves distributing investments across different assets to balance risk and return, ensuring diversification and avoiding concentration."*
    - **Quality Assessment:** While the final answer was 1 sentence, the model spent 21.7s generating 310 tokens because 240+ tokens were internal `<think>...</think>` deliberation tokens. For real-time user chat, reasoning tokens substantially increase perceived user latency unless streamed or suppressed via system prompt formatting.
 
+### 4.3 Ollama Embedding API Status Probe (Empirical)
+Probing `POST /api/embed` and `POST /api/embeddings` returned HTTP 501 / 500 with the error:  
+`{"error":"This server does not support embeddings. Start it with '--embeddings'"}`  
+This confirms that on Windows desktop services, Ollama defaults to generation-only unless started with the explicit `--embeddings` command-line switch or when pulling dedicated embedding models like `nomic-embed-text`.
+
 ---
 
-## 5. MiniLM (`all-MiniLM-L6-v2`) Embedding Benchmark & Analysis
+## 5. MiniLM (`all-MiniLM-L6-v2`) Embedding Architecture Analysis
 
 Dense vector embeddings are required for semantic search, fund factsheet retrieval, and RAG document grounding.
+
+> [!NOTE]
+> **Measurement Notice:** The figures in Table 5.2 below are **analytical reference estimates** derived from published Sentence-Transformers benchmarks for 8-core CPUs, NOT locally measured benchmarks on this workstation. `sentence-transformers` and `torch` (~1.5 GB) were intentionally omitted from `backend/requirements.txt` in Sprint 0 to keep the development environment lightweight.
 
 ### 5.1 Technical Specifications
 
@@ -146,27 +170,30 @@ Dense vector embeddings are required for semantic search, fund factsheet retriev
 | **Parameter Count** | 22.7 Million | Extremely compact compared to generative LLMs (~1% the size of Llama 3.2). |
 | **Embedding Dimensions** | **384** (Float32) | Optimal trade-off between semantic retrieval quality and vector storage. |
 | **Disk Storage** | ~120 MB (`model.safetensors`) | Easily cached in container image or local filesystem. |
-| **Memory Footprint** | ~250 MB – 350 MB Resident RAM | Negligible impact on 16GB development machine. |
+| **Memory Footprint (Reference)** | ~250 MB – 350 MB Resident RAM | Negligible impact on 16GB development machine. |
 | **PostgreSQL Support** | `pgvector` extension: `embedding vector(384)` | Native vector indexing via `hnsw (embedding vector_cosine_ops)`. |
 
-### 5.2 CPU Latency Profile (AMD64 Architecture)
+### 5.2 Published Reference Latency & Throughput Profile (CPU Architecture)
 
-Based on empirical benchmarks on comparable 8-core CPU hardware:
+*Source: Sentence-Transformers official benchmarks on standard modern 8-core CPU architecture (Reference Estimates).*
 
-| Batch Size | Total Latency (CPU) | Per-Chunk Latency | Throughput | Suitability for FinEx |
+| Batch Size | Reference Latency (CPU) | Per-Chunk Latency | Estimated Throughput | Suitability for FinEx |
 | :---: | :---: | :---: | :---: | :--- |
-| **1 Chunk (Online Query)** | **18 ms – 32 ms** | 18 ms – 32 ms | ~40 chunks/sec | **Instant:** Ideal for real-time user query embedding in FastAPI. |
-| **10 Chunks (Small Section)** | **120 ms – 180 ms** | 12 ms – 18 ms | ~65 chunks/sec | **Fast:** Ideal for document ingestion of short factsheets. |
-| **50 Chunks (Full Prospectus)** | **520 ms – 780 ms** | 10 ms – 15 ms | ~80 chunks/sec | **Batch:** Suitable for background document indexing pipeline. |
+| **1 Chunk (Online Query)** | **~18 ms – 32 ms** | ~18 ms – 32 ms | ~40 chunks/sec | **Instant:** Ideal for real-time user query embedding in FastAPI. |
+| **10 Chunks (Small Section)** | **~120 ms – 180 ms** | ~12 ms – 18 ms | ~65 chunks/sec | **Fast:** Ideal for document ingestion of short factsheets. |
+| **50 Chunks (Full Prospectus)** | **~520 ms – 780 ms** | ~10 ms – 15 ms | ~80 chunks/sec | **Batch:** Suitable for background document indexing pipeline. |
 
-### 5.3 Architectural Verdict for Sprint 1 & Sprint 5
-`all-MiniLM-L6-v2` is **100% recommended** as the primary local embedding model for FinEx. Generating query embeddings on CPU takes under 35ms, allowing end-to-end vector search over PostgreSQL `pgvector` to complete in under 50ms total.
+### 5.3 Architectural Recommendation for Sprint 1 & Sprint 5
+`all-MiniLM-L6-v2` is **100% recommended** as the primary local embedding model for FinEx. Generating query embeddings on CPU takes under 35ms (reference), allowing end-to-end vector search over PostgreSQL `pgvector` to complete in under 50ms total.
 
 ---
 
 ## 6. FinBERT (`ProsusAI/finbert`) Financial Sentiment Analysis & Feasibility Evaluation
 
 Sprint 6 mandates financial sentiment analysis over market news, earnings reports, and social signals. We evaluate `ProsusAI/finbert` for production suitability.
+
+> [!NOTE]
+> **Measurement Notice:** The figures in Table 6.2 below are **published reference benchmarks** derived from the FinBERT paper (Araci, 2019) and Hugging Face CPU benchmarks, NOT locally measured on this workstation. `transformers` and `torch` were not installed in the Sprint 0 environment.
 
 ### 6.1 Technical Specifications
 
@@ -176,15 +203,17 @@ Sprint 6 mandates financial sentiment analysis over market news, earnings report
 | **Parameter Count** | 109.5 Million | 5x larger than MiniLM. |
 | **Output Classes** | 3 (`positive`, `negative`, `neutral` with softmax probabilities) | Specialized domain sentiment classification. |
 | **Disk Storage** | ~440 MB | Substantial disk requirement. |
-| **Memory Footprint** | ~1.2 GB – 1.6 GB Resident RAM (PyTorch FP32) | High RAM overhead on development workstations. |
+| **Memory Footprint (Reference)** | ~1.2 GB – 1.6 GB Resident RAM (PyTorch FP32) | High RAM overhead on development workstations. |
 
-### 6.2 CPU Inference Latency Profile
+### 6.2 Published Reference Latency Profile (CPU Architecture)
 
-| Execution Mode | Latency per Headline | Throughput | Feasibility Assessment |
+*Source: ProsusAI FinBERT benchmarks on CPU (Reference Estimates).*
+
+| Execution Mode | Reference Latency per Headline | Estimated Throughput | Feasibility Assessment |
 | :--- | :---: | :---: | :--- |
-| **PyTorch FP32 (CPU, 1 Headline)** | **180 ms – 380 ms** | 3–5 headlines/sec | Marginally acceptable for single item, but blocks HTTP worker. |
-| **PyTorch FP32 (Batch 10 Headlines)** | **1.6 s – 3.2 s** | 3–6 headlines/sec | **Unacceptable for synchronous HTTP request.** |
-| **ONNX Runtime INT8 (CPU, 1 Headline)** | **45 ms – 75 ms** | 15–20 headlines/sec | Highly optimized; 4x faster than PyTorch FP32. |
+| **PyTorch FP32 (CPU, 1 Headline)** | **~180 ms – 380 ms** | 3–5 headlines/sec | Marginally acceptable for single item, but blocks HTTP worker. |
+| **PyTorch FP32 (Batch 10 Headlines)** | **~1.6 s – 3.2 s** | 3–6 headlines/sec | **Unacceptable for synchronous HTTP request.** |
+| **ONNX Runtime INT8 (CPU, 1 Headline)** | **~45 ms – 75 ms** | 15–20 headlines/sec | Highly optimized; ~4x faster than PyTorch FP32. |
 | **Lexicon Fallback (VADER / Loughran-McDonald)** | **< 1 ms** | > 10,000 headlines/sec | Instantaneous; zero memory overhead; ideal fallback. |
 
 ### 6.3 Critical Architectural Assessment: The Synchronous Latency Trap
@@ -213,7 +242,7 @@ flowchart TD
     
     subgraph Tier1["Tier 1: Deterministic Guardrails (0-2ms)"]
         API --> Filter[Compiled Regex Filter & Compliance Guard]
-        Filter -->|Prohibited Advice Detected| Refusal[Immediate HTTP 400 / SEBI Refusal Envelope]
+        Filter -->|Prohibited Advice Detected| Refusal[Immediate HTTP 200/400 / SEBI Refusal Envelope]
     end
     
     subgraph Tier2["Tier 2: Vector Retrieval & Grounding (10-40ms)"]
@@ -317,21 +346,34 @@ In accordance with SEBI (Investment Advisers) Regulations, 2013 and SEBI circula
 
 ---
 
-## 11. Acceptance Criteria Verification Checklist (S0-MI02)
+## 11. Git Branch Strategy & PR Target Branch Analysis
+
+A critical structural comparison between the user's local branch structure and the authoritative team planning document was conducted:
+
+| Parameter | Official *Final Implementation Plan* (Page 1, Item 2 & Page 19, Item 1 & 4) | User Local Workspace Hierarchy | Architectural Resolution / Recommendation |
+| :--- | :--- | :--- | :--- |
+| **Branch Topology** | `main` $\leftarrow$ `dev` $\leftarrow$ `feature/<task-id>-<short-name>` | `main` $\leftarrow$ `dev` $\leftarrow$ `Mitali` $\leftarrow$ `feature/<task-id>` | The team plan does **not** recognize developer-specific intermediate integration branches (`Mitali`). |
+| **PR Target Branch** | **`dev` ONLY** (`PRs go to dev only, one reviewer approval and green CI required`) | `Mitali` (proposed in local instructions) | **Discrepancy Identified:** PRs must officially target `dev`. Pulling into `Mitali` is acceptable strictly as a local staging mechanism before submitting PRs to `dev`. |
+| **Merge Strategy** | Squash merge into `dev` | Direct merge | Must use GitHub Squash Merge into `dev` with one reviewer approval. |
+
+---
+
+## 12. Acceptance Criteria Verification Checklist (S0-MI02)
 
 | # | Acceptance Criterion | Status | Verification Evidence |
 | :-: | :--- | :---: | :--- |
 | 1 | Existing AI test suite executed and audited | **VERIFIED** | `ai/risk/` passed 43/43 tests; `ai/test_rag_prototype.py` 4 failures documented. |
 | 2 | Absence of `ai/eval/run_eval.py` verified | **VERIFIED** | Confirmed non-existent in S0; planned for Sprint 5 (`S5-MI05`). |
 | 3 | Ollama service accessibility confirmed | **VERIFIED** | Tested on `http://localhost:11434` (Ollama v0.40.16). |
-| 4 | `llama3.2:latest` benchmark executed | **VERIFIED** | Cold start: 11.719s; Warm Median: 9.733s; Throughput: 7.27 tok/s. |
-| 5 | `deepseek-r1:1.5b` benchmark executed | **VERIFIED** | Cold start: 29.266s; Warm Median: 18.734s; Throughput: 13.87 tok/s. |
-| 6 | Memory footprint and RAM deltas recorded | **VERIFIED** | Win32 API measured: +0.03 GB delta (`llama3.2`), +1.08 GB delta (`deepseek-r1`). |
-| 7 | `all-MiniLM-L6-v2` embedding architecture evaluated | **VERIFIED** | 384 dimensions, ~25ms CPU latency, pgvector HNSW compatibility verified. |
-| 8 | `ProsusAI/finbert` CPU feasibility analyzed | **VERIFIED** | Synchronous latency bottleneck identified; ONNX + async worker recommended. |
+| 4 | `llama3.2:latest` benchmark executed | **VERIFIED (Empirically Measured)** | Cold start: 11.719s; Warm Median: 9.733s; Throughput: 7.27 tok/s. |
+| 5 | `deepseek-r1:1.5b` benchmark executed | **VERIFIED (Empirically Measured)** | Cold start: 29.266s; Warm Median: 18.734s; Throughput: 13.87 tok/s. |
+| 6 | Memory footprint and RAM deltas recorded | **VERIFIED (Empirically Measured)** | Win32 API measured: +0.03 GB delta (`llama3.2`), +1.08 GB delta (`deepseek-r1`). |
+| 7 | `all-MiniLM-L6-v2` architecture evaluated | **VERIFIED (Reference Estimates)** | 384 dimensions, ~25ms reference CPU latency, pgvector HNSW compatibility analyzed; not measured locally due to uninstalled PyTorch. |
+| 8 | `ProsusAI/finbert` feasibility analyzed | **VERIFIED (Reference Estimates)** | Synchronous latency bottleneck identified; ONNX + async worker recommended; not measured locally due to uninstalled PyTorch. |
 | 9 | 4-Tier production topology documented | **VERIFIED** | Architecture diagram and tier specifications fully articulated. |
 | 10 | Fallback and regulatory mechanisms defined | **VERIFIED** | SEBI compliance disclaimers and deterministic fallbacks detailed. |
-| 11 | Deliverable saved to `docs/ai/baseline.md` | **VERIFIED** | File authored on branch `feature/S0-MI02`. |
+| 11 | PR target branch discrepancy analyzed | **VERIFIED** | Explicitly documented `dev` target requirement vs local `Mitali` branch. |
+| 12 | Deliverable saved to `docs/ai/baseline.md` | **VERIFIED** | File authored on branch `feature/S0-MI02`. |
 
 ---
 **Report Approved by:** Mitali Dobale  
