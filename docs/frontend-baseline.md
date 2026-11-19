@@ -9,7 +9,7 @@
 | Area | As found | Baseline result |
 | --- | --- | --- |
 | React | `frontend-react/`, Create React App (`react-scripts` 5.0.1), React 18.2, Node requirement in root README: 24.20.0 | Node.js 24.20.0 and npm 11.19.0 available. `npm ci`, all React tests, and production build completed successfully. |
-| Flutter | `frontend_flutter/`, Flutter app using Dart SDK constraint `^3.13.0`; repository README specifies Flutter 3.47.2 / Dart 3.13 | Dart 3.13.2 is available in the SDK at `C:\flutter`. Flutter tool launch is blocked because the SDK cache is not writable in this session; Flutter checks remain unrun. |
+| Flutter | `frontend_flutter/`, Flutter app using Dart SDK constraint `^3.13.0`; repository README specifies Flutter 3.47.2 / Dart 3.13 | Dart 3.13.2 is available. Flutter checks passed when run from an elevated PowerShell terminal after enabling plugin symlink support. |
 | Git state | ZIP source provided without repository metadata | Branch, commit, and dirty-state baseline cannot be determined from this ZIP. |
 
 ## React commands
@@ -26,17 +26,15 @@ The npm audit findings are dependency-level warnings from the installed lockfile
 
 ## Flutter commands
 
-The direct Dart executable reports `Dart SDK version: 3.13.2 (stable)`.
+The direct Dart executable reports `Dart SDK version: 3.13.2 (stable)`. Commands were run from `frontend_flutter/` with Flutter 3.47.2.
 
 | Command | Result |
 | --- | --- |
-| Flutter tool version | **Blocked.** Both `flutter.bat --version` and direct invocation of the SDK tool snapshot failed: `Flutter failed to open a file at "C:\flutter\bin\cache\lockfile"`. |
-| `flutter pub get` | **Attempted; blocked before package resolution.** Flutter could not open `C:\flutter\bin\cache\lockfile` (exit `-1073741816`). |
-| `flutter analyze` | **Attempted; blocked before analysis** by the same SDK cache error (exit `-1073741816`). |
-| `flutter test` | **Attempted; blocked before tests** by the same SDK cache error (exit `-1073741816`). |
+| `flutter pub get` | **Passed.** Dependencies resolved and downloaded in 39.5 seconds. 13 packages have newer versions outside current dependency constraints; no dependency files were changed. |
+| `flutter analyze` | **Passed.** No issues found; completed in 55.3 seconds. |
+| `flutter test` | **Passed.** 833 tests passed; 4 tests were skipped. |
 
-Flutter dependency resolution, analysis, and test counts remain unmeasured. Do not interpret this as a clean Flutter baseline.
-
+The initial package resolution attempt required Windows symbolic link support for Flutter plugins. Running the commands in an elevated PowerShell terminal resolved this environment issue.
 ## Runtime API origins found
 
 The following client runtime source files contain a local API origin literal. Test fixtures and package-lock URLs are excluded. The local origin is expected for the current local development setup; direct calls bypass the intended shared/configured client and should be addressed under the handbook's later S1-NI01 task, not this baseline-only task.
@@ -59,5 +57,5 @@ The React auth/profile code also references an Unsplash image URL for an avatar.
 
 - The ZIP does not provide Git history or status, so no branch/commit statement can be made.
 - React dependencies were installed from the lockfile; the lockfile was not modified. Generated `node_modules` and build output are not part of the deliverable archive.
-- The Flutter commands must be rerun from `frontend_flutter/` in an environment where the SDK cache under `C:\flutter\bin\cache` is writable before the full baseline can be considered green.
+- Flutter package resolution, analysis, and tests completed successfully in the supplied project copy. The package constraints were not changed.
 - This issue does not authorize or require changes to the React API calls, Flutter API client, frozen routes, or persistence.
