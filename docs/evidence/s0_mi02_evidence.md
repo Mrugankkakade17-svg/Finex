@@ -1,12 +1,12 @@
 # FinEx Sprint 0 Task S0-MI02 Verification Evidence & Execution Log
 
-**Document Reference:** `FINEX-EVIDENCE-S0-MI02-V1`  
-**Task ID:** `S0-MI02` (Issue #12 / PR #116)  
-**Author:** Mitali Dobale (Senior AI Engineer & Implementation Lead)  
-**Reviewer:** Mrugank Kakade (`@Mrugankkakade17-svg`)  
-**Sprint:** Sprint 0 — Verified Baseline  
-**Date:** 20 November 2026  
-**Execution Environment:** Local Developer Laptop (Microsoft Windows 11 Home Single Language Build 26200, AMD Ryzen 5 7520U with Radeon Graphics, 4 Cores / 8 Logical Processors, 16GB LPDDR5 5500MHz RAM)  
+**Document Reference:** `FINEX-EVIDENCE-S0-MI02-V1`
+**Task ID:** `S0-MI02` (Issue #12 / PR #116)
+**Author:** Mitali Dobale (Senior AI Engineer & Implementation Lead)
+**Reviewer:** Mrugank Kakade (`@Mrugankkakade17-svg`)
+**Sprint:** Sprint 0 — Verified Baseline
+**Date:** 20 November 2026
+**Execution Environment:** Local Developer Laptop (Microsoft Windows 11 Home Single Language Build 26200, AMD Ryzen 5 7520U with Radeon Graphics, 4 Cores / 8 Logical Processors, 16GB LPDDR5 5500MHz RAM)
 
 ---
 
@@ -19,9 +19,12 @@ This evidence document provides raw execution outputs, terminal logs, and empiri
 | :-: | :--- | :--- | :---: |
 | 1 | Complete measurements for MiniLM and FinBERT locally; provide `docs/evidence/s0_mi02_evidence.md`. | Both models were downloaded and executed locally on this laptop's CPU. Complete latency, throughput, RAM deltas, and functional classification outputs are recorded. | Sections 4 & 5 |
 | 2 | Clarify Llama cold-start result; evict model before testing; use $N=10$ runs; do not call max of 5 runs P95. | Model was explicitly evicted from memory via Ollama API (`keep_alive: 0`) and verified with `GET /api/ps`. Cold run disk load measured (8.502s). 10 warm runs conducted; statistical Min, Mean, Median, Max reported. | Section 3 |
-| 3 | Make test audit scope clear; distinguish passing from failing tests. | Audited all 3 AI test suites in `ai/` and `test_ai_refusal_case.py` in `backend/`. Full breakdown of 93 passed, 4 failed (Sprint 1 RAG prototype interface gap), 0 skipped provided. | Section 2 |
+| 3 | Make test audit scope clear; distinguish passing from failing tests. | Audited all 3 AI test suites in `ai/` (47 tests: 43 passed, 4 failed by design) and sibling tests in `backend/` (50 passed on branch `feature/S0-MI01`). Full failure analysis provided. | Section 2 |
 | 4 | Separate implemented behavior from proposals; qualify absolute claims. | Baseline documentation explicitly labels future tiers as proposed architecture. Regulatory language qualified to reflect defense-in-depth risk mitigation. | `docs/ai/baseline.md` |
-| 5 | Correct PR title to `[S0-MI02] Document AI Model and Hardware Baseline`. | PR #116 title verified and aligned on GitHub. | GitHub PR #116 |
+| 5 | Correct PR title. | PR #116 title updated to `[S0-MI02] Run AI Tests and Benchmark Ollama, MiniLM & FinBERT`. | GitHub PR #116 |
+| 6 | Hardware mismatch resolution. | Disclosed and verified that all benchmark measurements were produced on the AMD Ryzen 5 7520U (16GB LPDDR5) laptop; clarified that an earlier comment mentioning Intel Core Ultra was an erroneous text label. | Section 1 & Section 6 |
+| 7 | Commit reproducibility artifacts. | Committed `benchmark_ollama_v2.py`, `benchmark_local_models.py`, `ollama_benchmark_v2_results.json`, and `local_models_benchmark_results.json` directly into `scratch/`. | Section 8 & `scratch/` |
+| 8 | Remove Markdown trailing whitespace. | Stripped all trailing whitespace across documentation; verified 0 errors via `git diff --check`. | Repository wide |
 
 ---
 
@@ -292,7 +295,7 @@ Based on our empirical measurements, the following engineering decision is estab
 
 ### 7.1 Does FinBERT CPU Latency Pass the Synchronous SLA Check?
 - **Engineering Responsiveness Target (Assumed):** A sub-500ms P95 latency budget is assumed for interactive HTTP endpoints. *(Note: While not an official SLA specified in the FinEx Implementation Plan, where S8-PA01 notes "targets recorded, not assumed", sub-500ms is standard for web APIs).*
-- **Empirical Reality:** 
+- **Empirical Reality:**
   - Classifying a batch of 10 news headlines takes **489.80 ms (Median)** and up to **699.80 ms (Max)** on CPU.
   - Adding network overhead and database reads puts total endpoint latency at **> 750 ms**, which **fails our assumed sub-500ms synchronous API budget**.
   - Executing 8-thread transformer inference in the web process blocks event loop concurrency and starves CPU resources.
@@ -311,12 +314,14 @@ Based on our empirical measurements, the following engineering decision is estab
 
 ## 8. Reproducibility Artifacts
 
+The complete Python benchmark scripts and raw benchmark JSON output files are committed directly to branch `feature/S0-MI02` in directory `scratch/`:
+
 - **Ollama Benchmark Script:** `scratch/benchmark_ollama_v2.py`
 - **MiniLM & FinBERT Benchmark Script:** `scratch/benchmark_local_models.py`
 - **Raw Ollama Benchmark Data:** `scratch/ollama_benchmark_v2_results.json`
 - **Raw Local Models Benchmark Data:** `scratch/local_models_benchmark_results.json`
-- **Benchmark Virtual Environment:** `scratch/.bench_venv/` (Isolated; not committed to Git)
+- **Benchmark Virtual Environment:** `scratch/.bench_venv/` (Local execution venv; excluded from Git per `.gitignore`)
 
 ---
-**Report Approved by:** Mitali Dobale  
-**Role:** Senior AI Engineer & Implementation Lead, FinEx Engineering Team  
+**Report Approved by:** Mitali Dobale
+**Role:** Senior AI Engineer & Implementation Lead, FinEx Engineering Team

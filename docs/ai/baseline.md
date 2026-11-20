@@ -1,15 +1,15 @@
 # FinEx AI Hardware Baseline, Model Benchmarks & Architectural Readiness Report
 
-**Document Reference:** `FINEX-DOCS-AI-BASELINE-V2`  
-**Task ID:** `S0-MI02` (Issue #12 / PR #116)  
-**Author:** Mitali Dobale (Senior AI Engineer & Implementation Lead)  
-**Reviewer:** Mrugank Kakade (`@Mrugankkakade17-svg`)  
-**Sprint:** Sprint 0 — Verified Baseline  
-**Date:** 20 November 2026  
-**Status:** Verified Baseline with Empirical Local Measurements  
-**Target Repository:** `https://github.com/Mrugankkakade17-svg/Finex`  
-**Git Branch:** `feature/S0-MI02`  
-**Related Evidence File:** `docs/evidence/s0_mi02_evidence.md`  
+**Document Reference:** `FINEX-DOCS-AI-BASELINE-V2`
+**Task ID:** `S0-MI02` (Issue #12 / PR #116)
+**Author:** Mitali Dobale (Senior AI Engineer & Implementation Lead)
+**Reviewer:** Mrugank Kakade (`@Mrugankkakade17-svg`)
+**Sprint:** Sprint 0 — Verified Baseline
+**Date:** 20 November 2026
+**Status:** Verified Baseline with Empirical Local Measurements
+**Target Repository:** `https://github.com/Mrugankkakade17-svg/Finex`
+**Git Branch:** `feature/S0-MI02`
+**Related Evidence File:** `docs/evidence/s0_mi02_evidence.md`
 
 ---
 
@@ -37,6 +37,9 @@ In strict adherence to the **Honesty Rules** defined in the *FinEx Final Impleme
 ## 2. Workstation Hardware & Environment Specifications
 
 All benchmarks were performed directly on the primary engineering development workstation.
+
+> [!NOTE] Hardware Provenance & Verification
+> All empirical benchmarks reported in this document were executed locally on the developer laptop: **AMD Ryzen 5 7520U with Radeon Graphics** (4 Cores, 8 Logical Processors), **16.00 GB Physical LPDDR5 RAM** (5500 MHz, 15.28 GB addressable), running **Microsoft Windows 11 Home Single Language (Build 26200)**. An earlier PR comment mistakenly cited an "Intel Core Ultra 7 155H / 32 GB RAM" setup; this was an erroneous text label in the comment. The underlying execution logs, raw JSON results in `scratch/`, memory API measurements (`ullTotalPhys: 15.28 GB`), and local Hugging Face cache timestamps definitively verify that the AMD Ryzen 5 7520U laptop is the sole physical hardware that produced every measurement in this study.
 
 | Parameter | Specification | Verification Method |
 | :--- | :--- | :--- |
@@ -85,7 +88,7 @@ The 4 failures in `ai/test_rag_prototype.py` were verified against the codebase:
 
 ## 4. Empirical Ollama LLM Benchmark (AMD Ryzen CPU)
 
-All measurements conducted locally via HTTP REST API (`/api/generate`) with test prompt:  
+All measurements conducted locally via HTTP REST API (`/api/generate`) with test prompt:
 `"Explain asset allocation in 2 sentences."` (Temperature: 0.2, Seed: 42).
 
 ### 4.1 Eviction & Measurement Protocol
@@ -194,7 +197,7 @@ Based on our empirical measurements, the following engineering decision is estab
 
 ### 7.1 Does FinBERT CPU Latency Pass the Synchronous SLA Check?
 - **Engineering Responsiveness Target (Assumed):** A sub-500ms P95 latency budget is standard for interactive HTTP web API endpoints. *Note: While the approved FinEx Final Implementation Plan does not define an official 500ms SLA (Task `S8-PA01` on Page 19 specifically directs: "Targets recorded, not assumed"), 500ms represents our assumed engineering target for synchronous request handlers.*
-- **Empirical Reality:** 
+- **Empirical Reality:**
   - Classifying a batch of 10 news headlines takes **489.80 ms (Median)** and up to **699.80 ms (Max)** on CPU.
   - Adding network overhead and database reads puts total endpoint latency at **> 750 ms**, which **fails our assumed sub-500ms synchronous API budget**.
   - Executing 8-thread transformer inference in the web process blocks event loop concurrency and starves CPU resources.
@@ -266,5 +269,5 @@ To ensure strict engineering precision and avoid overclaims, we explicitly delin
 | 10 | Review comments on PR #116 fully addressed | **PASS** | All 5 review points resolved with empirical evidence. |
 
 ---
-**Report Approved by:** Mitali Dobale  
-**Role:** Senior AI Engineer & Implementation Lead, FinEx Engineering Team  
+**Report Approved by:** Mitali Dobale
+**Role:** Senior AI Engineer & Implementation Lead, FinEx Engineering Team
