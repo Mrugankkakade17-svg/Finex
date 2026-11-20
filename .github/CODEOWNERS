@@ -1,1 +1,25 @@
-* @likhitanikhare
+# FinEx Code Owners — Sprint 0 Governance Baseline
+# Updated per FinEx Final Implementation Plan & Addendum 1 (20 Nov 2026)
+
+# Global default: active development team leads
+* @mitali2701 @Mrugankkakade17-svg @NilishaBhole @payalmude14-star
+
+# Subsystem Ownership (Handbook & Addendum 1)
+# Frontend React & UI Components (Nilisha Bhole)
+/frontend-react/ @NilishaBhole
+
+# Database Migrations, Backend Jobs, CI & Release Automation (Mrugank Kakade)
+/backend/alembic/ @Mrugankkakade17-svg
+/.github/ @Mrugankkakade17-svg
+/backend/app/jobs/ @Mrugankkakade17-svg
+
+# Market Data, Paper Trading, Portfolio & Alerts (Payal Mude)
+/backend/app/routers/market* @payalmude14-star
+/backend/app/routers/paper* @payalmude14-star
+/backend/app/routers/portfolio.py @payalmude14-star
+/backend/app/routers/alerts* @payalmude14-star
+/backend/app/routers/goals* @payalmude14-star
+
+# AI, RAG Assistant, Suitability & Risk Models (Mitali Dobale)
+/ai/ @mitali2701
+/backend/app/routers/ai* @mitali2701
