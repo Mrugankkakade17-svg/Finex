@@ -1,6 +1,6 @@
 # ADR-002: PostgreSQL host and pgvector for S0 validation
 
-- **Status:** Accepted for S0 development/migration validation; live provisioning evidence pending
+- **Status:** Accepted and verified (see `docs/evidence/s0_mr01_evidence.md`)
 - **Date:** 2026-11-18
 - **Task:** S0-MR01
 
@@ -41,7 +41,7 @@ Neon's documentation states that pgvector is available on every plan and is enab
 
 ## Verification record
 
-The provider choice is recorded. **Live host creation, PostgreSQL 16 version confirmation, pgvector installation, and the Alembic round-trip are not yet verified by this repository change.** Attach the actual SQL and command output to `docs/evidence/s0_mr01_evidence.md` after executing the runbook in `host.md`.
+Live host creation on Neon (`finex-s0-validation-pg16`, PostgreSQL 16.16), installation of `vector 0.8.7`, and the Alembic round-trip (`upgrade head -> downgrade base -> upgrade head`) were verified. The actual SQL and command results are recorded in `docs/evidence/s0_mr01_evidence.md`.
 
 ## References
 

@@ -7,6 +7,7 @@
 - Create a project at https://console.neon.tech/
 - Project name: `finex-s0-validation`
 - PostgreSQL version: **16** (select it explicitly)
+- **Tip:** Neon defaults new projects to its latest PostgreSQL version (for example, PostgreSQL 18), so choose **PostgreSQL 16** from the version dropdown when creating the project.
 - Region: choose the closest available region to the team/application deployment.
 - Use a disposable development database/branch for the destructive Alembic rollback test.
 - Do not use this database as a replacement for the application's existing local SQLite store.
@@ -75,4 +76,4 @@ This task provisions a PostgreSQL 16 target for the existing Alembic migrations 
 
 ## Completion status
 
-This file records the selected provider and repeatable setup. The host is not considered provisioned and pgvector is not considered verified until the live SQL output and Alembic command output are recorded in `docs/evidence/s0_mr01_evidence.md`.
+The live host setup and pgvector check are verified. PostgreSQL 16.16, `vector 0.8.7`, and the Alembic round-trip results are recorded in `docs/evidence/s0_mr01_evidence.md`.
