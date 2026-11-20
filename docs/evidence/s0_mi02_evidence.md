@@ -6,7 +6,7 @@
 **Reviewer:** Mrugank Kakade (`@Mrugankkakade17-svg`)  
 **Sprint:** Sprint 0 — Verified Baseline  
 **Date:** 20 November 2026  
-**Execution Environment:** Local Developer Laptop (Windows 11 Home, AMD Ryzen 5, 8 Logical Cores, 16GB DDR4 RAM)  
+**Execution Environment:** Local Developer Laptop (Microsoft Windows 11 Home Single Language Build 26200, AMD Ryzen 5 7520U with Radeon Graphics, 4 Cores / 8 Logical Processors, 16GB LPDDR5 5500MHz RAM)  
 
 ---
 
@@ -125,10 +125,11 @@ FAILED ai/test_rag_prototype.py::test_retrieval_five_golden_questions - Attribut
 
 ---
 
-### 2.4 Test Suite 4: `backend/tests/unit/test_ai_refusal_case.py` (50 Tests)
+### 2.4 Sibling Unit Test Suite: `backend/tests/unit/test_ai_refusal_case.py` (50 Tests)
+- **Branch Location:** Branch `feature/S0-MI01` (PR #115); verified during Sprint 0 AI safety audit.
 - **Command:** `.\backend\.venv\Scripts\python.exe -m pytest backend/tests/unit/test_ai_refusal_case.py -q --no-cov`
 - **Scope:** Precompiled `re.IGNORECASE` advice refusal across lowercase, uppercase, mixed-case queries, plus educational queries and backward compatibility.
-- **Result:** **50 PASSED**, 0 Failed, 0 Skipped (Duration: 4.19s).
+- **Result:** **50 PASSED**, 0 Failed, 0 Skipped (Duration: 4.19s). (Note: The 3 suites discovered strictly under directory `ai/` total 47 tests: 43 passed, 4 failed by design).
 
 ---
 
@@ -272,7 +273,7 @@ Testing was conducted using Hugging Face `transformers 5.23.0` and PyTorch CPU i
 
 ## 6. Phase 5: Comparative Cross-Model Performance Matrix
 
-All models tested under identical hardware conditions (AMD Ryzen 5, 8 CPU cores, 16GB DDR4, Windows 11 Home):
+All models tested under identical hardware conditions (AMD Ryzen 5 7520U with Radeon Graphics, 4 Cores / 8 Logical Processors, 16GB LPDDR5, Windows 11 Home Single Language):
 
 | Model Category | Model ID | Parameter Size | Resident RAM Footprint | Single Item Latency (Warm Median) | Batch 10 Latency (Warm Median) | Throughput on CPU |
 | :--- | :--- | :---: | :---: | :---: | :---: | :---: |
@@ -290,10 +291,10 @@ The acceptance criterion states: *"CPU latency and RAM recorded; feeds the senti
 Based on our empirical measurements, the following engineering decision is established for Sprint 6 (`S6-MI01`):
 
 ### 7.1 Does FinBERT CPU Latency Pass the Synchronous SLA Check?
-- **SLA Requirement:** FinEx FastAPI endpoints require a sub-500ms P95 latency budget.
+- **Engineering Responsiveness Target (Assumed):** A sub-500ms P95 latency budget is assumed for interactive HTTP endpoints. *(Note: While not an official SLA specified in the FinEx Implementation Plan, where S8-PA01 notes "targets recorded, not assumed", sub-500ms is standard for web APIs).*
 - **Empirical Reality:** 
   - Classifying a batch of 10 news headlines takes **489.80 ms (Median)** and up to **699.80 ms (Max)** on CPU.
-  - Adding network overhead and database reads puts total endpoint latency at **> 750 ms**, which **fails the synchronous HTTP request SLA**.
+  - Adding network overhead and database reads puts total endpoint latency at **> 750 ms**, which **fails our assumed sub-500ms synchronous API budget**.
   - Executing 8-thread transformer inference in the web process blocks event loop concurrency and starves CPU resources.
 
 ### 7.2 The Authoritative Sentiment Architecture for FinEx

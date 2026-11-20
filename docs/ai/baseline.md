@@ -40,9 +40,9 @@ All benchmarks were performed directly on the primary engineering development wo
 
 | Parameter | Specification | Verification Method |
 | :--- | :--- | :--- |
-| **Operating System** | Windows 11 Home (64-bit Build 26100) | `Get-CimInstance Win32_OperatingSystem` |
-| **Processor (CPU)** | AMD Ryzen 5 / AMD64 Family 23 Model 160 Stepping 0 (8 Logical Cores, ~3.20 GHz base) | `Get-CimInstance Win32_Processor` |
-| **System RAM** | 16.00 GB Physical DDR4 (15.28 GB addressable) | `GlobalMemoryStatusEx` Win32 API |
+| **Operating System** | Microsoft Windows 11 Home Single Language (64-bit Build 26200) | `Get-CimInstance Win32_OperatingSystem` |
+| **Processor (CPU)** | AMD Ryzen 5 7520U with Radeon Graphics (4 Cores, 8 Logical Processors, ~2.80 GHz base) | `Get-CimInstance Win32_Processor` |
+| **System RAM** | 16.00 GB Physical LPDDR5 (5500 MHz, 15.28 GB addressable) | `Get-CimInstance Win32_PhysicalMemory` |
 | **Free RAM at Baseline** | ~4.87 GB Available (~71% background load) | Win32 Memory API |
 | **Disk Storage** | 244.14 GB Total / 22.42 GB Available SSD | `Get-PSDrive C` |
 | **Python Runtimes** | - Primary App: Python 3.13.17 (`backend/.venv`)<br>- Benchmark Runner: Python 3.13.17 (`scratch/.bench_venv`) | `python --version` |
@@ -57,14 +57,20 @@ A comprehensive test audit was executed against all test files in the `ai/` and 
 
 ### 3.1 Test Execution Summary Table
 
+#### A. Test Suites Discovered Under `ai/` Directory (Branch `feature/S0-MI02`)
 | Test Suite Path | Scope / Domain | Total | Passed | Failed | Skipped | Status Assessment |
 | :--- | :--- | :---: | :---: | :---: | :---: | :--- |
 | `ai/risk/test_scoring.py` | Risk Scoring Deterministic Engine | 32 | **32** | 0 | 0 | **PASSED:** 12 risk profiles, boundary transitions, 1000-run replay determinism. |
 | `ai/risk/test_explanation.py` | Risk Explanation & Prompt Template Guardrails | 11 | **11** | 0 | 0 | **PASSED:** Zero numerical drift, injection resistance, fallback on malformed JSON. |
-| `backend/tests/unit/test_ai_refusal_case.py` | Regulatory Advice Refusal (`S0-MI01` / BUG-01) | 50 | **50** | 0 | 0 | **PASSED:** Precompiled `re.IGNORECASE` pattern matching across all casing variants. |
 | `ai/test_rag_prototype.py` | RAG Prototype & Document Chunking (`S1-AI-02`) | 4 | 0 | **4** | 0 | **FAILED (By Design):** Tests require functions planned for Sprint 1 (`S1-AI-02`). |
 | `ai/eval/run_eval.py` | LLM Quantitative Evaluation Pipeline | — | — | — | — | **NOT TESTED:** File does not exist in Sprint 0; scheduled for Sprint 5 (`S5-MI05`). |
-| **Total Test Count** | **Comprehensive AI Test Audit** | **97** | **93** | **4** | **0** | **95.9% Pass Rate across audited suites.** |
+| **Subtotal (`ai/` Directory)** | **All Discovered Suites in `ai/`** | **47** | **43** | **4** | **0** | **91.5% Pass Rate (Failing tests are S1 stubs).** |
+
+#### B. Sibling Sprint 0 AI Unit Tests (Branch `feature/S0-MI01`)
+| Test Suite Path | Scope / Domain | Total | Passed | Failed | Skipped | Status Assessment |
+| :--- | :--- | :---: | :---: | :---: | :---: | :--- |
+| `backend/tests/unit/test_ai_refusal_case.py` | Regulatory Advice Refusal (`S0-MI01` / BUG-01) | 50 | **50** | 0 | 0 | **PASSED:** Located on `feature/S0-MI01` (PR #115); verified during S0 safety audit. |
+| **Total Sprint 0 AI Audit** | **Combined AI Test Coverage** | **97** | **93** | **4** | **0** | **95.9% Pass Rate across audited suites.** |
 
 ### 3.2 In-Depth Analysis of Failing Tests in `ai/test_rag_prototype.py`
 The 4 failures in `ai/test_rag_prototype.py` were verified against the codebase:
@@ -187,10 +193,10 @@ The acceptance criterion states: *"CPU latency and RAM recorded; feeds the senti
 Based on our empirical measurements, the following engineering decision is established for Sprint 6 (`S6-MI01`):
 
 ### 7.1 Does FinBERT CPU Latency Pass the Synchronous SLA Check?
-- **SLA Requirement:** FinEx FastAPI endpoints require a sub-500ms P95 latency budget.
+- **Engineering Responsiveness Target (Assumed):** A sub-500ms P95 latency budget is standard for interactive HTTP web API endpoints. *Note: While the approved FinEx Final Implementation Plan does not define an official 500ms SLA (Task `S8-PA01` on Page 19 specifically directs: "Targets recorded, not assumed"), 500ms represents our assumed engineering target for synchronous request handlers.*
 - **Empirical Reality:** 
   - Classifying a batch of 10 news headlines takes **489.80 ms (Median)** and up to **699.80 ms (Max)** on CPU.
-  - Adding network overhead and database reads puts total endpoint latency at **> 750 ms**, which **fails the synchronous HTTP request SLA**.
+  - Adding network overhead and database reads puts total endpoint latency at **> 750 ms**, which **fails our assumed sub-500ms synchronous API budget**.
   - Executing 8-thread transformer inference in the web process blocks event loop concurrency and starves CPU resources.
 
 ### 7.2 The Authoritative Sentiment Architecture for FinEx
@@ -207,7 +213,7 @@ Based on our empirical measurements, the following engineering decision is estab
 
 ## 8. Cross-Model Performance & Resource Comparison Matrix
 
-All models measured on identical workstation hardware (AMD Ryzen 5, 8 CPU cores, 16GB DDR4):
+All models measured on identical workstation hardware (AMD Ryzen 5 7520U, 4 Cores / 8 Threads, 16GB LPDDR5, Windows 11 Home Single Language):
 
 | Metric | Ollama `llama3.2:latest` | Ollama `deepseek-r1:1.5b` | `all-MiniLM-L6-v2` | `ProsusAI/finbert` |
 | :--- | :---: | :---: | :---: | :---: |
