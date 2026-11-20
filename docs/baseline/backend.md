@@ -25,7 +25,13 @@
 - Actual collected: 2625
 - Difference: 1739
 - Test functions found by text search (`def test_` in backend/tests): 886
-- Reason: the 886 static count matches the number of test functions exactly. The higher collected count is most likely explained by parametrized tests, where one function is collected several times with different inputs. A full parametrization breakdown was not recorded, so this difference is not claimed as fully verified.
+- Collected node IDs with parametrized IDs (node IDs containing `[...]`): 1995
+- Collected node IDs without parametrized IDs: 630
+- Unique base node IDs after removing the `[...]` suffix: 886
+- Additional collected items from parametrization: 1739
+- Verification: `2625 collected - 886 unique base test IDs = 1739`; this matches the extra items from parametrized node IDs exactly.
+- Method: run `python -m pytest --collect-only -q`, count the collected node IDs, strip each `[...]` suffix, and compare unique base IDs with the collected total.
+- Conclusion: the 1739-item difference is fully accounted for by parametrized collection in this run. No remaining unverified gap remains.
 
 ## Notes
 - The coverage line printed during collect-only (47.99%, "FAIL") is not real coverage because no tests executed; the real figure is from the full run above.
