@@ -1,0 +1,146 @@
+{
+  "minilm": {
+    "model_id": "sentence-transformers/all-MiniLM-L6-v2",
+    "parameters_million": 22.7,
+    "embedding_dimension": 384,
+    "ram_before_load_gb": 10.35,
+    "ram_after_load_gb": 10.51,
+    "ram_during_inference_gb": 10.55,
+    "model_load_time_s": 70.989,
+    "single_query_cold_ms": 74.54,
+    "single_query_warm": {
+      "min_ms": 19.64,
+      "mean_ms": 23.68,
+      "median_ms": 24.51,
+      "max_ms": 27.18,
+      "samples": [
+        21.71,
+        23.3,
+        24.61,
+        27.18,
+        24.51,
+        25.89,
+        26.06,
+        24.28,
+        19.66,
+        19.64
+      ]
+    },
+    "batch_5_warm": {
+      "min_ms": 37.53,
+      "mean_ms": 42.27,
+      "median_ms": 40.88,
+      "max_ms": 63.52,
+      "per_chunk_mean_ms": 8.45,
+      "samples": [
+        63.52,
+        38.3,
+        38.86,
+        37.53,
+        42.02,
+        40.88,
+        38.75,
+        38.4,
+        41.86,
+        42.58
+      ]
+    },
+    "batch_10_warm": {
+      "min_ms": 60.11,
+      "mean_ms": 82.99,
+      "median_ms": 68.14,
+      "max_ms": 207.1,
+      "per_chunk_mean_ms": 8.3,
+      "samples": [
+        79.42,
+        63.34,
+        61.66,
+        68.14,
+        63.74,
+        60.11,
+        79.37,
+        65.58,
+        207.1,
+        81.47
+      ]
+    }
+  },
+  "finbert": {
+    "model_id": "ProsusAI/finbert",
+    "parameters_million": 109.5,
+    "ram_before_load_gb": 10.47,
+    "ram_after_load_gb": 10.92,
+    "ram_during_inference_gb": 10.88,
+    "model_load_time_s": 139.037,
+    "validation_outputs": [
+      {
+        "text": "HDFC Bank reports 35% surge in quarterly net profit, beating analyst estimates across all operational segments.",
+        "label": "positive",
+        "confidence": 0.9523,
+        "probabilities": {
+          "positive": 0.9523,
+          "negative": 0.024,
+          "neutral": 0.0237
+        }
+      },
+      {
+        "text": "Tech giant warns of severe revenue slump and cuts full-year forecast amid worsening global macro headwinds.",
+        "label": "negative",
+        "confidence": 0.947,
+        "probabilities": {
+          "positive": 0.0195,
+          "negative": 0.947,
+          "neutral": 0.0336
+        }
+      },
+      {
+        "text": "Reserve Bank of India maintains policy repo rate unchanged at 6.50% following monetary policy committee meeting.",
+        "label": "negative",
+        "confidence": 0.4996,
+        "probabilities": {
+          "positive": 0.0272,
+          "negative": 0.4996,
+          "neutral": 0.4732
+        }
+      }
+    ],
+    "single_headline_cold_ms": 110.89,
+    "single_headline_warm": {
+      "min_ms": 109.89,
+      "mean_ms": 116.9,
+      "median_ms": 115.03,
+      "max_ms": 133.66,
+      "samples": [
+        119.87,
+        112.7,
+        133.66,
+        122.15,
+        109.89,
+        112.09,
+        121.93,
+        110.6,
+        111.05,
+        115.03
+      ]
+    },
+    "batch_10_warm": {
+      "min_ms": 450.13,
+      "mean_ms": 509.93,
+      "median_ms": 489.8,
+      "max_ms": 699.8,
+      "per_headline_mean_ms": 50.99,
+      "samples": [
+        495.36,
+        453.39,
+        450.13,
+        489.8,
+        453.66,
+        699.8,
+        610.39,
+        508.31,
+        465.24,
+        473.18
+      ]
+    }
+  }
+}
