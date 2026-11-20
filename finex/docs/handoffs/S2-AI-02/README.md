@@ -2,7 +2,7 @@
 
 - **Task ID**: `S2-AI-02`
 - **Owner**: Pranjal
-- **Reviewers**: Nayan + Likhita
+- **Reviewers**: Nayan
 - **Branch**: `feature/S2-AI-02-deterministic-risk-explanation`
 - **Target Branch**: `dev` / `main`
 - **Status**: Completed & Ready for Review
