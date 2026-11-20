@@ -20,6 +20,14 @@
 | Pytest | `python -m pytest -q` | 2625 passed, 0 failed, 2444 warnings in 317.12s |
 | Coverage | (part of pytest run) | 85.52% (6249 statements, 905 missed); required 70% reached |
 
+## Raw command output
+
+The attached logs are fresh reruns from 20 Nov 2026, executed from `backend/` with the project virtual environment (Python 3.13.15; Ruff 0.16.2; mypy 2.3.0; pytest 8.4.1). Test counts and coverage match the baseline; runtime varies by environment.
+
+- [Ruff](./logs/ruff.txt)
+- [Mypy](./logs/mypy.txt)
+- [Pytest](./logs/pytest.txt)
+
 ## Reconciliation with the 886 static count
 - Static count in plan: 886
 - Actual collected: 2625

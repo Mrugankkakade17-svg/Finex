@@ -1,0 +1,472 @@
+........................................................................ [  2%]
+........................................................................ [  5%]
+........................................................................ [  8%]
+........................................................................ [ 10%]
+........................................................................ [ 13%]
+........................................................................ [ 16%]
+........................................................................ [ 19%]
+........................................................................ [ 21%]
+........................................................................ [ 24%]
+........................................................................ [ 27%]
+........................................................................ [ 30%]
+........................................................................ [ 32%]
+........................................................................ [ 35%]
+........................................................................ [ 38%]
+........................................................................ [ 41%]
+........................................................................ [ 43%]
+........................................................................ [ 46%]
+........................................................................ [ 49%]
+........................................................................ [ 52%]
+........................................................................ [ 54%]
+........................................................................ [ 57%]
+........................................................................ [ 60%]
+........................................................................ [ 63%]
+........................................................................ [ 65%]
+........................................................................ [ 68%]
+........................................................................ [ 71%]
+........................................................................ [ 74%]
+........................................................................ [ 76%]
+........................................................................ [ 79%]
+........................................................................ [ 82%]
+........................................................................ [ 85%]
+........................................................................ [ 87%]
+........................................................................ [ 90%]
+........................................................................ [ 93%]
+........................................................................ [ 96%]
+........................................................................ [ 98%]
+.................................                                        [100%]
+============================== warnings summary ===============================
+.venv\Lib\site-packages\starlette\testclient.py:51
+  C:\Users\VICTUS\FINEX Project\backend\.venv\Lib\site-packages\starlette\testclient.py:51: DeprecationWarning: The anyio.abc.BlockingPortal alias is deprecated, use anyio.from_thread.BlockingPortal instead.
+    _PortalFactoryType = Callable[[], AbstractContextManager[anyio.abc.BlockingPortal]]
+
+app\routers\release_handover.py:30
+  C:\Users\VICTUS\FINEX Project\backend\app\routers\release_handover.py:30: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    signed_at=datetime.utcnow(),
+
+app\routers\release_handover.py:42
+  C:\Users\VICTUS\FINEX Project\backend\app\routers\release_handover.py:42: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    signed_at=datetime.utcnow(),
+
+app\main.py:127: 1 warning
+tests/contract/test_local_s1_api.py: 29 warnings
+tests/contract/test_local_s1_openapi.py: 10 warnings
+tests/contract/test_local_s2_portfolio_api.py: 75 warnings
+tests/contract/test_local_s2_portfolio_failures.py: 7 warnings
+tests/contract/test_local_s2_portfolio_transport.py: 42 warnings
+tests/contract/test_local_s2_risk_api.py: 54 warnings
+tests/contract/test_local_s2_risk_transport.py: 20 warnings
+tests/contract/test_local_s3_faults.py: 14 warnings
+tests/contract/test_local_s3_foundation_api.py: 95 warnings
+tests/contract/test_local_s3_foundation_failures.py: 38 warnings
+tests/contract/test_local_s3_openapi.py: 4 warnings
+tests/contract/test_local_s3_review_controls.py: 8 warnings
+tests/contract/test_s2_risk_api.py: 26 warnings
+tests/integration/test_local_s1_persistence.py: 31 warnings
+tests/integration/test_local_s3_foundation_atomicity.py: 7 warnings
+tests/integration/test_s1_s2_pilot_journey.py: 19 warnings
+tests/test_legacy_local_boundary.py: 5 warnings
+tests/test_local_request_boundary.py: 17 warnings
+tests/test_local_settings.py: 4 warnings
+tests/test_r0_cors.py: 1 warning
+tests/unit/test_local_store.py: 1 warning
+tests/unit/test_s2_evaluation.py: 29 warnings
+tests/unit/test_verify_s3_foundation.py: 6 warnings
+  C:\Users\VICTUS\FINEX Project\backend\app\main.py:127: DeprecationWarning: 
+          on_event is deprecated, use lifespan event handlers instead.
+  
+          Read more about it in the
+          [FastAPI docs for Lifespan Events](https://fastapi.tiangolo.com/advanced/events/).
+          
+    @application.on_event("startup")
+
+.venv\Lib\site-packages\fastapi\applications.py:4495: 2 warnings
+tests/contract/test_local_s1_api.py: 58 warnings
+tests/contract/test_local_s1_openapi.py: 20 warnings
+tests/contract/test_local_s2_portfolio_api.py: 150 warnings
+tests/contract/test_local_s2_portfolio_failures.py: 14 warnings
+tests/contract/test_local_s2_portfolio_transport.py: 84 warnings
+tests/contract/test_local_s2_risk_api.py: 108 warnings
+tests/contract/test_local_s2_risk_transport.py: 40 warnings
+tests/contract/test_local_s3_faults.py: 28 warnings
+tests/contract/test_local_s3_foundation_api.py: 190 warnings
+tests/contract/test_local_s3_foundation_failures.py: 76 warnings
+tests/contract/test_local_s3_openapi.py: 8 warnings
+tests/contract/test_local_s3_review_controls.py: 16 warnings
+tests/contract/test_s2_risk_api.py: 52 warnings
+tests/integration/test_local_s1_persistence.py: 62 warnings
+tests/integration/test_local_s3_foundation_atomicity.py: 14 warnings
+tests/integration/test_s1_s2_pilot_journey.py: 38 warnings
+tests/test_legacy_local_boundary.py: 10 warnings
+tests/test_local_request_boundary.py: 34 warnings
+tests/test_local_settings.py: 8 warnings
+tests/test_r0_cors.py: 2 warnings
+tests/unit/test_local_store.py: 2 warnings
+tests/unit/test_s2_evaluation.py: 58 warnings
+tests/unit/test_verify_s3_foundation.py: 12 warnings
+  C:\Users\VICTUS\FINEX Project\backend\.venv\Lib\site-packages\fastapi\applications.py:4495: DeprecationWarning: 
+          on_event is deprecated, use lifespan event handlers instead.
+  
+          Read more about it in the
+          [FastAPI docs for Lifespan Events](https://fastapi.tiangolo.com/advanced/events/).
+          
+    return self.router.on_event(event_type)
+
+app\main.py:135: 1 warning
+tests/contract/test_local_s1_api.py: 29 warnings
+tests/contract/test_local_s1_openapi.py: 10 warnings
+tests/contract/test_local_s2_portfolio_api.py: 75 warnings
+tests/contract/test_local_s2_portfolio_failures.py: 7 warnings
+tests/contract/test_local_s2_portfolio_transport.py: 42 warnings
+tests/contract/test_local_s2_risk_api.py: 54 warnings
+tests/contract/test_local_s2_risk_transport.py: 20 warnings
+tests/contract/test_local_s3_faults.py: 14 warnings
+tests/contract/test_local_s3_foundation_api.py: 95 warnings
+tests/contract/test_local_s3_foundation_failures.py: 38 warnings
+tests/contract/test_local_s3_openapi.py: 4 warnings
+tests/contract/test_local_s3_review_controls.py: 8 warnings
+tests/contract/test_s2_risk_api.py: 26 warnings
+tests/integration/test_local_s1_persistence.py: 31 warnings
+tests/integration/test_local_s3_foundation_atomicity.py: 7 warnings
+tests/integration/test_s1_s2_pilot_journey.py: 19 warnings
+tests/test_legacy_local_boundary.py: 5 warnings
+tests/test_local_request_boundary.py: 17 warnings
+tests/test_local_settings.py: 4 warnings
+tests/test_r0_cors.py: 1 warning
+tests/unit/test_local_store.py: 1 warning
+tests/unit/test_s2_evaluation.py: 29 warnings
+tests/unit/test_verify_s3_foundation.py: 6 warnings
+  C:\Users\VICTUS\FINEX Project\backend\app\main.py:135: DeprecationWarning: 
+          on_event is deprecated, use lifespan event handlers instead.
+  
+          Read more about it in the
+          [FastAPI docs for Lifespan Events](https://fastapi.tiangolo.com/advanced/events/).
+          
+    @application.on_event("shutdown")
+
+app\repositories\user_repository.py:41: 1 warning
+tests/contract/test_auth_contract.py: 6 warnings
+tests/contract/test_consent_contract.py: 3 warnings
+tests/contract/test_profile_contract.py: 2 warnings
+tests/contract/test_risk_contract.py: 5 warnings
+tests/integration/test_consent_flow.py: 3 warnings
+tests/integration/test_google_auth_flow.py: 14 warnings
+tests/integration/test_profile_flow.py: 2 warnings
+tests/test_auth.py: 6 warnings
+tests/test_auth_flow.py: 1 warning
+tests/test_legacy_local_boundary.py: 2 warnings
+tests/test_profile_service.py: 2 warnings
+tests/test_repository.py: 9 warnings
+tests/test_users_router.py: 2 warnings
+tests/unit/test_auth_service.py: 14 warnings
+tests/unit/test_user_repository.py: 14 warnings
+  C:\Users\VICTUS\FINEX Project\backend\app\repositories\user_repository.py:41: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/contract/test_auth_contract.py: 8 warnings
+tests/contract/test_consent_contract.py: 3 warnings
+tests/contract/test_profile_contract.py: 2 warnings
+tests/contract/test_risk_contract.py: 5 warnings
+tests/integration/test_consent_flow.py: 3 warnings
+tests/integration/test_google_auth_flow.py: 20 warnings
+tests/integration/test_profile_flow.py: 2 warnings
+tests/test_auth.py: 8 warnings
+tests/test_auth_flow.py: 3 warnings
+tests/test_legacy_local_boundary.py: 2 warnings
+tests/unit/test_auth_service.py: 18 warnings
+tests/unit/test_jwt_service.py: 7 warnings
+  C:\Users\VICTUS\FINEX Project\backend\app\auth\jwt_handler.py:14: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    expire = datetime.utcnow() + (
+
+tests/contract/test_auth_contract.py: 7 warnings
+tests/contract/test_consent_contract.py: 3 warnings
+tests/contract/test_profile_contract.py: 2 warnings
+tests/contract/test_risk_contract.py: 5 warnings
+tests/integration/test_consent_flow.py: 3 warnings
+tests/integration/test_google_auth_flow.py: 16 warnings
+tests/integration/test_profile_flow.py: 2 warnings
+tests/test_auth.py: 7 warnings
+tests/test_auth_flow.py: 2 warnings
+tests/test_legacy_local_boundary.py: 2 warnings
+tests/unit/test_auth_service.py: 17 warnings
+tests/unit/test_jwt_service.py: 3 warnings
+  C:\Users\VICTUS\FINEX Project\backend\app\auth\jwt_handler.py:23: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    expire = datetime.utcnow() + timedelta(days=7)
+
+tests/contract/test_profile_contract.py::TestProfileSuccessEnvelope::test_update_profile_success_shape
+tests/integration/test_profile_flow.py::TestProfileFlow::test_update_profile_authenticated
+tests/test_profile_router.py::test_update_profile_endpoint
+tests/test_profile_service.py::test_update_profile
+tests/test_repository.py::test_update_user
+tests/unit/test_user_repository.py::TestUpdateUser::test_updates_allowed_fields
+  C:\Users\VICTUS\FINEX Project\backend\app\repositories\user_repository.py:125: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    user["updated_at"] = datetime.utcnow()
+
+tests/unit/test_local_s2_portfolio_native_harness.py::test_corpus_rejects_nonstring_envelope_messages[None-session_invalid-error.message]
+  C:\Users\VICTUS\FINEX Project\backend\local_s2_evidence.py:61: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x00000210AEA72D40>
+    return any(secret in value for secret in forbidden)
+  Enable tracemalloc to get traceback where the object was allocated.
+  See https://docs.pytest.org/en/stable/how-to/capture-warnings.html#resource-warnings for more info.
+
+tests/unit/test_local_s2_portfolio_native_harness.py::test_corpus_rejects_nonstring_envelope_messages[None-session_invalid-error.message]
+  C:\Users\VICTUS\FINEX Project\backend\local_s2_evidence.py:61: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x00000210AEA70E50>
+    return any(secret in value for secret in forbidden)
+  Enable tracemalloc to get traceback where the object was allocated.
+  See https://docs.pytest.org/en/stable/how-to/capture-warnings.html#resource-warnings for more info.
+
+tests/unit/test_local_s2_portfolio_native_harness.py::test_corpus_rejects_nonstring_envelope_messages[None-session_invalid-error.message]
+  C:\Users\VICTUS\FINEX Project\backend\local_s2_evidence.py:61: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x00000210AEA72E30>
+    return any(secret in value for secret in forbidden)
+  Enable tracemalloc to get traceback where the object was allocated.
+  See https://docs.pytest.org/en/stable/how-to/capture-warnings.html#resource-warnings for more info.
+
+tests/unit/test_local_s2_portfolio_native_harness.py::test_corpus_rejects_nonstring_envelope_messages[None-session_invalid-error.message]
+  C:\Users\VICTUS\FINEX Project\backend\local_s2_evidence.py:61: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x00000210AEA723E0>
+    return any(secret in value for secret in forbidden)
+  Enable tracemalloc to get traceback where the object was allocated.
+  See https://docs.pytest.org/en/stable/how-to/capture-warnings.html#resource-warnings for more info.
+
+tests/unit/test_local_s2_portfolio_native_harness.py::test_corpus_rejects_nonstring_envelope_messages[None-session_invalid-error.message]
+  C:\Users\VICTUS\FINEX Project\backend\local_s2_evidence.py:61: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x00000210AEA73790>
+    return any(secret in value for secret in forbidden)
+  Enable tracemalloc to get traceback where the object was allocated.
+  See https://docs.pytest.org/en/stable/how-to/capture-warnings.html#resource-warnings for more info.
+
+tests/unit/test_local_s2_portfolio_native_harness.py::test_corpus_rejects_nonstring_envelope_messages[None-session_invalid-error.message]
+  C:\Users\VICTUS\FINEX Project\backend\local_s2_evidence.py:61: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x00000210AEA722F0>
+    return any(secret in value for secret in forbidden)
+  Enable tracemalloc to get traceback where the object was allocated.
+  See https://docs.pytest.org/en/stable/how-to/capture-warnings.html#resource-warnings for more info.
+
+tests/unit/test_local_s2_portfolio_native_harness.py::test_corpus_rejects_nonstring_envelope_messages[None-session_invalid-error.message]
+  C:\Users\VICTUS\FINEX Project\backend\local_s2_evidence.py:61: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x00000210AEA72890>
+    return any(secret in value for secret in forbidden)
+  Enable tracemalloc to get traceback where the object was allocated.
+  See https://docs.pytest.org/en/stable/how-to/capture-warnings.html#resource-warnings for more info.
+
+tests/unit/test_local_s2_portfolio_native_harness.py::test_corpus_rejects_nonstring_envelope_messages[None-session_invalid-error.message]
+  C:\Users\VICTUS\FINEX Project\backend\local_s2_evidence.py:61: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x00000210AEA72110>
+    return any(secret in value for secret in forbidden)
+  Enable tracemalloc to get traceback where the object was allocated.
+  See https://docs.pytest.org/en/stable/how-to/capture-warnings.html#resource-warnings for more info.
+
+tests/unit/test_local_s2_portfolio_native_harness.py::test_corpus_rejects_nonstring_envelope_messages[None-session_invalid-error.message]
+  C:\Users\VICTUS\FINEX Project\backend\local_s2_evidence.py:61: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x00000210AEA73F10>
+    return any(secret in value for secret in forbidden)
+  Enable tracemalloc to get traceback where the object was allocated.
+  See https://docs.pytest.org/en/stable/how-to/capture-warnings.html#resource-warnings for more info.
+
+tests/unit/test_local_s2_portfolio_native_harness.py::test_corpus_rejects_nonstring_envelope_messages[None-session_invalid-error.message]
+  C:\Users\VICTUS\FINEX Project\backend\local_s2_evidence.py:61: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x00000210AEA71A80>
+    return any(secret in value for secret in forbidden)
+  Enable tracemalloc to get traceback where the object was allocated.
+  See https://docs.pytest.org/en/stable/how-to/capture-warnings.html#resource-warnings for more info.
+
+tests/unit/test_local_s2_portfolio_native_harness.py::test_corpus_rejects_nonstring_envelope_messages[None-session_invalid-error.message]
+  C:\Users\VICTUS\FINEX Project\backend\local_s2_evidence.py:61: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x00000210AEA72F20>
+    return any(secret in value for secret in forbidden)
+  Enable tracemalloc to get traceback where the object was allocated.
+  See https://docs.pytest.org/en/stable/how-to/capture-warnings.html#resource-warnings for more info.
+
+tests/unit/test_token_repo_and_google_service.py::TestTokenRepository::test_store_and_validate_refresh_token
+  C:\Users\VICTUS\FINEX Project\backend\tests\unit\test_token_repo_and_google_service.py:19: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    expires = datetime.utcnow() + timedelta(days=7)
+
+tests/unit/test_token_repo_and_google_service.py::TestTokenRepository::test_store_and_validate_refresh_token
+tests/unit/test_token_repo_and_google_service.py::TestTokenRepository::test_revoke_token
+tests/unit/test_token_repo_and_google_service.py::TestTokenRepository::test_revoke_user_tokens
+tests/unit/test_token_repo_and_google_service.py::TestTokenRepository::test_revoke_user_tokens
+tests/unit/test_token_repo_and_google_service.py::TestTokenRepository::test_revoke_user_tokens
+tests/unit/test_token_repo_and_google_service.py::TestTokenRepository::test_expired_token
+tests/unit/test_token_repo_and_google_service.py::TestTokenRepository::test_clear_repository
+  C:\Users\VICTUS\FINEX Project\backend\app\repositories\token_repository.py:28: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    "created_at": datetime.utcnow(),
+
+tests/unit/test_token_repo_and_google_service.py::TestTokenRepository::test_store_and_validate_refresh_token
+tests/unit/test_token_repo_and_google_service.py::TestTokenRepository::test_expired_token
+  C:\Users\VICTUS\FINEX Project\backend\app\repositories\token_repository.py:77: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    if expires_at and expires_at < datetime.utcnow():
+
+tests/unit/test_token_repo_and_google_service.py::TestTokenRepository::test_expired_token
+  C:\Users\VICTUS\FINEX Project\backend\tests\unit\test_token_repo_and_google_service.py:53: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    expired = datetime.utcnow() - timedelta(days=1)
+
+tests/unit/test_user_repository.py::TestGetOrCreateGoogleUser::test_links_google_to_existing_email_password_user
+  C:\Users\VICTUS\FINEX Project\backend\app\repositories\user_repository.py:97: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    user["updated_at"] = datetime.utcnow()
+
+tests/unit/test_verify_s3_foundation.py::test_owned_cleanup_rejects_every_reparse_capability_without_recursive_delete[database-junction]
+  C:\Users\VICTUS\FINEX Project\backend\local_s2_evidence.py:61: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x00000210B1B57880>
+    return any(secret in value for secret in forbidden)
+  Enable tracemalloc to get traceback where the object was allocated.
+  See https://docs.pytest.org/en/stable/how-to/capture-warnings.html#resource-warnings for more info.
+
+tests/unit/test_verify_s3_foundation.py::test_owned_cleanup_rejects_every_reparse_capability_without_recursive_delete[database-junction]
+  C:\Users\VICTUS\FINEX Project\backend\local_s2_evidence.py:61: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x00000210B1B557B0>
+    return any(secret in value for secret in forbidden)
+  Enable tracemalloc to get traceback where the object was allocated.
+  See https://docs.pytest.org/en/stable/how-to/capture-warnings.html#resource-warnings for more info.
+
+tests/unit/test_verify_s3_foundation.py::test_owned_cleanup_rejects_every_reparse_capability_without_recursive_delete[database-junction]
+  C:\Users\VICTUS\FINEX Project\backend\local_s2_evidence.py:61: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x00000210B1B553F0>
+    return any(secret in value for secret in forbidden)
+  Enable tracemalloc to get traceback where the object was allocated.
+  See https://docs.pytest.org/en/stable/how-to/capture-warnings.html#resource-warnings for more info.
+
+tests/unit/test_verify_s3_foundation.py::test_owned_cleanup_rejects_every_reparse_capability_without_recursive_delete[database-junction]
+  C:\Users\VICTUS\FINEX Project\backend\local_s2_evidence.py:61: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x00000210B1B555D0>
+    return any(secret in value for secret in forbidden)
+  Enable tracemalloc to get traceback where the object was allocated.
+  See https://docs.pytest.org/en/stable/how-to/capture-warnings.html#resource-warnings for more info.
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=============================== tests coverage ================================
+______________ coverage: platform win32, python 3.13.15-final-0 _______________
+
+Name                                                 Stmts   Miss  Cover   Missing
+----------------------------------------------------------------------------------
+app\__init__.py                                          0      0   100%
+app\adapters\__init__.py                                 0      0   100%
+app\adapters\market_data_adapter.py                     30      2    93%   71-75
+app\adapters\yfinance_adapter.py                        34     10    71%   37, 80-90, 94-102
+app\api\v1\c1.py                                        15      0   100%
+app\auth\__init__.py                                     0      0   100%
+app\auth\dependencies.py                                19      2    89%   21, 43
+app\auth\jwt.py                                         21     21     0%   1-32
+app\auth\jwt_handler.py                                 22      0   100%
+app\auth\local_boundary.py                              19      0   100%
+app\auth\password.py                                     6      0   100%
+app\auth\schemas.py                                     11     11     0%   5-26
+app\auth\security.py                                    25      2    92%   46, 53
+app\auth\token_store.py                                 16      0   100%
+app\config\__init__.py                                   0      0   100%
+app\config\cors.py                                      19      4    79%   18, 22, 24, 51
+app\config\database.py                                  30     30     0%   1-61
+app\config\logging.py                                    3      0   100%
+app\config\settings.py                                 170     14    92%   42, 136, 142, 146, 150, 154-155, 157, 167, 240, 248, 251, 269, 276
+app\core\__init__.py                                     0      0   100%
+app\core\exceptions.py                                  53      2    96%   140, 151
+app\core\handlers.py                                    46      8    83%   14, 29, 34, 37-40, 81
+app\core\middleware.py                                  39      0   100%
+app\core\responses.py                                   14      0   100%
+app\domain\__init__.py                                   0      0   100%
+app\domain\local_application.py                         30      0   100%
+app\domain\local_foundation.py                         102     16    84%   58, 60, 65, 70, 78, 82, 88, 98, 103, 105, 110, 119, 126, 128, 130, 137
+app\domain\local_portfolio.py                          143      3    98%   163, 172, 197
+app\domain\local_risk.py                                18      0   100%
+app\exceptions\__init__.py                               0      0   100%
+app\exceptions\custom_exceptions.py                     17      0   100%
+app\exceptions\handlers.py                              10     10     0%   1-22
+app\fixtures\__init__.py                                 0      0   100%
+app\fixtures\s1_dat_01.py                              253     51    80%   106-113, 116, 122, 128, 160, 177, 186, 193-194, 203, 212, 222, 238, 258, 260, 263, 267, 272, 277, 282, 305, 322, 335, 360, 365, 385, 397, 404, 408, 419, 449, 463, 467, 475, 482, 493, 556-570, 576-583, 587
+app\fixtures\s2_dat_01.py                              330     71    78%   84-91, 94, 108, 114, 140, 146, 148, 161, 165, 173, 177, 185, 190, 193-194, 201, 204, 210, 214, 220, 231, 238, 241, 259, 266, 270, 283, 289, 314, 316, 318, 322, 342, 346, 351, 357, 399, 413, 417, 419, 423, 446, 450, 480, 492, 498, 578, 614, 713, 716, 776-814, 818
+app\main.py                                             96      1    99%   112
+app\models\__init__.py                                   2      0   100%
+app\models\dat02_models.py                              41     41     0%   17-81
+app\models\risk_questionnaire.py                        42      0   100%
+app\models\user.py                                      15      0   100%
+app\ports\__init__.py                                    0      0   100%
+app\ports\adapters\lakebase.py                          15      0   100%
+app\ports\adapters\mock_google_verifier.py              16      1    94%   37
+app\ports\adapters\sqlite_local_application.py          25      0   100%
+app\ports\adapters\sqlite_local_foundation.py           77      4    95%   94, 110, 220, 251
+app\ports\adapters\sqlite_local_portfolio_store.py      85      4    95%   92, 95, 145, 243
+app\ports\adapters\sqlite_local_risk.py                 44      2    95%   24, 106
+app\ports\adapters\sqlite_local_schema.py               75      5    93%   173, 202, 210, 256, 262
+app\ports\adapters\sqlite_local_store.py               128      7    95%   36, 82, 101, 136, 139, 145, 192
+app\ports\adapters\synthetic_local_portfolio.py         60      7    88%   63, 89, 108, 114, 134, 164-165
+app\ports\analytics_store.py                             7      7     0%   15-43
+app\ports\assessment_fixture_store.py                    9      0   100%
+app\ports\assessment_scorer.py                           3      0   100%
+app\ports\google_oauth_port.py                           4      4     0%   1-14
+app\ports\llm_provider.py                               22     22     0%   21-59
+app\ports\local_application_store.py                     7      0   100%
+app\ports\local_authorization.py                         6      0   100%
+app\ports\local_foundation_store.py                      6      0   100%
+app\ports\local_portfolio_quotes.py                      4      0   100%
+app\ports\local_portfolio_store.py                       5      0   100%
+app\ports\local_risk_store.py                            5      0   100%
+app\ports\market_data_port.py                           19      2    89%   25, 34
+app\ports\market_data_provider.py                       20     20     0%   17-56
+app\ports\operational_store.py                          10     10     0%   28-77
+app\ports\retriever.py                                  13     13     0%   15-34
+app\ports\test_ports_smoke.py                            5      5     0%   1-14
+app\repositories\__init__.py                             0      0   100%
+app\repositories\c1_repository.py                       20      0   100%
+app\repositories\dat02_repository.py                    54      5    91%   138, 159-170, 221
+app\repositories\onboarding_repository.py               11      1    91%   32
+app\repositories\portfolio_repository.py                93     32    66%   63-69, 83, 90, 92, 113, 163, 178-185, 199-219, 223-232
+app\repositories\risk_repository.py                     30      1    97%   37
+app\repositories\token_repository.py                    49      3    94%   40, 60, 74
+app\repositories\user_repository.py                     59      1    98%   99
+app\routers\__init__.py                                  0      0   100%
+app\routers\ai_assistant.py                             38     24    37%   72-135, 144-152
+app\routers\alerts.py                                   40     21    48%   59-60, 69-85, 94-98, 107-109, 121-130
+app\routers\auth.py                                     38      3    92%   303-306
+app\routers\consent_profile.py                          27      1    96%   26
+app\routers\demo.py                                      9      0   100%
+app\routers\goals.py                                    41     26    37%   32-54, 59-91, 100-101, 110-114
+app\routers\health.py                                   15      0   100%
+app\routers\local_application.py                        72      0   100%
+app\routers\local_foundation.py                        145      4    97%   68, 90, 103, 138
+app\routers\local_portfolio.py                          98      2    98%   94, 100
+app\routers\local_risk.py                               68      1    99%   82
+app\routers\onboarding.py                               12      0   100%
+app\routers\ops_hardening.py                            31     14    55%   51-70, 79-80, 91-96, 105-118
+app\routers\paper_trading.py                            70     70     0%   6-217
+app\routers\portfolio.py                                58     58     0%   1-183
+app\routers\privacy.py                                  35     22    37%   34-35, 48-86
+app\routers\profile.py                                  16      0   100%
+app\routers\release_handover.py                         28     11    61%   51, 57, 63-73, 79, 85-111
+app\routers\risk.py                                     54      6    89%   93-94, 140-141, 174-175
+app\routers\risk_contract.py                            37      3    92%   33, 76-77
+app\routers\spending.py                                 39     23    41%   58-60, 65-66, 75-83, 92-123
+app\routers\users.py                                    25      2    92%   16, 45
+app\schemas\__init__.py                                  0      0   100%
+app\schemas\auth.py                                     29      0   100%
+app\schemas\c1.py                                       28      0   100%
+app\schemas\common.py                                    4      4     0%   1-6
+app\schemas\consent_profile.py                          53      0   100%
+app\schemas\envelope.py                                 30      0   100%
+app\schemas\google_callback.py                           5      0   100%
+app\schemas\google_identity.py                           7      0   100%
+app\schemas\health.py                                    6      0   100%
+app\schemas\local_application.py                        56      0   100%
+app\schemas\local_foundation.py                        210     16    92%   27, 38-40, 82-88, 131, 184, 190, 192, 208, 226, 247, 321, 328
+app\schemas\local_portfolio.py                         270     22    92%   83, 151, 165, 185, 197, 214, 232, 266, 297, 305, 350, 352, 356, 358, 366, 396, 409, 420, 425, 427, 432, 440
+app\schemas\local_risk.py                               39      0   100%
+app\schemas\onboarding.py                                7      0   100%
+app\schemas\portfolio.py                               115      3    97%   114, 135, 137
+app\schemas\profile.py                                  11      0   100%
+app\schemas\response.py                                  6      0   100%
+app\schemas\risk.py                                     24      0   100%
+app\schemas\risk_contract.py                            67      0   100%
+app\schemas\sprint4_paper_goals.py                      69      0   100%
+app\schemas\sprint5_privacy_spending.py                 53      0   100%
+app\schemas\sprint6_ai_alerts.py                        52      0   100%
+app\schemas\sprint7_ops_hardening.py                    31      0   100%
+app\schemas\sprint8_release_handover.py                 38      0   100%
+app\schemas\user.py                                      7      0   100%
+app\services\__init__.py                                 0      0   100%
+app\services\auth_service.py                            60      1    98%   127
+app\services\c1_service.py                              17      0   100%
+app\services\consent_profile_service.py                 75      7    91%   46-47, 143, 160, 203-204, 211
+app\services\google_auth_service.py                     43      7    84%   78-91
+app\services\local_application_service.py               88      1    99%   51
+app\services\local_authorization.py                     40      0   100%
+app\services\local_foundation_quotes.py                 61      0   100%
+app\services\local_foundation_service.py               231     18    92%   145, 154, 161, 166, 212, 253, 269, 278, 304, 333, 355, 359, 377, 385, 451, 470, 475, 487
+app\services\local_portfolio_math.py                    80      5    94%   88, 94, 98, 103, 108
+app\services\local_portfolio_service.py                207      9    96%   169, 182, 206, 213, 292, 320, 343, 392, 401
+app\services\local_risk_service.py                     180     16    91%   63, 70, 77, 89, 181-182, 195, 244, 273-275, 301, 346, 351, 362, 373
+app\services\onboarding_service.py                       8      1    88%   25
+app\services\portfolio_math.py                          63      6    90%   25, 30, 34, 38, 91, 124
+app\services\portfolio_service.py                      102     36    65%   113-149, 164, 238-254, 264-290, 312-319, 334
+app\services\profile_service.py                         12      2    83%   9, 26
+app\services\risk_contract_service.py                    8      0   100%
+app\services\risk_service.py                            53      5    91%   47, 53, 61, 88, 114
+app\services\user_service.py                            31      0   100%
+----------------------------------------------------------------------------------
+TOTAL                                                 6249    905    86%
+Required test coverage of 70% reached. Total coverage: 85.52%
+2625 passed, 2444 warnings in 1019.27s (0:16:59)
