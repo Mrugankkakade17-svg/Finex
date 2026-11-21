@@ -7,7 +7,7 @@ principal dependency. Operations feature flag toggles and UAT release sign-offs
 require the `admin` role; other authenticated operations and privacy endpoints
 remain available to authenticated principals. Added security coverage that
 removes the expected-failure marker from these three secured routers and
-comprehensive tests for anonymous, regular-user, and admin behavior.
+comprehensive tests for anonymous, regular-user, and admin behavior. Privacy consent history and actions are keyed by principal ID, with a cross-user revocation isolation regression test.
 
 ## Changed files
 
@@ -18,6 +18,16 @@ comprehensive tests for anonymous, regular-user, and admin behavior.
 - `backend/app/routers/release_handover.py`
 - `backend/tests/security/test_prototype_routes_require_auth.py`
 - `backend/tests/unit/test_s1_mr05_ops_release_privacy.py`
+
+## Privacy user isolation update
+
+Consent history and privacy action records are now scoped by the authenticated
+principal's user ID. Consent reads return only that principal's history, and
+revoking consent updates only that principal's active records. The regression
+test creates two independent users, revokes one user's consent, and verifies
+the other user's consent remains active. The redundant `S1-MR05/` archive and
+duplicate PR description copy were removed; this evidence file remains the
+authoritative task evidence.
 
 ## Verification
 

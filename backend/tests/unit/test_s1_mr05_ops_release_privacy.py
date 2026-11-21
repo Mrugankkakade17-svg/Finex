@@ -26,8 +26,8 @@ def _admin_headers() -> dict[str, str]:
     return {"Authorization": f"Bearer {token}"}
 
 
-def _user_headers() -> dict[str, str]:
-    token = create_access_token(data={"sub": "user@finex.test", "user_id": 100, "roles": ["user"]})
+def _user_headers(user_id: int | str = 100) -> dict[str, str]:
+    token = create_access_token(data={"sub": "user@finex.test", "user_id": user_id, "roles": ["user"]})
     return {"Authorization": f"Bearer {token}"}
 
 
@@ -294,3 +294,34 @@ class TestPrivacyAuthorization:
         data = resp.json()
         assert data["success"] is True
         assert data["data"]["action"] == "REVOKE_CONSENT"
+
+
+    def test_revoke_consent_is_isolated_to_authenticated_user(self):
+        user_a = "privacy-user-a"
+        user_b = "privacy-user-b"
+        consent_a_before = client.get(
+            "/api/v1/privacy/consent", headers=_user_headers(user_a)
+        ).json()["data"]
+        consent_b_before = client.get(
+            "/api/v1/privacy/consent", headers=_user_headers(user_b)
+        ).json()["data"]
+        assert consent_a_before["is_consent_active"] is True
+        assert consent_b_before["is_consent_active"] is True
+
+        revoke = client.post(
+            "/api/v1/privacy/action",
+            json={"action": "REVOKE_CONSENT", "confirm_explicit": True},
+            headers=_user_headers(user_a),
+        )
+        assert revoke.status_code == status.HTTP_200_OK
+
+        consent_a_after = client.get(
+            "/api/v1/privacy/consent", headers=_user_headers(user_a)
+        ).json()["data"]
+        consent_b_after = client.get(
+            "/api/v1/privacy/consent", headers=_user_headers(user_b)
+        ).json()["data"]
+        assert consent_a_after["is_consent_active"] is False
+        assert all(not record["is_active"] for record in consent_a_after["audit_history"])
+        assert consent_b_after["is_consent_active"] is True
+        assert all(record["is_active"] for record in consent_b_after["audit_history"])
