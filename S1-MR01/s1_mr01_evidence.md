@@ -15,9 +15,9 @@ This folder contains the local PR description and evidence copy for the Sprint 1
 
 ## Verification
 
-- Alembic `upgrade head`: PASS
-- Alembic `downgrade base`: PASS
-- Alembic `upgrade head` after downgrade: PASS
-- `test_fx002.py`: PASS, `1 passed`
-- Ruff changed-file and backend checks: PASS
-- Full backend suite: `2604 passed`, `26 xfailed`, `22 failed` because the local Python 3.14 environment's bcrypt package rejects test passwords over 72 bytes; migration-specific checks pass.
+- `python -m alembic upgrade head --sql`: PASS (offline SQL generation)
+- `python -m alembic downgrade s1mr01_fx002:s1mr01_fx001 --sql`: PASS (offline SQL generation)
+- `python -m ruff check .`: PASS
+- `python -m pytest -q -m "not postgres"`: `2625 passed`, `26 xfailed`, `2 deselected`; coverage 86.20%.
+- 52 previously failing authentication tests pass after restoring the repository-pinned bcrypt 4.2.1.
+- The PostgreSQL contract test and live migration round-trip will run in backend CI against the isolated PostgreSQL 16 service; local Docker/PostgreSQL was unavailable.
