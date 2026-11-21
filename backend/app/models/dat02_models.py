@@ -19,6 +19,7 @@ from sqlalchemy import (
     Column,
     Date,
     Float,
+    Numeric,
     String,
     Text,
     func,
@@ -74,7 +75,7 @@ class PortfolioHolding(Base):
     portfolio_id = Column(Text, nullable=False, index=True)
     user_id = Column(Text, nullable=False, index=True)
     instrument_symbol = Column(String(20), nullable=False)
-    quantity = Column(Float, nullable=False)
+    quantity = Column(Numeric(38, 18), nullable=False)
     avg_buy_price = Column(Float, nullable=False)
     current_value = Column(Float, nullable=True)
     created_at = Column(TIMESTAMP(timezone=True), server_default=func.now())
