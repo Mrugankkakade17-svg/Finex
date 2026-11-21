@@ -5,9 +5,13 @@
 Secured the operations, release handover, and privacy routers with the current
 principal dependency. Operations feature flag toggles and UAT release sign-offs
 require the `admin` role; other authenticated operations and privacy endpoints
-remain available to authenticated principals. Added security coverage that
-removes the expected-failure marker from these three secured routers and
-comprehensive tests for anonymous, regular-user, and admin behavior. Privacy consent history and actions are keyed by principal ID, with a cross-user revocation isolation regression test.
+remain available to authenticated principals. Security coverage verifies
+anonymous rejection, role enforcement, and authenticated route contracts.
+
+Consent history and privacy action records are scoped to the authenticated
+principal's user ID. Consent reads return only that user's history, and
+revocation updates only that user's active records. A regression test verifies
+that User A revoking consent does not change User B's consent.
 
 ## Changed files
 
@@ -19,32 +23,26 @@ comprehensive tests for anonymous, regular-user, and admin behavior. Privacy con
 - `backend/tests/security/test_prototype_routes_require_auth.py`
 - `backend/tests/unit/test_s1_mr05_ops_release_privacy.py`
 
-## Privacy user isolation update
-
-Consent history and privacy action records are now scoped by the authenticated
-principal's user ID. Consent reads return only that principal's history, and
-revoking consent updates only that principal's active records. The regression
-test creates two independent users, revokes one user's consent, and verifies
-the other user's consent remains active. The redundant `S1-MR05/` archive and
-duplicate PR description copy were removed; this evidence file remains the
+No database schema changes or migration were needed. The redundant `S1-MR05/`
+archive and duplicate PR-description copy were removed; this file is the
 authoritative task evidence.
 
 ## Verification
 
-Commands run from `backend/`:
+GitHub Actions full backend test run:
 
-- `python -m ruff check .` — passed.
-- Focused S1-MR05 and prototype security tests: **41 passed, 15 xfailed**.
-  The focused invocation exits nonzero only because the repository's global
-  coverage gate is 70% and the focused subset reports 37% total coverage.
-- `python -m pytest -q` — **2,747 passed, 10 skipped, 15 xfailed**; total
-  coverage **83.73%** (70% minimum met), completed in 1,049.50 seconds.
+- Command: `python -m pytest -q` (run from `backend/`)
+- Result: **2,758 passed, 15 xfailed, 0 skipped**
+- Coverage: **86.06%** (70% minimum met)
+- Duration: **161.41 seconds**
+- Workflow: [Backend Postgres Tests, run 37](https://github.com/Mrugankkakade17-svg/Finex/actions/runs/44932024340)
+- Test output excerpt: [s1_mr05_test_output.txt](s1_mr05_test_output.txt)
 
-The focused tests verify 401 responses for anonymous requests, 403 responses
-for non-admin flag toggles and sign-offs, successful admin operations, and
-authenticated access to the corresponding read and privacy routes.
+The full run includes the privacy isolation regression test. The same PR head's
+S1 UAT Evidence, R0-S2 Release Evidence, and Backend Quality Gates workflows
+also completed successfully.
 
-## Storage and migration
+## Test output
 
-No database schema or persistent storage behavior was changed; no migration is
-required. Existing in-memory route stores and response contracts are preserved.
+The captured summary from the successful GitHub Actions run is saved in
+`docs/evidence/s1_mr05_test_output.txt`.
