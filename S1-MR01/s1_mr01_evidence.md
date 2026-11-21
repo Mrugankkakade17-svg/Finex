@@ -21,4 +21,4 @@ This folder contains the local PR description and evidence copy for the Sprint 1
 - `python -m ruff check .`: PASS
 - `python -m pytest -q -m "not postgres"`: `2625 passed`, `26 xfailed`, `2 deselected`; coverage 86.20%.
 - 52 previously failing authentication tests pass after restoring the repository-pinned bcrypt 4.2.1.
-- The PostgreSQL contract test and live migration round-trip will run in backend CI against the isolated PostgreSQL 16 service; local Docker/PostgreSQL was unavailable.
+- Backend CI run #44882516405: migration upgrade/downgrade/upgrade passed on PostgreSQL 16; `test_fx002.py` passed as part of `2,676 passed, 26 xfailed`.
