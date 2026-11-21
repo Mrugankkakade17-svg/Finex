@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 from enum import Enum
 from functools import lru_cache
 from ipaddress import ip_address
@@ -76,6 +77,8 @@ class Settings(BaseSettings):
     local_app_enabled: bool = False
     local_db_path: Path = BASE_DIR / ".local" / "finex.sqlite3"
     local_session_ttl_minutes: int = Field(default=30, ge=1, le=60, strict=True)
+    app_persistence: Literal["sqlite", "postgresql"] = "sqlite"
+    app_database_url: str = ""
 
     databricks_host: str = ""
     databricks_token: str = ""
@@ -186,6 +189,12 @@ class Settings(BaseSettings):
 
     @model_validator(mode="after")
     def validate_security_rules(self) -> "Settings":
+        if self.app_persistence == "postgresql" and not self.app_database_url:
+            self.app_database_url = os.getenv("DATABASE_URL", "")
+            if not self.app_database_url:
+                raise ConfigurationError(
+                    "APP_DATABASE_URL or DATABASE_URL is required when APP_PERSISTENCE=postgresql."
+                )
         wildcard = "*" in self.allowed_origins
 
         if self.local_app_enabled:
