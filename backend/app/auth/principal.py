@@ -224,3 +224,21 @@ async def get_current_principal(
 
 
 CurrentPrincipal = Depends(get_current_principal)
+
+
+async def require_admin_role(
+    principal: Principal = Depends(get_current_principal),
+) -> Principal:
+    """Validate that the authenticated principal possesses the admin role.
+
+    Raises HTTP 403 Forbidden if the principal lacks the admin role.
+    """
+    if "admin" not in principal.roles:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Forbidden: Admin role required",
+        )
+    return principal
+
+
+RequireAdmin = Depends(require_admin_role)
