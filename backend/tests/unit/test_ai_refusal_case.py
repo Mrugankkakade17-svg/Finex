@@ -8,6 +8,7 @@ normal educational question answering and API response contracts.
 import pytest
 from fastapi.testclient import TestClient
 
+from app.auth.jwt_handler import create_access_token
 from app.main import create_app
 from app.routers.ai_assistant import (
     COMPILED_PROHIBITED_PATTERNS,
@@ -18,7 +19,8 @@ from app.routers.ai_assistant import (
 @pytest.fixture(scope="module")
 def client():
     app = create_app()
-    with TestClient(app) as test_client:
+    token = create_access_token({"sub": "test_ai_user", "user_id": "test_ai_user"})
+    with TestClient(app, headers={"Authorization": f"Bearer {token}"}) as test_client:
         yield test_client
 
 
