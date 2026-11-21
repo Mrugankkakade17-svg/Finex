@@ -34,9 +34,14 @@ CONTRACT_USER_IDS = (
 
 
 def _cleanup_postgres(database_url: str) -> None:
-    from app.ports.adapters.postgres_local_store import postgres_dsn
+    from app.ports.adapters.postgres_local_store import (
+        SCHEMA_STATEMENTS,
+        postgres_dsn,
+    )
 
     with psycopg.connect(postgres_dsn(database_url)) as connection:
+        for statement in SCHEMA_STATEMENTS:
+            connection.execute(statement)
         connection.execute(
             "DELETE FROM finex.local_users WHERE user_id = ANY(%s)",
             (list(CONTRACT_USER_IDS),),
