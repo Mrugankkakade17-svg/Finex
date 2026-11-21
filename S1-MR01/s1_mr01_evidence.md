@@ -10,6 +10,7 @@ Generated repository files:
 - `backend/tests/db/test_fx002.py`
 - `backend/app/models/dat02_models.py`
 - `docs/evidence/s1_mr01_evidence.md`
+- `.github/workflows/backend-quality.yml` (isolated PostgreSQL CI service)
 
 This folder contains the local PR description and evidence copy for the Sprint 1 migration task.
 

@@ -1,30 +1,30 @@
-## What is done
+## What changed?
 
 - Added reversible Alembic migrations `fx_001` and `fx_002`.
-- Added the `finex.portfolios` table with a cascade foreign key to users.
-- Added identity foreign keys for existing profile records.
-- Changed `finex.portfolio_holdings.quantity` from floating point to `NUMERIC(38,18)`.
-- Added portfolio and user foreign keys to portfolio holdings, including a composite owner-matching foreign key so a holding cannot reference another user's portfolio.
-- Added the `tests/db/test_fx002.py` PostgreSQL contract test.
-- Updated the SQLAlchemy holding model to match the database type.
-- Added the Sprint 1 evidence record.
+- Added `finex.portfolios` and identity foreign keys.
+- Changed holdings quantity to `NUMERIC(38,18)`.
+- Added a composite foreign key requiring each holding's user to own its portfolio.
+- Added PostgreSQL contract coverage for invalid and cross-user portfolio references.
+- Updated the evidence record and backend CI to run migrations and PostgreSQL tests against an isolated PostgreSQL 16 service.
 
-## Why
+## Why?
 
-This implements S1-MR01 as the authoritative database foundation for user, profile, and portfolio ownership while enforcing exact decimal storage and referential integrity.
+Implements S1-MR01 (#21), establishing persistent portfolio ownership and exact numeric holding quantities without changing existing routes.
 
-## How was it checked
+## How was it checked?
 
-- Run `python -m alembic upgrade head --sql` (offline SQL generation).
-- Run `python -m alembic downgrade s1mr01_fx002:s1mr01_fx001 --sql` (offline SQL generation).
-- Backend CI now runs migrations up/down/up and PostgreSQL contract tests against an isolated PostgreSQL 16 service.
-- Run `python -m ruff check .`.
-- Run `python -m pytest -q -m "not postgres"` (2,625 passed, 26 xfailed, 2 deselected; 86.20% coverage after restoring the pinned bcrypt dependency).
+Commands below were run from `backend/`.
+
+- `python -m ruff check alembic/versions/fx_002_holdings_numeric_fk.py tests/db/test_fx002.py` — passed.
+- `python -m ruff format --check alembic/versions/fx_002_holdings_numeric_fk.py tests/db/test_fx002.py` — passed.
+- `python -m alembic upgrade head --sql` — passed.
+- `python -m alembic downgrade s1mr01_fx002:s1mr01_fx001 --sql` — passed.
+- Live PostgreSQL migration round-trip and `tests/db/test_fx002.py` — pending in backend CI.
 
 ## Checklist
 
 - [x] The changes are focused on this task.
-- [ ] Migration and contract checks pass (live PostgreSQL verification is pending in CI).
+- [ ] Tests or checks pass; live PostgreSQL verification is pending in CI.
 - [x] No secrets or local-only files are included.
 - [x] Documentation is updated when needed.
 
