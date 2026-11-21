@@ -18,6 +18,10 @@ from app.core.handlers import (
 )
 from app.core.middleware import CorrelationIdMiddleware, LocalApplicationBoundaryMiddleware
 from app.domain.local_application import Clock
+from app.ports.adapters.postgres_local_application import PostgresLocalApplicationStore
+from app.ports.adapters.postgres_local_foundation import PostgresLocalFoundationStore
+from app.ports.adapters.postgres_local_portfolio_store import PostgresLocalPortfolioStore
+from app.ports.adapters.postgres_local_risk import PostgresLocalRiskStore
 from app.ports.local_application_store import LocalApplicationStore
 from app.ports.local_foundation_store import LocalFoundationStore
 from app.ports.local_portfolio_quotes import LocalPortfolioCatalogPort, LocalPortfolioQuotePort
@@ -80,6 +84,21 @@ def create_app(
     application.state.local_foundation_store = local_foundation_store
     application.state.local_foundation_service = None
     application.state.local_foundation_service_lock = Lock()
+
+    if active_settings.app_persistence == "postgresql":
+        database_url = active_settings.app_database_url
+        if local_store is None:
+            local_store = PostgresLocalApplicationStore(database_url)
+        if local_risk_store is None:
+            local_risk_store = PostgresLocalRiskStore(database_url)
+        if local_portfolio_store is None:
+            local_portfolio_store = PostgresLocalPortfolioStore(database_url)
+        if local_foundation_store is None:
+            local_foundation_store = PostgresLocalFoundationStore(database_url)
+        application.state.local_application_store = local_store
+        application.state.local_risk_store = local_risk_store
+        application.state.local_portfolio_store = local_portfolio_store
+        application.state.local_foundation_store = local_foundation_store
 
     application.add_middleware(LocalApplicationBoundaryMiddleware)
     application.add_middleware(CorrelationIdMiddleware)
