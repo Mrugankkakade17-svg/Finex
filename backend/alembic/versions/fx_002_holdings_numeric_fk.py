@@ -27,12 +27,28 @@ def upgrade() -> None:
         schema="finex",
     )
 
+    op.create_unique_constraint(
+        "uq_portfolios_portfolio_user",
+        "portfolios",
+        ["portfolio_id", "user_id"],
+        schema="finex",
+    )
     op.create_foreign_key(
         "fk_portfolio_holdings_portfolio_id_portfolios",
         "portfolio_holdings",
         "portfolios",
         ["portfolio_id"],
         ["portfolio_id"],
+        source_schema="finex",
+        referent_schema="finex",
+        ondelete="CASCADE",
+    )
+    op.create_foreign_key(
+        "fk_portfolio_holdings_portfolio_owner",
+        "portfolio_holdings",
+        "portfolios",
+        ["portfolio_id", "user_id"],
+        ["portfolio_id", "user_id"],
         source_schema="finex",
         referent_schema="finex",
         ondelete="CASCADE",
@@ -57,9 +73,21 @@ def downgrade() -> None:
         schema="finex",
     )
     op.drop_constraint(
+        "fk_portfolio_holdings_portfolio_owner",
+        "portfolio_holdings",
+        type_="foreignkey",
+        schema="finex",
+    )
+    op.drop_constraint(
         "fk_portfolio_holdings_portfolio_id_portfolios",
         "portfolio_holdings",
         type_="foreignkey",
+        schema="finex",
+    )
+    op.drop_constraint(
+        "uq_portfolios_portfolio_user",
+        "portfolios",
+        type_="unique",
         schema="finex",
     )
     op.alter_column(
