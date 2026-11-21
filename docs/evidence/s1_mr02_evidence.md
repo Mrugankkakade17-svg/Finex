@@ -40,8 +40,9 @@ not user-owned and are outside this migration.
   repository-pinned `bcrypt==4.2.1`. The initial failures came from a local
   `bcrypt==5.0.0` installation, which is incompatible with Passlib 1.7.4's
   backend-detection self-test.
-- The PostgreSQL contract tests and live migration round-trip were not run on
-  this machine because Docker/PostgreSQL is unavailable. Backend CI now runs
-  them against an isolated PostgreSQL 16 service; the updated CI run is pending.
+- Backend CI [run #44882874095](https://github.com/Mrugankkakade17-svg/Finex/actions/runs/44882874095)
+  passed against an isolated PostgreSQL 16 service. The migration upgrade,
+  downgrade, and re-upgrade all passed; pytest passed with 2,677 passed and
+  26 xfailed (87.49% coverage), including the PostgreSQL contract tests.
 
 The migration upgrade and downgrade SQL also rendered successfully offline.
