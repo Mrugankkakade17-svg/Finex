@@ -1,5 +1,7 @@
 """PostgreSQL implementation of foundation watchlist and paper-account persistence."""
 
+from psycopg.rows import DictRow
+
 from app.domain.local_foundation import (
     PaperAccountRecord,
     PaperOpeningRecord,
@@ -20,7 +22,7 @@ from app.ports.adapters.postgres_local_store import (
 from app.ports.local_foundation_store import LocalFoundationTransaction
 
 
-def _watchlist(row: dict) -> WatchlistRecord:
+def _watchlist(row: DictRow) -> WatchlistRecord:
     return validate_watchlist(
         WatchlistRecord(
             stored_text(row["user_id"]),
@@ -32,7 +34,7 @@ def _watchlist(row: dict) -> WatchlistRecord:
     )
 
 
-def _item(row: dict) -> WatchlistItemRecord:
+def _item(row: DictRow) -> WatchlistItemRecord:
     return validate_item(
         WatchlistItemRecord(
             stored_text(row["user_id"]),
@@ -43,7 +45,7 @@ def _item(row: dict) -> WatchlistItemRecord:
     )
 
 
-def _account(row: dict) -> PaperAccountRecord:
+def _account(row: DictRow) -> PaperAccountRecord:
     return validate_account(
         PaperAccountRecord(
             stored_text(row["user_id"]),
@@ -57,7 +59,7 @@ def _account(row: dict) -> PaperAccountRecord:
     )
 
 
-def _opening(row: dict) -> PaperOpeningRecord:
+def _opening(row: DictRow) -> PaperOpeningRecord:
     return validate_opening(
         PaperOpeningRecord(
             stored_text(row["user_id"]),

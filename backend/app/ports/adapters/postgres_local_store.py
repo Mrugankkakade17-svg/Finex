@@ -7,7 +7,7 @@ from typing import Generic, TypeVar
 from urllib.parse import urlparse, urlunparse
 
 import psycopg
-from psycopg.rows import dict_row
+from psycopg.rows import DictRow, dict_row
 
 from app.domain.local_application import (
     ConsentRecord,
@@ -19,6 +19,7 @@ from app.domain.local_application import (
 from app.ports.local_authorization import AuthorizationTransaction
 
 TransactionT = TypeVar("TransactionT", bound=AuthorizationTransaction)
+PostgresConnection = psycopg.Connection[DictRow]
 
 
 def postgres_dsn(database_url: str) -> str:
@@ -140,7 +141,7 @@ SCHEMA_STATEMENTS = (
 
 
 class PostgresAuthorizationTransaction:
-    def __init__(self, connection: psycopg.Connection) -> None:
+    def __init__(self, connection: PostgresConnection) -> None:
         self._connection = connection
 
     def get_session(self, digest: str) -> LocalSession | None:
@@ -196,12 +197,12 @@ class PostgresAuthorizationTransaction:
 
 class PostgresTransactionStore(Generic[TransactionT]):
     def __init__(
-        self, database_url: str, factory: Callable[[psycopg.Connection], TransactionT]
+        self, database_url: str, factory: Callable[[PostgresConnection], TransactionT]
     ) -> None:
         self._dsn = postgres_dsn(database_url)
         self._factory = factory
 
-    def _connect(self) -> psycopg.Connection:
+    def _connect(self) -> PostgresConnection:
         connection = psycopg.connect(self._dsn, row_factory=dict_row)
         try:
             with connection.cursor() as cursor:
@@ -216,7 +217,7 @@ class PostgresTransactionStore(Generic[TransactionT]):
 
     @contextmanager
     def transaction(self, *, write: bool = False) -> Iterator[TransactionT]:
-        connection: psycopg.Connection | None = None
+        connection: PostgresConnection | None = None
         try:
             connection = self._connect()
             connection.execute("BEGIN")

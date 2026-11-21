@@ -2,6 +2,8 @@
 
 from dataclasses import replace
 
+from psycopg.rows import DictRow
+
 from app.domain.local_risk import LocalRiskAssessmentRecord, LocalRiskDraftRecord
 from app.ports.adapters.postgres_local_store import (
     PostgresAuthorizationTransaction,
@@ -13,7 +15,7 @@ from app.ports.adapters.postgres_local_store import (
 from app.ports.local_risk_store import LocalRiskTransaction
 
 
-def _assessment(row: dict) -> LocalRiskAssessmentRecord:
+def _assessment(row: DictRow) -> LocalRiskAssessmentRecord:
     return LocalRiskAssessmentRecord(
         assessment_id=stored_text(row["assessment_id"]),
         user_id=stored_text(row["user_id"]),

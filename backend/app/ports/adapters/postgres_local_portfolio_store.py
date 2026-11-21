@@ -1,5 +1,7 @@
 """PostgreSQL implementation of manual portfolio persistence."""
 
+from psycopg.rows import DictRow
+
 from app.domain.local_portfolio import (
     HOLDING_LIMIT,
     PORTFOLIO_LIMIT,
@@ -22,7 +24,7 @@ from app.ports.adapters.postgres_local_store import (
 from app.ports.local_portfolio_store import LocalPortfolioTransaction
 
 
-def _portfolio(row: dict, user_id: str) -> LocalPortfolioRecord:
+def _portfolio(row: DictRow, user_id: str) -> LocalPortfolioRecord:
     return validate_portfolio_record(
         LocalPortfolioRecord(
             user_id=stored_text(row["user_id"]),
@@ -37,7 +39,7 @@ def _portfolio(row: dict, user_id: str) -> LocalPortfolioRecord:
     )
 
 
-def _holding(row: dict, user_id: str, portfolio_id: str) -> LocalHoldingRecord:
+def _holding(row: DictRow, user_id: str, portfolio_id: str) -> LocalHoldingRecord:
     return validate_holding_record(
         LocalHoldingRecord(
             user_id=stored_text(row["user_id"]),
@@ -78,6 +80,8 @@ class PostgresLocalPortfolioTransaction(PostgresAuthorizationTransaction):
             "SELECT COUNT(*) AS count FROM finex.local_manual_portfolios WHERE user_id=%s",
             (user_id,),
         ).fetchone()
+        if row is None:
+            raise ValueError("The manual collection count is missing.")
         return stored_integer(row["count"])
 
     def insert_portfolio(self, record: LocalPortfolioRecord) -> LocalPortfolioRecord:
@@ -155,6 +159,8 @@ class PostgresLocalPortfolioTransaction(PostgresAuthorizationTransaction):
             "WHERE user_id=%s AND portfolio_id=%s",
             (user_id, portfolio_id),
         ).fetchone()
+        if row is None:
+            raise ValueError("The manual collection count is missing.")
         return stored_integer(row["count"])
 
     def get_holding_by_instrument(
