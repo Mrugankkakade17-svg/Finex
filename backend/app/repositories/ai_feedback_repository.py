@@ -27,45 +27,41 @@ class AIFeedbackRepository:
         else:
             self.db_path = self.settings.local_db_path
 
-        # In SQLite mode, ensure the SQLite table exists
-        self._ensure_sqlite_table()
-
     @contextmanager
     def _connection(self) -> Iterator[sqlite3.Connection]:
         self.db_path.parent.mkdir(parents=True, exist_ok=True)
         conn = sqlite3.connect(str(self.db_path), check_same_thread=False)
         conn.row_factory = sqlite3.Row
+        self._ensure_sqlite_table(conn)
         try:
             yield conn
         finally:
             conn.close()
 
-    def _ensure_sqlite_table(self) -> None:
+    def _ensure_sqlite_table(self, conn: sqlite3.Connection) -> None:
         """Create ai_feedback table in SQLite if it does not exist."""
         try:
-            with self._connection() as conn:
-                conn.execute(
-                    """
-                    CREATE TABLE IF NOT EXISTS ai_feedback (
-                        user_id TEXT NOT NULL,
-                        feedback_id TEXT NOT NULL,
-                        message_id TEXT NOT NULL,
-                        rating TEXT NOT NULL,
-                        comment TEXT,
-                        created_at TEXT NOT NULL,
-                        PRIMARY KEY (user_id, feedback_id)
-                    )
-                    """
+            conn.execute(
+                """
+                CREATE TABLE IF NOT EXISTS ai_feedback (
+                    user_id TEXT NOT NULL,
+                    feedback_id TEXT NOT NULL,
+                    message_id TEXT NOT NULL,
+                    rating TEXT NOT NULL,
+                    comment TEXT,
+                    created_at TEXT NOT NULL,
+                    PRIMARY KEY (user_id, feedback_id)
                 )
-                conn.execute(
-                    """
-                    CREATE INDEX IF NOT EXISTS ix_ai_feedback_user_created
-                    ON ai_feedback(user_id, created_at)
-                    """
-                )
-                conn.commit()
+                """
+            )
+            conn.execute(
+                """
+                CREATE INDEX IF NOT EXISTS ix_ai_feedback_user_created
+                ON ai_feedback(user_id, created_at)
+                """
+            )
+            conn.commit()
         except Exception:
-            # If path cannot be created yet, defer to runtime
             pass
 
     def create_feedback(
@@ -117,7 +113,6 @@ class AIFeedbackRepository:
             engine.dispose()
         else:
             # SQLite persistence
-            self._ensure_sqlite_table()
             with self._connection() as conn:
                 conn.execute(
                     """
@@ -174,7 +169,6 @@ class AIFeedbackRepository:
                 return None
             engine.dispose()
         else:
-            self._ensure_sqlite_table()
             with self._connection() as conn:
                 cursor = conn.execute(
                     """
@@ -231,7 +225,6 @@ class AIFeedbackRepository:
                 ]
             engine.dispose()
         else:
-            self._ensure_sqlite_table()
             with self._connection() as conn:
                 cursor = conn.execute(
                     """
@@ -259,7 +252,6 @@ class AIFeedbackRepository:
     def clear_for_test(self, user_id: Optional[str] = None) -> None:
         """Clear test records for test isolation."""
         try:
-            self._ensure_sqlite_table()
             with self._connection() as conn:
                 if user_id:
                     conn.execute("DELETE FROM ai_feedback WHERE user_id = ?", (user_id,))
