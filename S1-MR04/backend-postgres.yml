@@ -1,0 +1,89 @@
+name: Backend Postgres Tests
+
+on:
+  push:
+    paths:
+      - "backend/**"
+      - ".github/workflows/backend-postgres.yml"
+  pull_request:
+    paths:
+      - "backend/**"
+      - ".github/workflows/backend-postgres.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  postgres-tests:
+    name: Pytest Postgres (pgvector:pg16)
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_DB: finex_test
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d finex_test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      DATABASE_URL: postgresql+asyncpg://postgres:postgres@localhost:5432/finex_test
+
+    defaults:
+      run:
+        working-directory: backend
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Verify PostgreSQL & pgvector service
+        run: |
+          python -c "
+          import asyncio
+          import asyncpg
+
+          async def check():
+              conn = await asyncpg.connect('postgresql://postgres:postgres@localhost:5432/finex_test')
+              version = await conn.fetchval('SHOW server_version;')
+              print(f'PostgreSQL server version: {version}')
+              assert '16' in version, f'Expected PostgreSQL 16, got {version}'
+              await conn.execute('CREATE EXTENSION IF NOT EXISTS vector;')
+              ext = await conn.fetchval(\"SELECT extversion FROM pg_extension WHERE extname = 'vector';\")
+              print(f'pgvector extension version: {ext}')
+              assert ext is not None, 'pgvector extension not found'
+              await conn.close()
+
+          asyncio.run(check())
+          "
+
+      - name: Run Alembic migrations (if present)
+        run: |
+          python -m alembic upgrade head || echo "No migrations to apply or skipped"
+
+      - name: Run @pytest.mark.postgres tests
+        run: |
+          python -m pytest -m postgres -v --no-cov
+
+      - name: Run full Pytest suite
+        run: |
+          python -m pytest -q

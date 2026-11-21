@@ -1,3 +1,5 @@
+import os
+
 import pytest
 import pytest_asyncio
 from dotenv import load_dotenv
@@ -35,8 +37,7 @@ def reset_in_memory_repositories():
 
 @pytest_asyncio.fixture
 async def postgres_db():
-    import os
-
+    """Provide an async engine when DATABASE_URL is set; otherwise skip PostgreSQL tests."""
     load_dotenv()
     database_url = os.getenv("DATABASE_URL")
     if not database_url:
