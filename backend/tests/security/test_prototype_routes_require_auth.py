@@ -164,6 +164,15 @@ def setup_probe_resources() -> Generator[None, None, None]:
     alerts._rules_db.pop(SEED_RULE_ID, None)
 
 
+# SPRINT 0 AUTH PROBE & SPRINT 1 TRANSITION PLAN:
+# 1. These 26 tests are intentionally expected to fail in Sprint 0 because authentication
+#    protection is not yet implemented on the prototype routers and demo endpoints.
+# 2. `strict=False` is used so that in Sprint 0 assertions fail as expected (reporting XFAIL,
+#    exit code 0). When a route implements authentication and begins returning 401/403,
+#    `strict=False` causes pytest to report XPASS while the xfail marker remains.
+# 3. During Sprint 1 authentication implementation, the corresponding xfail markers must be
+#    removed so the tests report normal PASSED results (not XPASS).
+# 4. The actual security assertion must remain `response.status_code in (401, 403)`.
 @pytest.mark.xfail(
     strict=False,
     reason="Prototype route does not yet enforce authentication in Sprint 0; will pass in Sprint 1",
@@ -179,7 +188,19 @@ def test_prototype_routes_require_auth(
     path: str,
     request_kwargs: dict[str, Any],
 ) -> None:
-    """Verify that unauthenticated requests to prototype endpoints are rejected with 401 or 403."""
+    """Verify that unauthenticated requests to prototype endpoints are rejected with 401 or 403.
+
+    Sprint 0 Note:
+        Endpoints currently allow unauthenticated access and return 200/201/400/500,
+        causing this assertion to fail as an expected failure (XFAIL).
+
+    Sprint 1 Transition Note:
+        When authentication protection is implemented in Sprint 1, each endpoint will
+        reject unauthenticated calls with HTTP 401/403. Because `strict=False` is set,
+        pytest may report XPASS until the xfail marker is removed. As part of Sprint 1
+        authentication delivery, the xfail marker must be removed so all tests report
+        standard PASSED results, while maintaining the strict 401/403 assertion.
+    """
     response = client.request(method=method, url=path, **request_kwargs)
     assert response.status_code in (
         status.HTTP_401_UNAUTHORIZED,

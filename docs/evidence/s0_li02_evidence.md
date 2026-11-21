@@ -159,3 +159,40 @@ tests/security/test_prototype_routes_require_auth.py::test_prototype_routes_requ
 2. **Prerequisite Resource Seeding:** An autouse fixture cleanly seeds temporary in-memory records (`seed-goal-001` and `rule-del-001`) and pops them upon teardown, preventing cross-test pollution and ensuring path operations execute successfully.
 3. **No Unintended Changes:** No application routers, middlewares, schemas, or existing test suites were modified.
 4. **No Unnecessary Files:** No redundant `__init__.py` or auxiliary packages were added.
+
+---
+
+## 6. Sprint 1 Follow-up (Action Required in Sprint 1)
+
+In response to review feedback on Pull Request #120 regarding the `xfail(strict=False)` transition lifecycle, the following follow-up procedure is documented for Sprint 1 authentication delivery:
+
+1. **Current Sprint 0 Baseline:**
+   - In Sprint 0, all 26 authentication probe tests in `backend/tests/security/test_prototype_routes_require_auth.py` are marked with `@pytest.mark.xfail(strict=False, ...)`.
+   - Because authentication is not yet implemented on the 7 prototype routers and demo endpoints, unauthenticated requests execute route business logic (returning HTTP 200, 201, 400, or 500).
+   - The security assertion `assert response.status_code in (401, 403)` fails as expected, resulting in `26 xfailed` (exit code `0`).
+
+2. **Intermediate Sprint 1 Behavior with `strict=False`:**
+   - When authentication protection is added to each router in Sprint 1 (e.g. S1-LI02 for Goals, S1-PA01 for Spending/Alerts, S1-MR05 for Ops/Release/Privacy, S1-MI01 for AI), unauthenticated requests will begin returning HTTP 401 or 403.
+   - Under `strict=False`, tests whose routes are secured will evaluate to `True` and report `XPASS` (unexpected pass). This prevents breaking the CI build mid-sprint while other routes are still being protected.
+
+3. **Required Action in Sprint 1:**
+   - **Remove XFAIL Markers:** As authentication is implemented for each router/route in Sprint 1, the corresponding `@pytest.mark.xfail` marker must be removed from `test_prototype_routes_require_auth.py`.
+   - **Verify PASSED Outcome:** Confirm that all 26 tests report standard `PASSED` results rather than `XPASS`.
+   - **Preserve Security Assertion:** The strict security assertion must remain unchanged:
+     ```python
+     assert response.status_code in (
+         status.HTTP_401_UNAUTHORIZED,
+         status.HTTP_403_FORBIDDEN,
+     )
+     ```
+   - **Verification Execution:** Run both the targeted security probe suite and the full backend test suite:
+     ```powershell
+     cd backend
+     python -m pytest tests/security/test_prototype_routes_require_auth.py -v
+     python -m pytest
+     ```
+   - Confirm: `26 passed, 0 xfailed, 0 xpassed, 0 failed` for the security probe suite, with full test suite passing and meeting coverage requirements.
+
+4. **Explicit Scope Clarification:**
+   - This follow-up removal of xfail markers is scheduled for execution during Sprint 1 authentication feature delivery.
+   - This Sprint 1 work is **NOT** claimed as completed in this Sprint 0 PR.
