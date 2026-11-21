@@ -5,12 +5,10 @@ on:
     paths:
       - "backend/**"
       - ".github/workflows/backend-postgres.yml"
-      - ".github/workflows/postgres.yml"
   pull_request:
     paths:
       - "backend/**"
       - ".github/workflows/backend-postgres.yml"
-      - ".github/workflows/postgres.yml"
 
 permissions:
   contents: read
