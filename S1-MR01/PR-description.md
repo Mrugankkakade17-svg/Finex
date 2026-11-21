@@ -19,12 +19,12 @@ Commands below were run from `backend/`.
 - `python -m ruff format --check alembic/versions/fx_002_holdings_numeric_fk.py tests/db/test_fx002.py` — passed.
 - `python -m alembic upgrade head --sql` — passed.
 - `python -m alembic downgrade s1mr01_fx002:s1mr01_fx001 --sql` — passed.
-- Live PostgreSQL migration round-trip and `tests/db/test_fx002.py` — pending in backend CI.
+- Backend CI [run #44882516405](https://github.com/Mrugankkakade17-svg/Finex/actions/runs/44882516405) — passed against PostgreSQL 16, including migration upgrade/downgrade/upgrade, `tests/db/test_fx002.py`, Ruff, Mypy, and pytest (`2,676 passed, 26 xfailed`).
 
 ## Checklist
 
 - [x] The changes are focused on this task.
-- [ ] Tests or checks pass; live PostgreSQL verification is pending in CI.
+- [x] Tests or checks pass.
 - [x] No secrets or local-only files are included.
 - [x] Documentation is updated when needed.
 
