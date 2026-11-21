@@ -28,12 +28,18 @@ not user-owned and are outside this migration.
 ## Verification
 
 - `python -m ruff check .` — PASS.
+- `python -m ruff format --check .` — PASS.
+- Backend CI Mypy checks for Linux and Windows (Python 3.13) — PASS, no issues
+  in 151 source files on either platform.
 - `python -m alembic upgrade head --sql` — PASS (offline SQL generation).
 - `python -m alembic downgrade s1mr02_fx003:s1mr01_fx002 --sql` — PASS
   (offline SQL generation).
-- `python -m pytest -q -m "not postgres"` — 2,603 passed, 22 failed,
-  26 xfailed, 2 deselected; coverage 86.04%. All 22 failures are in existing
-  authentication tests that hit the installed bcrypt 72-byte password limit.
+- `python -m pytest -q -m "not postgres"` — 2,625 passed, 26 xfailed,
+  2 deselected; coverage 86.20%.
+- Previously failing authentication tests: 52 passed after restoring the
+  repository-pinned `bcrypt==4.2.1`. The initial failures came from a local
+  `bcrypt==5.0.0` installation, which is incompatible with Passlib 1.7.4's
+  backend-detection self-test.
 - `tests/db/test_fx003.py` — not executed against PostgreSQL because no isolated,
   verified PostgreSQL test database was available. The test was collected.
 

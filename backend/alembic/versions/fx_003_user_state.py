@@ -27,9 +27,7 @@ def upgrade() -> None:
         sa.Column("current_amount", sa.Numeric(precision=38, scale=18), nullable=False),
         sa.Column("horizon_years", sa.Integer(), nullable=False),
         sa.Column("monthly_contribution", sa.Numeric(precision=38, scale=18), nullable=False),
-        sa.Column(
-            "expected_annual_return_pct", sa.Numeric(precision=38, scale=18), nullable=False
-        ),
+        sa.Column("expected_annual_return_pct", sa.Numeric(precision=38, scale=18), nullable=False),
         sa.Column("projected_final_amount", sa.Numeric(precision=38, scale=18), nullable=False),
         sa.Column("shortfall_or_surplus", sa.Numeric(precision=38, scale=18), nullable=False),
         sa.Column("is_on_track", sa.Boolean(), nullable=False),
