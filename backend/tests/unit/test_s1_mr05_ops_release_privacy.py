@@ -27,7 +27,9 @@ def _admin_headers() -> dict[str, str]:
 
 
 def _user_headers(user_id: int | str = 100) -> dict[str, str]:
-    token = create_access_token(data={"sub": "user@finex.test", "user_id": user_id, "roles": ["user"]})
+    token = create_access_token(
+        data={"sub": "user@finex.test", "user_id": user_id, "roles": ["user"]}
+    )
     return {"Authorization": f"Bearer {token}"}
 
 
