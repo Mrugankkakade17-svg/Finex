@@ -11,3 +11,6 @@ select = ["E", "F", "I"]
 testpaths = ["tests"]
 pythonpath = [".", ".."]
 addopts = "--cov=app --cov-report=term-missing --cov-fail-under=70"
+markers = [
+    "postgres: requires an external PostgreSQL database",
+]

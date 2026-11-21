@@ -1,4 +1,7 @@
 import pytest
+import pytest_asyncio
+from dotenv import load_dotenv
+from sqlalchemy.ext.asyncio import async_engine_from_config
 
 from app.repositories.onboarding_repository import onboarding_repository
 from app.repositories.risk_repository import risk_repository
@@ -28,3 +31,22 @@ def reset_in_memory_repositories():
         risk_repository._next_assessment_id = 1
 
     yield
+
+
+@pytest_asyncio.fixture
+async def postgres_db():
+    import os
+
+    load_dotenv()
+    database_url = os.getenv("DATABASE_URL")
+    if not database_url:
+        pytest.skip("DATABASE_URL is required for PostgreSQL contract tests")
+
+    engine = async_engine_from_config(
+        {"sqlalchemy.url": database_url},
+        prefix="sqlalchemy.",
+    )
+    try:
+        yield engine
+    finally:
+        await engine.dispose()
