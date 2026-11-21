@@ -1,5 +1,6 @@
 """Authentication service supporting PostgreSQL persistence, bcrypt, and rate limiting (S1-LI02)."""
 
+import os
 import threading
 import time
 from typing import Any
@@ -8,6 +9,7 @@ from app.auth.jwt_handler import create_access_token, create_refresh_token, deco
 from app.auth.password import hash_password, verify_password
 from app.auth.token_store import token_revocation_store
 from app.config.logging import logger
+from app.config.settings import get_settings
 from app.core.exceptions import (
     BadRequestException,
     LoginRateLimitExceededException,
@@ -19,8 +21,22 @@ from app.repositories.postgres_user_repository import (
 )
 from app.repositories.user_repository import user_repository as default_user_repo
 
-# Default user repository is PostgreSQL; tests may monkeypatch user_repository
-user_repository: Any = postgres_user_repository
+
+def _resolve_initial_user_repository() -> Any:
+    persistence = os.getenv("APP_PERSISTENCE", "").strip().lower()
+    if persistence == "postgresql":
+        return postgres_user_repository
+    try:
+        if get_settings().app_persistence == "postgresql":
+            return postgres_user_repository
+    except Exception:
+        pass
+    return default_user_repo
+
+
+# Default user repository follows APP_PERSISTENCE (sqlite by default);
+# tests may monkeypatch user_repository
+user_repository: Any = _resolve_initial_user_repository()
 
 
 class LoginAttemptTracker:

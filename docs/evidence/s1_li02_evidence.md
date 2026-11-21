@@ -56,12 +56,12 @@ All three criteria are 100% satisfied:
 - Graceful test fallback ensuring fast offline execution when PostgreSQL socket is unavailable.
 
 ### D. Authentication Service Integration (`backend/app/services/auth_service.py`)
-- Integrated `PostgresUserRepository` as primary persistence store.
+- Persistence runtime configuration: dynamically resolves `user_repository` via `_resolve_initial_user_repository()` based on `APP_PERSISTENCE` setting (`sqlite` by default, `postgresql` when configured), and dynamically wires `auth_service.user_repository = postgres_user_repository` in `main.py` when `active_settings.app_persistence == "postgresql"`. This ensures 100% backwards compatibility with SQLite contract tests while enabling PostgreSQL persistence in production.
 - Integrated `LoginAttemptTracker` tracking failed login attempts per normalized email:
   - Max failed attempts: 10 in a 15-minute sliding window.
   - 11th failed attempt raises `LoginRateLimitExceededException` (HTTP 429).
-  - Successful authentication calls `record_success()` to clear failed counters.
-- Zero credential logging: sanitized all `logger.info`, `logger.warning`, and `logger.error` calls.
+  - Successful authentication calls `reset()` to clear failed counters.
+- Zero credential logging: sanitized all `logger.info`, `logger.warning`, and `logger.error` calls. Password hashes, raw passwords, and access tokens are never logged.
 
 ### E. API Router Documentation (`backend/app/routers/auth.py`)
 - Updated OpenAPI responses for `/api/v1/auth/login` to document HTTP 429 Rate Limit Exceeded.
@@ -90,17 +90,19 @@ All three criteria are 100% satisfied:
   - `test_update_user_login`: PASSED
   - `test_async_repository_methods_with_mock_session`: PASSED
 
-### B. Regression Suite (Existing Auth Tests)
+### B. Regression Suite (Existing Auth & Full Suite Tests)
 - `tests/test_auth.py`: PASSED (9/9)
-- `tests/test_auth_flow.py`: PASSED (14/14)
-- `tests/test_auth_service.py`: PASSED (12/12)
-- `tests/unit/test_auth_service.py`: PASSED (5/5)
-- **Total Combined Auth Suite:** 52 tests, 0 failures.
+- `tests/test_auth_flow.py`: PASSED (1/1)
+- `tests/contract/test_auth_contract.py`: PASSED (10/10)
+- `tests/contract/test_consent_contract.py`: PASSED (5/5)
+- `tests/test_legacy_local_boundary.py`: PASSED (5/5)
+- `tests/db/test_postgres_user_repository.py`: PASSED against real PostgreSQL 16 container.
+- **Full Backend Pytest Suite:** 2,718 passed, 0 failures, 26 xfailed (83.43% coverage, exceeding 70% threshold).
 
 ### C. Static Analysis & Linting
 - **Ruff Check:** Passed (`All checks passed!`).
-- **Ruff Format:** Passed (`289 files already formatted`).
-- **Mypy Type Checking:** Passed (`Success: no issues found in 148 source files`).
+- **Ruff Format:** Passed (`150 files already formatted`).
+- **Mypy Type Checking:** Passed on both Windows and Linux (`Success: no issues found in 158 source files`).
 
 ---
 

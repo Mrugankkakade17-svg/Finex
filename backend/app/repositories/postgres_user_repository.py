@@ -1,6 +1,7 @@
 """PostgreSQL User Repository for operational user data in finex.users (S1-LI02)."""
 
 import os
+import uuid
 from collections.abc import Mapping
 from datetime import datetime, timezone
 from typing import Any, Optional, Union
@@ -159,11 +160,7 @@ class PostgresUserRepository:
     ) -> UserModel:
         """Insert a new user record into finex.users. Raises BadRequestException if email exists."""
         norm_email = email.strip().lower()
-        if user_id is not None:
-            uid = str(user_id)
-        else:
-            uid = str(self._next_id)
-            self._next_id += 1
+        uid = str(user_id) if user_id is not None else str(uuid.uuid4())
         now = datetime.now(timezone.utc)
 
         if not self.is_db_available():
@@ -339,11 +336,7 @@ class PostgresUserRepository:
     ) -> UserModel:
         """Async insert user record with duplicate check."""
         norm_email = email.strip().lower()
-        if user_id is not None:
-            uid = str(user_id)
-        else:
-            uid = str(self._next_id)
-            self._next_id += 1
+        uid = str(user_id) if user_id is not None else str(uuid.uuid4())
 
         existing = await self.get_user_by_email_async(norm_email)
         if existing:
