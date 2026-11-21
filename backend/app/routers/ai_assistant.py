@@ -64,6 +64,10 @@ PROHIBITED_ADVICE_KEYWORDS = [
     r"\bhot stock\b",
 ]
 
+COMPILED_PROHIBITED_PATTERNS = [
+    re.compile(pattern, re.IGNORECASE) for pattern in PROHIBITED_ADVICE_KEYWORDS
+]
+
 _feedback_db: List[dict] = []
 
 
@@ -76,8 +80,8 @@ def chat_ai(req: AIChatRequest, request: Request):
     lower_query = req.message.lower()
 
     # Safety Guardrail 1: Refusal of personalized investment recommendations
-    for pattern in PROHIBITED_ADVICE_KEYWORDS:
-        if re.search(pattern, lower_query):
+    for pattern in COMPILED_PROHIBITED_PATTERNS:
+        if pattern.search(req.message):
             response = AIChatResponse(
                 conversation_id=conv_id,
                 message_id=msg_id,
