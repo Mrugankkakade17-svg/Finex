@@ -40,9 +40,8 @@ not user-owned and are outside this migration.
   repository-pinned `bcrypt==4.2.1`. The initial failures came from a local
   `bcrypt==5.0.0` installation, which is incompatible with Passlib 1.7.4's
   backend-detection self-test.
-- `tests/db/test_fx003.py` — not executed against PostgreSQL because no isolated,
-  verified PostgreSQL test database was available. The test was collected.
+- The PostgreSQL contract tests and live migration round-trip were not run on
+  this machine because Docker/PostgreSQL is unavailable. Backend CI now runs
+  them against an isolated PostgreSQL 16 service; the updated CI run is pending.
 
-The migration upgrade/downgrade was rendered offline; a live database
-upgrade/downgrade cycle remains to be verified in CI or an isolated PostgreSQL
-environment.
+The migration upgrade and downgrade SQL also rendered successfully offline.
