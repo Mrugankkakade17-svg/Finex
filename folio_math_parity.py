@@ -13,16 +13,21 @@ BACKEND_DIR = Path(__file__).resolve().parent / "backend"
 if str(BACKEND_DIR) not in sys.path:
     sys.path.insert(0, str(BACKEND_DIR))
 
-from app.domain.local_portfolio import (
+from app.domain.local_portfolio import (  # noqa: E402
+    FIXTURE_AS_OF,
+    QUOTE_SNAPSHOT_VERSION,
+    QUOTE_SOURCE,
+    QUOTE_SOURCE_TYPE,
     LocalHoldingRecord,
+    LocalPortfolioQuoteRecord,
+    LocalPortfolioQuoteSnapshot,
     LocalPortfolioRecord,
 )
-from app.ports.adapters.synthetic_local_portfolio import (
+from app.ports.adapters.synthetic_local_portfolio import (  # noqa: E402
     SyntheticLocalPortfolioCatalog,
-    SyntheticLocalPortfolioQuotes,
 )
-from app.services.local_portfolio_math import calculate_portfolio_metrics
-from app.services.portfolio_math import compute_portfolio_valuations
+from app.services.local_portfolio_math import calculate_portfolio_metrics  # noqa: E402
+from app.services.portfolio_math import compute_portfolio_valuations  # noqa: E402
 
 NOW = datetime(2026, 10, 11, 18, 0, 0, tzinfo=timezone.utc)
 PORTFOLIO_ID = "00000000-0000-4000-8000-000000000001"
@@ -139,8 +144,8 @@ def _legacy_result(
         for index, row in enumerate(holdings, start=1)
     ]
     quotes = {row.symbol: float(row.current_price) for row in holdings}
-    total_value, total_cost, gain_loss, gain_pct, evaluated = (
-        compute_portfolio_valuations(raw, quotes)
+    total_value, total_cost, gain_loss, gain_pct, evaluated = compute_portfolio_valuations(
+        raw, quotes
     )
     return {
         "cost_basis": _money(total_cost),
@@ -176,22 +181,30 @@ def _local_result(holdings: tuple[ParityHolding, ...]) -> dict[str, object]:
         for index, row in enumerate(holdings, start=1)
     )
     catalogue = SyntheticLocalPortfolioCatalog().snapshot()
-    quotes = (
-        SyntheticLocalPortfolioQuotes().snapshot(
-            tuple(row.instrument_id for row in holdings)
-        )
-        if holdings
-        else None
+    quotes = LocalPortfolioQuoteSnapshot(
+        QUOTE_SNAPSHOT_VERSION,
+        QUOTE_SOURCE,
+        QUOTE_SOURCE_TYPE,
+        FIXTURE_AS_OF,
+        tuple(
+            LocalPortfolioQuoteRecord(
+                row.instrument_id,
+                row.current_price,
+                "CACHED",
+                FIXTURE_AS_OF,
+                None,
+            )
+            for row in holdings
+        ),
     )
-    result = calculate_portfolio_metrics(
-        portfolio, local_holdings, catalogue, quotes, NOW
-    )
+    result = calculate_portfolio_metrics(portfolio, local_holdings, catalogue, quotes, NOW)
     return {
         "cost_basis": result.totals.cost_basis,
         "market_value": result.totals.market_value,
         "gain_loss": result.totals.gain_loss,
         "gain_loss_percent": result.totals.gain_loss_percent,
         "weights": [row.weight_percent for row in result.holdings],
+        "prices_used": [row.quote.unit_price for row in result.holdings],
     }
 
 
@@ -215,7 +228,11 @@ def compare_fixtures() -> dict[str, object]:
             {
                 "fixture": fixture_name,
                 "legacy": legacy,
-                "canonical": local,
+                "canonical": {key: local[key] for key in legacy},
+                "prices_used": {
+                    "legacy": [row.current_price for row in holdings],
+                    "canonical": local["prices_used"],
+                },
                 "differences": differences,
             }
         )
