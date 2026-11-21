@@ -1,0 +1,21 @@
+[Section: Metadata]
+Document Title: SEC Investor Bulletin: Mutual Funds and Exchange-Traded Funds (ETFs)
+Issuing Agency: U.S. Securities and Exchange Commission (SEC), Office of Investor Education and Advocacy (OIEA)
+Publication Date: 2022-04-10
+Document Version: 2022.04
+Licence: U.S. Government Work - Public Domain (17 U.S.C. § 105)
+License: U.S. Government Work - Public Domain (17 U.S.C. § 105)
+Authoritative Reference: https://www.sec.gov/investor/pubs/sec-guide-to-mutual-funds.pdf
+Audience: Personal finance learners, retail investors, educational platforms
+
+[Section: Introduction to Pooled Investment Vehicles]
+Mutual funds and exchange-traded funds (ETFs) are registered investment companies that pool money from many individual investors to purchase a diversified collection of stocks, bonds, or other securities. Pooled investment structures allow individual retail investors to gain immediate access to professional portfolio management and diversified asset holdings that would otherwise be difficult or cost-prohibitive to assemble independently. Each share of a fund represents an undivided proportionate interest in the underlying collective portfolio of securities.
+
+[Section: Structural Differences Between Mutual Funds and ETFs]
+While mutual funds and ETFs share similar underlying investment holdings, their operational and trading structures differ significantly. Mutual funds are bought and sold directly through the fund sponsor or broker at the end of each trading day at the fund's Net Asset Value (NAV), which is calculated once daily after major stock markets close. In contrast, ETFs trade continuously throughout the trading day on secondary stock exchanges at market prices determined by supply and demand, much like individual shares of common stock. Consequently, ETF market prices may trade at a slight premium or discount to their underlying indicative NAV.
+
+[Section: Understanding Fund Fees and Expense Ratios]
+Every investment fund incurs operating expenses that reduce overall investor returns. The primary metric for comparing fund ongoing costs is the annual expense ratio, which represents the percentage of fund assets deducted annually to cover portfolio management, custodial operations, administrative overhead, and legal compliance. Some mutual funds may also levy marketing or distribution fees known as 12b-1 fees, as well as front-end or back-end sales loads when purchasing or redeeming shares. Index ETFs typically feature lower expense ratios than actively managed funds due to passive algorithmic replication of benchmark indices.
+
+[Section: Passive Indexing Versus Active Management]
+Index funds and index ETFs aim to track the performance of a specific target benchmark index, such as the S&P 500 or Nifty 50, by holding the exact or representative sample of securities comprising the index. These passive strategies do not attempt to beat the market, resulting in low portfolio turnover, high tax efficiency, and minimal management expenses. Actively managed funds, by contrast, employ research analysts and portfolio managers who select individual securities in an effort to outperform a benchmark index, which usually entails higher research expenses and elevated transaction fees.

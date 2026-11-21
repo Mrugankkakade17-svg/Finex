@@ -1,0 +1,21 @@
+[Section: Metadata]
+Document Title: CFPB Financial Education: Compound Interest and Time Value of Money
+Issuing Agency: Consumer Financial Protection Bureau (CFPB)
+Publication Date: 2023-01-15
+Document Version: 2023.1
+Licence: U.S. Government Work - Public Domain (17 U.S.C. § 105)
+License: U.S. Government Work - Public Domain (17 U.S.C. § 105)
+Authoritative Reference: https://www.consumerfinance.gov/consumer-tools/educator-tools/financial-terms/
+Audience: Personal finance learners, retail investors, educational platforms
+
+[Section: Mechanics of Compound Interest]
+Compound interest is the interest calculated on the initial principal balance, which also includes all of the accumulated interest from previous periods. Unlike simple interest, which is calculated strictly on the initial principal deposit, compound interest causes wealth to grow at an accelerating rate over time. This compounding effect is often described as interest earning interest on itself. Over long investment horizons, compounding typically generates significantly more wealth than the total capital originally deposited by the investor.
+
+[Section: Compounding Frequency]
+The frequency with which interest is compounded dramatically impacts long-term investment outcomes. Common compounding schedules include annually, quarterly, monthly, and daily. The standard compound interest formula is expressed as A = P * (1 + r/n)**(n*t), where A represents the final accrued amount, P represents the initial principal, r is the annual nominal interest rate in decimal form, n is the number of times interest is compounded per year, and t is the time duration in years. As compounding frequency n increases, the effective annual yield (APY) rises relative to the stated nominal annual interest rate.
+
+[Section: The Rule of 72]
+The Rule of 72 is a practical mental calculation tool used to estimate the number of years required for an invested sum of money to double at a given constant annual rate of return. To use the rule, divide the number 72 by the annual expected interest or return percentage. For example, an investment growing at an average annual return of 6 percent will double in approximately twelve years (72 divided by 6 equals 12). At an 8 percent return, the investment doubles in approximately nine years. The Rule of 72 provides a quick rule of thumb for evaluating the opportunity cost of delaying saving.
+
+[Section: Inflation and Real Purchasing Power]
+When evaluating nominal compound interest rates, investors must account for inflation, which is the general progressive increase in prices of goods and services over time. If a savings deposit earns a nominal annual interest rate of 3 percent while consumer price inflation runs at 4 percent, the real return of the deposit is negative 1 percent. In this scenario, although the monetary dollar balance in the account increases, the investor's real purchasing power actually declines. Effective long-term wealth accumulation strategies must aim to generate real returns that outpace headline inflation.
