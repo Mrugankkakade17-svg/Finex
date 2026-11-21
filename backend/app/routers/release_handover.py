@@ -4,8 +4,9 @@ import uuid
 from datetime import datetime
 from typing import List
 
-from fastapi import APIRouter, status
+from fastapi import APIRouter, Depends, status
 
+from app.auth.principal import Principal, get_current_principal, require_admin_role
 from app.schemas.sprint8_release_handover import (
     DisasterRecoveryDrill,
     HandoverSummary,
@@ -14,7 +15,11 @@ from app.schemas.sprint8_release_handover import (
     UATSignoffRequest,
 )
 
-router = APIRouter(prefix="/api/v1/release", tags=["Sprint 8 - Release & Handover"])
+router = APIRouter(
+    prefix="/api/v1/release",
+    tags=["Sprint 8 - Release & Handover"],
+    dependencies=[Depends(get_current_principal)],
+)
 
 # In-memory store initialized with canonical Anand Sharma pilot signoff
 _SIGNOFF_STORE: List[UATSignoffRecord] = [
@@ -58,7 +63,10 @@ async def list_uat_signoffs():
 
 
 @router.post("/uat-signoffs", response_model=UATSignoffRecord, status_code=status.HTTP_201_CREATED)
-async def submit_uat_signoff(payload: UATSignoffRequest):
+async def submit_uat_signoff(
+    payload: UATSignoffRequest,
+    admin: Principal = Depends(require_admin_role),
+):
     """Submit a stakeholder UAT verification sign-off."""
     new_record = UATSignoffRecord(
         signoff_id=f"SIG-{uuid.uuid4().hex[:8].upper()}",

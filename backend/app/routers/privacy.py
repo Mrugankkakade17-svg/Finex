@@ -7,8 +7,9 @@ from datetime import datetime, timezone
 from typing import Dict, List
 from uuid import uuid4
 
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Request
 
+from app.auth.principal import get_current_principal
 from app.core.responses import APIResponse
 from app.schemas.sprint5_privacy_spending import (
     ConsentAuditRecord,
@@ -16,7 +17,11 @@ from app.schemas.sprint5_privacy_spending import (
     PrivacyActionResponse,
 )
 
-router = APIRouter(prefix="/api/v1/privacy", tags=["Sprint 5 - Privacy Controls"])
+router = APIRouter(
+    prefix="/api/v1/privacy",
+    tags=["Sprint 5 - Privacy Controls"],
+    dependencies=[Depends(get_current_principal)],
+)
 
 _audit_history: List[ConsentAuditRecord] = [
     ConsentAuditRecord(

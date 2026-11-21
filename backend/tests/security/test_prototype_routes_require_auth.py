@@ -164,23 +164,38 @@ def setup_probe_resources() -> Generator[None, None, None]:
     alerts._rules_db.pop(SEED_RULE_ID, None)
 
 
-# SPRINT 0 AUTH PROBE & SPRINT 1 TRANSITION PLAN:
-# 1. These 26 tests are intentionally expected to fail in Sprint 0 because authentication
-#    protection is not yet implemented on the prototype routers and demo endpoints.
-# 2. `strict=False` is used so that in Sprint 0 assertions fail as expected (reporting XFAIL,
-#    exit code 0). When a route implements authentication and begins returning 401/403,
-#    `strict=False` causes pytest to report XPASS while the xfail marker remains.
-# 3. During Sprint 1 authentication implementation, the corresponding xfail markers must be
-#    removed so the tests report normal PASSED results (not XPASS).
-# 4. The actual security assertion must remain `response.status_code in (401, 403)`.
-@pytest.mark.xfail(
-    strict=False,
-    reason="Prototype route does not yet enforce authentication in Sprint 0; will pass in Sprint 1",
-)
+# SPRINT 0 AUTH PROBE & SPRINT 1 TRANSITION:
+# Routes secured under Sprint 1 (e.g. S1-MR05: Ops, Release, Privacy) now strictly enforce
+# authentication and pass cleanly. Routes not yet migrated retain xfail(strict=False).
+SECURED_ROUTERS_S1 = {"ops_hardening", "release_handover", "privacy"}
+
+
+def _build_test_params() -> list[Any]:
+    params = []
+    for router, method, path, kwargs in PROTOTYPE_ROUTES:
+        param_id = f"{router}_{method}_{path}"
+        if router in SECURED_ROUTERS_S1:
+            params.append(pytest.param(router, method, path, kwargs, id=param_id))
+        else:
+            params.append(
+                pytest.param(
+                    router,
+                    method,
+                    path,
+                    kwargs,
+                    id=param_id,
+                    marks=pytest.mark.xfail(
+                        strict=False,
+                        reason="Route not yet enforced; will pass in subsequent Sprint 1 tasks",
+                    ),
+                )
+            )
+    return params
+
+
 @pytest.mark.parametrize(
     ("router_name", "method", "path", "request_kwargs"),
-    PROTOTYPE_ROUTES,
-    ids=[f"{router}_{method}_{path}" for router, method, path, _ in PROTOTYPE_ROUTES],
+    _build_test_params(),
 )
 def test_prototype_routes_require_auth(
     router_name: str,
