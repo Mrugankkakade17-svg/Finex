@@ -184,6 +184,22 @@ class RateLimitExceededException(FinExException):
         )
 
 
+class LoginRateLimitExceededException(FinExException):
+    """Raised when consecutive failed login attempts exceed the allowed threshold."""
+
+    def __init__(
+        self,
+        message: str = "Too many failed login attempts. Please try again later.",
+        retry_after_seconds: int | None = None,
+    ):
+        super().__init__(
+            message=message,
+            error_code="RATE_LIMIT_EXCEEDED",
+            status_code=429,
+        )
+        self.retry_after_seconds = retry_after_seconds
+
+
 class SymbolNotFoundException(NotFoundException):
     """A requested market symbol is not available from the selected provider."""
 

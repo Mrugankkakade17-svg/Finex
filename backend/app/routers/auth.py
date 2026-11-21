@@ -104,6 +104,7 @@ def register(request: RegisterRequest, http_request: Request):
             },
         },
         401: {"description": "Invalid credentials"},
+        429: {"description": "Too many failed login attempts; rate limit exceeded"},
         422: {
             "description": "Validation error",
             "content": {
