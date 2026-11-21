@@ -1,8 +1,9 @@
 import os
 
 import pytest
+import pytest_asyncio
 from dotenv import load_dotenv
-from sqlalchemy.ext.asyncio import create_async_engine
+from sqlalchemy.ext.asyncio import async_engine_from_config
 
 from app.repositories.onboarding_repository import onboarding_repository
 from app.repositories.risk_repository import risk_repository
@@ -34,16 +35,19 @@ def reset_in_memory_repositories():
     yield
 
 
-@pytest.fixture
-def postgres_db():
-    """Provides an isolated async engine when DATABASE_URL is set; skips otherwise."""
+@pytest_asyncio.fixture
+async def postgres_db():
+    """Provide an async engine when DATABASE_URL is set; otherwise skip PostgreSQL tests."""
     load_dotenv()
     database_url = os.getenv("DATABASE_URL")
     if not database_url:
-        pytest.skip("DATABASE_URL is not set; skipping PostgreSQL test")
+        pytest.skip("DATABASE_URL is required for PostgreSQL contract tests")
 
-    engine = create_async_engine(database_url)
+    engine = async_engine_from_config(
+        {"sqlalchemy.url": database_url},
+        prefix="sqlalchemy.",
+    )
     try:
         yield engine
     finally:
-        engine.sync_engine.dispose()
+        await engine.dispose()

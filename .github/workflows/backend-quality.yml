@@ -40,6 +40,23 @@ permissions:
 jobs:
   quality:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: finex_test
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d finex_test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      DATABASE_URL: postgresql+asyncpg://postgres:postgres@localhost:5432/finex_test
 
     defaults:
       run:
@@ -109,6 +126,12 @@ jobs:
         run: |
           python -m mypy app verify_s1_application.py verify_s2_saved_risk.py verify_s2_manual_portfolio.py verify_s2_evidence_pair.py local_s2_evidence.py verify_s3_foundation.py verify_s3_evidence.py verify_r0_thin_slice.py verify_s2_risk.py verify_secret_snapshot.py --platform linux --python-version 3.13
           python -m mypy app verify_s1_application.py verify_s2_saved_risk.py verify_s2_manual_portfolio.py verify_s2_evidence_pair.py local_s2_evidence.py verify_s3_foundation.py verify_s3_evidence.py verify_r0_thin_slice.py verify_s2_risk.py verify_secret_snapshot.py --platform win32 --python-version 3.13
+
+      - name: PostgreSQL migration round-trip
+        run: |
+          python -m alembic upgrade head
+          python -m alembic downgrade -1
+          python -m alembic upgrade head
 
       - name: Pytest
         run: python -m pytest

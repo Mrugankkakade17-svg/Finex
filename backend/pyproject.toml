@@ -12,5 +12,5 @@ testpaths = ["tests"]
 pythonpath = [".", ".."]
 addopts = "--cov=app --cov-report=term-missing --cov-fail-under=70"
 markers = [
-    "postgres: marks tests requiring a running postgres database with pgvector",
+    "postgres: requires a PostgreSQL database, optionally with pgvector",
 ]
