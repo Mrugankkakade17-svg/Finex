@@ -17,14 +17,14 @@ pytestmark = pytest.mark.postgres
 async def test_postgres_user_repository_crud_against_real_db(postgres_db):
     """Verify PostgresUserRepository CRUD operations on real PostgreSQL finex.users."""
     async with AsyncSession(postgres_db) as session:
-        async with session.begin():
-            repo = PostgresUserRepository(session=session)
+        repo = PostgresUserRepository(session=session)
 
-            test_uid = str(uuid.uuid4())
-            email = f"test_{uuid.uuid4().hex[:8]}@example.com"
-            raw_pw = "SecurePostgresPass@2026"
-            hashed = hash_password(raw_pw)
+        test_uid = str(uuid.uuid4())
+        email = f"test_{uuid.uuid4().hex[:8]}@example.com"
+        raw_pw = "SecurePostgresPass@2026"
+        hashed = hash_password(raw_pw)
 
+        try:
             # 1. Create user
             created_user = await repo.create_user_async(
                 name="Postgres Test User",
@@ -69,3 +69,9 @@ async def test_postgres_user_repository_crud_against_real_db(postgres_db):
             assert db_row.user_id == test_uid
             assert db_row.email == email.lower()
             assert db_row.role == "trader"
+        finally:
+            await session.execute(
+                text("DELETE FROM finex.users WHERE user_id = :uid"),
+                {"uid": test_uid},
+            )
+            await session.commit()

@@ -363,7 +363,7 @@ class PostgresUserRepository:
         try:
             if self.session:
                 result = await self.session.execute(query, params)
-                await self.session.commit()
+                await self.session.flush()
                 row = result.fetchone()
                 if row:
                     return self._to_model(dict(row._mapping))
