@@ -26,6 +26,9 @@ def reset_in_memory_repositories():
     if hasattr(postgres_user_repository, "_memory_users"):
         postgres_user_repository._memory_users.clear()
 
+    if hasattr(postgres_user_repository, "_next_id"):
+        postgres_user_repository._next_id = 1
+
     login_tracker.clear()
 
     # Reset onboarding

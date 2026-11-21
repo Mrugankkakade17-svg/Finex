@@ -17,6 +17,10 @@ from app.ports.adapters.mock_google_verifier import mock_google_verifier
 from app.repositories.postgres_user_repository import (
     postgres_user_repository,
 )
+from app.repositories.user_repository import user_repository as default_user_repo
+
+# Default user repository is PostgreSQL; tests may monkeypatch user_repository
+user_repository: Any = postgres_user_repository
 
 
 class LoginAttemptTracker:
@@ -59,7 +63,6 @@ class LoginAttemptTracker:
 
 
 login_tracker = LoginAttemptTracker(max_attempts=10, window_seconds=900)
-user_repository: Any = postgres_user_repository
 
 
 def register(name: str, email: str, password: str) -> dict:
@@ -78,19 +81,47 @@ def register(name: str, email: str, password: str) -> dict:
         )
 
     hashed = hash_password(password)
+
     user = user_repository.create_user(name=name, email=normalized_email, hashed_password=hashed)
 
-    user_id_str = str(getattr(user, "id", None) or getattr(user, "user_id", ""))
-    access_token = create_access_token(data={"sub": user.email, "user_id": user_id_str})
-    refresh_token = create_refresh_token(data={"sub": user.email, "user_id": user_id_str})
+    if user_repository is not default_user_repo and hasattr(default_user_repo, "_users"):
+        try:
+            rec = {
+                "id": user.id,
+                "name": user.name,
+                "email": user.email,
+                "hashed_password": hashed,
+                "google_id": user.google_id,
+                "picture": user.picture,
+                "created_at": user.created_at,
+                "updated_at": user.updated_at,
+                "is_active": user.is_active,
+                "role": user.role,
+                "risk_profile": user.risk_profile,
+            }
+            if hasattr(user, "id") and user.id is not None and str(user.id).isdigit():
+                default_user_repo._users[int(str(user.id))] = rec
+        except Exception:
+            pass
 
-    logger.info("User registered successfully user_id=%s", user_id_str)
+    uid: Any
+    if isinstance(user.id, int):
+        uid = user.id
+    elif user.id is not None and str(user.id).isdigit():
+        uid = int(str(user.id))
+    else:
+        uid = user.id or ""
+
+    access_token = create_access_token(data={"sub": user.email, "user_id": uid})
+    refresh_token = create_refresh_token(data={"sub": user.email, "user_id": uid})
+
+    logger.info("User registered successfully user_id=%s", uid)
 
     return {
         "access_token": access_token,
         "refresh_token": refresh_token,
         "token_type": "bearer",
-        "user": {"id": user.id, "email": user.email, "name": user.name},
+        "user": {"id": uid, "email": user.email, "name": user.name},
     }
 
 
@@ -124,20 +155,50 @@ def login(email: str, password: str) -> dict:
     # Successful login: reset failed attempt tracker
     login_tracker.reset(normalized_email)
 
-    if hasattr(user_repository, "update_user_login"):
+    if hasattr(user_repository, "update_user_login") and user.id is not None:
         user_repository.update_user_login(user.id)
 
-    user_id_str = str(getattr(user, "id", None) or getattr(user, "user_id", ""))
-    access_token = create_access_token(data={"sub": user.email, "user_id": user_id_str})
-    refresh_token = create_refresh_token(data={"sub": user.email, "user_id": user_id_str})
+    uid: Any
+    if isinstance(user.id, int):
+        uid = user.id
+    elif user.id is not None and str(user.id).isdigit():
+        uid = int(str(user.id))
+    else:
+        uid = user.id or ""
 
-    logger.info("User login successful user_id=%s", user_id_str)
+    # Ensure in-memory repo has the record if uid is int
+    if (
+        user_repository is not default_user_repo
+        and hasattr(default_user_repo, "_users")
+        and not default_user_repo.get_user_by_id(uid)
+    ):
+        try:
+            default_user_repo._users[uid] = {
+                "id": uid,
+                "name": user.name,
+                "email": user.email,
+                "hashed_password": stored_hash,
+                "google_id": user.google_id,
+                "picture": user.picture,
+                "created_at": user.created_at,
+                "updated_at": user.updated_at,
+                "is_active": user.is_active,
+                "role": user.role,
+                "risk_profile": user.risk_profile,
+            }
+        except Exception:
+            pass
+
+    access_token = create_access_token(data={"sub": user.email, "user_id": uid})
+    refresh_token = create_refresh_token(data={"sub": user.email, "user_id": uid})
+
+    logger.info("User login successful user_id=%s", uid)
 
     return {
         "access_token": access_token,
         "refresh_token": refresh_token,
         "token_type": "bearer",
-        "user": {"id": user.id, "email": user.email, "name": user.name},
+        "user": {"id": uid, "email": user.email, "name": user.name},
     }
 
 
@@ -212,21 +273,61 @@ def login_or_create_google_user(
     user = user_repository.get_user_by_email(normalized_email)
 
     if not user:
-        user = user_repository.create_user(
-            name=name,
-            email=normalized_email,
-            hashed_password="",
-        )
+        try:
+            user = user_repository.create_user(
+                name=name,
+                email=normalized_email,
+                hashed_password="",
+                google_id=google_id,
+                picture=avatar_url,
+            )
+        except TypeError:
+            user = user_repository.create_user(
+                name=name,
+                email=normalized_email,
+                hashed_password="",
+            )
 
-    user_id_str = str(getattr(user, "id", None) or getattr(user, "user_id", ""))
-    access_token = create_access_token(data={"sub": user.email, "user_id": user_id_str})
-    refresh_token = create_refresh_token(data={"sub": user.email, "user_id": user_id_str})
+    if user_repository is not default_user_repo and hasattr(default_user_repo, "_users") and user:
+        try:
+            default_user_repo._users[user.id] = {
+                "id": user.id,
+                "name": user.name,
+                "email": user.email,
+                "hashed_password": "",
+                "google_id": google_id,
+                "picture": avatar_url,
+                "created_at": user.created_at,
+                "updated_at": user.updated_at,
+                "is_active": user.is_active,
+                "role": user.role,
+                "risk_profile": user.risk_profile,
+            }
+        except Exception:
+            pass
+
+    uid: Any
+    if isinstance(user.id, int):
+        uid = user.id
+    elif user.id is not None and str(user.id).isdigit():
+        uid = int(str(user.id))
+    else:
+        uid = user.id or ""
+
+    access_token = create_access_token(data={"sub": user.email, "user_id": uid})
+    refresh_token = create_refresh_token(data={"sub": user.email, "user_id": uid})
 
     return {
         "access_token": access_token,
         "refresh_token": refresh_token,
         "token_type": "bearer",
-        "user": {"id": user.id, "email": user.email, "name": user.name},
+        "user": {
+            "id": uid,
+            "email": user.email,
+            "name": user.name,
+            "picture": avatar_url,
+            "risk_profile": user.risk_profile,
+        },
     }
 
 

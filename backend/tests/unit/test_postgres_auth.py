@@ -9,6 +9,7 @@ Covers:
 
 import logging
 import time
+import uuid
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
@@ -33,17 +34,14 @@ class TestFailedLoginThrottling:
 
     def setup_method(self):
         login_tracker.clear()
-        # Ensure a test user exists
-        auth_service.user_repository._memory_users.clear()
-        auth_service.register(
-            name="Throttle User",
-            email="throttle@finex.com",
-            password="CorrectPassword@123",
-        )
+        if hasattr(auth_service.user_repository, "_memory_users"):
+            auth_service.user_repository._memory_users.clear()
 
     def test_first_10_failures_return_401_and_11th_returns_429(self):
-        email = "throttle@finex.com"
+        email = f"throttle_{uuid.uuid4().hex[:8]}@finex.com"
+        password = "CorrectPassword@123"
         wrong_pass = "WrongPassword@123"
+        auth_service.register(name="Throttle User", email=email, password=password)
 
         # Attempts 1 through 10 must raise UnauthorizedException (HTTP 401)
         for i in range(1, 11):
@@ -59,7 +57,7 @@ class TestFailedLoginThrottling:
         assert exc_info.value.error_code == "RATE_LIMIT_EXCEEDED"
 
     def test_endpoint_returns_http_429_on_11th_failed_login(self):
-        email = "endpoint_throttle@finex.com"
+        email = f"endpoint_throttle_{uuid.uuid4().hex[:8]}@finex.com"
         client.post(
             "/api/v1/auth/register",
             json={"name": "EP User", "email": email, "password": "Correct@123"},
@@ -85,7 +83,7 @@ class TestFailedLoginThrottling:
         assert body["error"]["code"] == "RATE_LIMIT_EXCEEDED"
 
     def test_successful_login_resets_failed_attempt_counter(self):
-        email = "throttle_reset@finex.com"
+        email = f"throttle_reset_{uuid.uuid4().hex[:8]}@finex.com"
         password = "GoodPassword@123"
         auth_service.register(name="Reset User", email=email, password=password)
 
@@ -108,7 +106,7 @@ class TestFailedLoginThrottling:
             auth_service.login(email=email, password="BadPassword")
 
     def test_window_expiration_clears_throttle(self, monkeypatch):
-        email = "window_expire@finex.com"
+        email = f"window_expire_{uuid.uuid4().hex[:8]}@finex.com"
         auth_service.register(name="Window User", email=email, password="GoodPassword@123")
 
         # Simulate 10 failed logins
@@ -130,8 +128,8 @@ class TestFailedLoginThrottling:
         assert exc_info.value.status_code == 401
 
     def test_different_emails_have_isolated_counters(self):
-        email_a = "user_a@finex.com"
-        email_b = "user_b@finex.com"
+        email_a = f"user_a_{uuid.uuid4().hex[:8]}@finex.com"
+        email_b = f"user_b_{uuid.uuid4().hex[:8]}@finex.com"
         auth_service.register(name="User A", email=email_a, password="PasswordA@123")
         auth_service.register(name="User B", email=email_b, password="PasswordB@123")
 
@@ -155,7 +153,7 @@ class TestPasswordHashNotLogged:
     def test_registration_does_not_log_passwords_or_hashes(self, caplog):
         caplog.set_level(logging.DEBUG)
         raw_password = "SuperSecretPlaintextPassword!987"
-        email = "logging_test_reg@finex.com"
+        email = f"logging_test_reg_{uuid.uuid4().hex[:8]}@finex.com"
 
         res = auth_service.register(name="Log Test", email=email, password=raw_password)
         user = auth_service.user_repository.get_user_by_email(email)
@@ -171,7 +169,7 @@ class TestPasswordHashNotLogged:
     def test_login_success_does_not_log_passwords_or_hashes(self, caplog):
         caplog.set_level(logging.DEBUG)
         raw_password = "LoginSecretPass@123"
-        email = "logging_test_login@finex.com"
+        email = f"logging_test_login_{uuid.uuid4().hex[:8]}@finex.com"
         auth_service.register(name="Log Login", email=email, password=raw_password)
 
         caplog.clear()
@@ -188,7 +186,7 @@ class TestPasswordHashNotLogged:
     def test_failed_login_does_not_log_raw_password(self, caplog):
         caplog.set_level(logging.DEBUG)
         wrong_password = "AttemptedWrongPassword!456"
-        email = "logging_test_fail@finex.com"
+        email = f"logging_test_fail_{uuid.uuid4().hex[:8]}@finex.com"
 
         caplog.clear()
         with pytest.raises(UnauthorizedException):

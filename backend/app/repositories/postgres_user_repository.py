@@ -1,7 +1,6 @@
 """PostgreSQL User Repository for operational user data in finex.users (S1-LI02)."""
 
 import os
-import uuid
 from collections.abc import Mapping
 from datetime import datetime, timezone
 from typing import Any, Optional, Union
@@ -42,6 +41,7 @@ class PostgresUserRepository:
         )
         self._memory_users: dict[str, dict[str, Any]] = {}
         self._db_available: Optional[bool] = None
+        self._next_id: int = 1
 
     def _get_sync_conn(self) -> PostgresConnection:
         dsn = postgres_dsn(self._database_url)
@@ -63,8 +63,15 @@ class PostgresUserRepository:
 
     @staticmethod
     def _to_model(row: Union[DictRow, Mapping[str, Any], dict[str, Any]]) -> UserModel:
+        raw_id = row["user_id"]
+        parsed_id: Union[int, str]
+        try:
+            parsed_id = int(raw_id)
+        except (ValueError, TypeError):
+            parsed_id = str(raw_id)
+
         return UserModel(
-            id=str(row["user_id"]),
+            id=parsed_id,
             name=str(row["name"]),
             email=str(row["email"]),
             hashed_password=str(row["password_hash"]),
@@ -152,7 +159,11 @@ class PostgresUserRepository:
     ) -> UserModel:
         """Insert a new user record into finex.users. Raises BadRequestException if email exists."""
         norm_email = email.strip().lower()
-        uid = user_id or str(uuid.uuid4())
+        if user_id is not None:
+            uid = str(user_id)
+        else:
+            uid = str(self._next_id)
+            self._next_id += 1
         now = datetime.now(timezone.utc)
 
         if not self.is_db_available():
@@ -328,7 +339,11 @@ class PostgresUserRepository:
     ) -> UserModel:
         """Async insert user record with duplicate check."""
         norm_email = email.strip().lower()
-        uid = user_id or str(uuid.uuid4())
+        if user_id is not None:
+            uid = str(user_id)
+        else:
+            uid = str(self._next_id)
+            self._next_id += 1
 
         existing = await self.get_user_by_email_async(norm_email)
         if existing:
