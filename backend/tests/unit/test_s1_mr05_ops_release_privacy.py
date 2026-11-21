@@ -297,7 +297,6 @@ class TestPrivacyAuthorization:
         assert data["success"] is True
         assert data["data"]["action"] == "REVOKE_CONSENT"
 
-
     def test_revoke_consent_is_isolated_to_authenticated_user(self):
         user_a = "privacy-user-a"
         user_b = "privacy-user-b"
