@@ -10,6 +10,7 @@
 **Base Branch:** `dev`  
 **Feature Branch:** `feature/S2-MI01-embedding-minilm`  
 **Pull Request:** [#131](https://github.com/Mrugankkakade17-svg/Finex/pull/131)  
+**Head Commit:** `7a0e06e032e0874586f74878567ae63df74a2e77`  
 **Date:** 22 November 2026  
 
 ---
@@ -24,7 +25,7 @@ This task establishes:
 3. Dual architectural import paths (`app.adapters.minilm_embedding_adapter` and `app.ports.adapters.minilm_embedding_adapter`) ensuring seamless compatibility across hexagonal layer conventions.
 4. A seeded, legally verified educational financial RAG corpus in `data/rag_corpus/` sourced from public domain materials published by the U.S. Securities and Exchange Commission (SEC) and the Consumer Financial Protection Bureau (CFPB) under 17 U.S.C. § 105, alongside Apache-2.0 internal repository samples.
 5. An updated, strictly validated document registry (`ai/document_registry.json`) with path-traversal hardening (`UnsafePathError`), ensuring every document has a verified licence, version, provenance, and SHA-256 hash.
-6. A comprehensive, passing test suite comprising 42 targeted S2-MI01 tests, 47 AI tests, and zero regressions across the 2,765 passed local backend tests.
+6. A comprehensive, passing test suite comprising 42 targeted S2-MI01 tests, 47 AI tests, and zero regressions across the 2,770 passed local backend tests.
 
 ---
 
@@ -48,12 +49,12 @@ This task establishes:
 | **REQ-CORP-05** | Cryptographic integrity verification via SHA-256 checksums | Issue #44; DoD | `test_rag_corpus_registry.py` | **PASS** (test_corpus_files_sha256_checksums) |
 | **REQ-TEST-01** | Targeted unit and integration test suite passing with 100% green status | Acceptance Criteria | 42 tests in `tests/unit/` and `tests/integration/` | **PASS** (42/42 passed) |
 | **REQ-TEST-02** | AI directory prototype test suite passing without regressions | S0-MI02 Handover | 47 tests in `ai/` | **PASS** (47/47 passed) |
-| **REQ-TEST-03** | Full backend test suite non-regression verification | DoD | 2,765 passed local tests + 7 CI DB tests | **PASS** (0 unexpected failures) |
+| **REQ-TEST-03** | Full backend test suite non-regression verification | DoD | 2,770 passed local tests + 7 CI DB tests | **PASS** (0 unexpected failures) |
 | **REQ-CODE-01** | Static analysis compliance (Ruff lint, Ruff format, Mypy type-checking) | Project Code Standards | `ruff check`, `ruff format --check`, `mypy app` | **PASS** (0 errors) |
 
 ---
 
-## 3. S0-MI02 Dependency Foundation & RAG Prototype Test History
+## 3. S0-MI02 Dependency Foundation & RAG Prototype Scope Resolution
 
 ### 3.1 S0-MI02 Baseline Findings
 Task `S0-MI02` (PR #116 / Issue #12) established the initial empirical evaluation of embedding models for FinEx, documented in `docs/ai/baseline.md` and `docs/evidence/s0_mi02_evidence.md`. Key findings included:
@@ -61,16 +62,11 @@ Task `S0-MI02` (PR #116 / Issue #12) established the initial empirical evaluatio
 - `all-MiniLM-L6-v2` proved optimal for the educational workstation target: 384 dimensions, ~160 MB resident memory, and ~24.5 ms warm CPU latency on AMD Ryzen 5 hardware.
 - The prototype script `ai/01_rag_prototype.py` and its test suite `ai/test_rag_prototype.py` were established as proof-of-concept benchmarks.
 
-### 3.2 Prototype Test History & Resolution in S2-MI01
-In the S0-MI02 baseline, 4 tests in `ai/test_rag_prototype.py` failed when executed directly because `ai/01_rag_prototype.py` lacked complete implementations of:
-1. `load_document_registry()`
-2. `chunk_financial_document(..., doc_id=...)` (missing metadata injection)
-3. `ingest_all_registered_documents()`
-4. `run_evaluation_suite()`
-
-In `S2-MI01`, these prototype functions were completed with dual-path resolution (resolving files from repo root, `ai/`, or `data/rag_corpus/`). This brought `ai/test_rag_prototype.py` to **100% PASS (4/4 passed)**, contributing to the full **47/47 passed** tests in `ai/`.
-
-Crucially, this was achieved by establishing modular foundational utilities in `backend/app/core/document_registry.py` without prematurely implementing Sprint 5 database ingestion or chunking pipelines (`S5-MI01`), strictly respecting sprint boundaries.
+### 3.2 Prototype Scope & Sprint Boundaries Analysis
+The changes to `ai/01_rag_prototype.py` and `ai/test_rag_prototype.py` were carefully analyzed for sprint boundaries and ownership:
+1. **Ownership Origin:** Task `S1-AI-02` (owned by Palak) originally created the prototype script `01_rag_prototype.py`. In that baseline, 4 tests in `ai/test_rag_prototype.py` failed due to missing stubs (`load_document_registry`, `chunk_financial_document(..., doc_id=...)`, `ingest_all_registered_documents`, `run_evaluation_suite`).
+2. **Compatibility Resolution in S2-MI01:** When S2-MI01 introduced new registered documents in `data/rag_corpus/`, the test `test_document_registry_structure` needed to resolve paths in both `ai/` and `data/rag_corpus/`. The stub implementations in `ai/01_rag_prototype.py` were completed purely as **test-compatibility prototype helpers** to allow `ai/test_rag_prototype.py` to run without throwing errors during `pytest ai/`.
+3. **Sprint Boundary Protection:** These prototype functions are **NOT** the production ingestion or chunking pipeline. Production chunking and embedding storage in PostgreSQL (`pgvector`) is officially assigned to task `S5-MI01` (`app/jobs/embed_corpus.py` (N)) in Sprint 5. S2-MI01 strictly confines its production code to `backend/app/ports/`, `backend/app/adapters/`, `backend/app/core/document_registry.py`, `data/rag_corpus/`, and `ai/document_registry.json`.
 
 ---
 
@@ -97,7 +93,7 @@ class EmbeddingPort(Protocol):
 - `model_name: str` — e.g., `"sentence-transformers/all-MiniLM-L6-v2"`
 - `dimension: int` — `384`
 - `max_sequence_length: int` — `256` (or `512`)
-- `is_normalized: bool` — `True` (guarantees unit-norm vectors for exact cosine similarity via dot product)
+- `is_normalized: bool` — `True` (guarantees unit-norm vectors for exact downstream cosine similarity via dot product)
 - `device: str` — `"cpu"` or `"cuda"`
 
 #### Exception Hierarchy:
@@ -160,6 +156,8 @@ The 3 initial sample documents in `ai/` (`sample_factsheet.txt`, `sample_fund_pr
 ## 7. Exact Commands Executed & Verified Test Outputs
 
 ### 7.1 Targeted S2-MI01 Unit & Integration Suite (42 Tests - 100% PASS)
+> **Note on Test Hierarchy:** These 42 tests are a **subset** of the backend unit (39 tests) and integration (3 tests) suites below. They are presented here for targeted inspection and must NOT be added to backend totals to avoid double counting.
+
 ```powershell
 cd Finex\backend
 .\.venv\Scripts\python.exe -m pytest tests/unit/test_embedding_port.py tests/unit/test_minilm_adapter.py tests/unit/test_rag_corpus_registry.py tests/integration/test_embedding_integration.py --no-cov -v
@@ -248,24 +246,24 @@ ai/test_rag_prototype.py (4 tests) ....                                  [100%]
 To avoid Windows process exhaustion and memory starvation, the complete backend test suite was run in structured batches.
 
 #### Exact Arithmetic Calculation:
-$$\text{Total Local Passed} = 231 (\text{Top-level}) + 483 (\text{Contract}) + 130 (\text{Integration}) + 1,921 (\text{Unit}) = \mathbf{2,765}$$
+$$\text{Total Local Backend Passed} = 231 (\text{Top-level}) + 483 (\text{Contract}) + 130 (\text{Integration}) + 1,926 (\text{Unit}) = \mathbf{2,770}$$
 
-| Batch ID | Directory / Scope | Files | Command | Tests Executed | Passed | Skipped / Expected Failures | Time |
+$$\text{Total Repository Passed} = 2,770 (\text{Local Backend}) + 7 (\text{CI Container DB}) + 47 (\text{AI Suite}) = \mathbf{2,824}$$
+
+$$\text{Total Repository Tests Evaluated} = 2,824 (\text{Passed}) + 4 (\text{Skipped}) + 24 (\text{xfailed}) + 2 (\text{xpassed}) = \mathbf{2,854}$$
+
+| Batch ID | Directory / Scope | Files | Command | Tests Collected | Passed | Skipped / Expected Failures | Time |
 | :---: | :--- | :---: | :--- | :---: | :---: | :---: | :---: |
-| **Batch 1** | Top-level backend (`tests/*.py`) | 33 | `pytest tests/test_*.py --no-cov -q` | 231 | **231** | 0 | 19.05s |
+| **Batch 1** | Top-level backend (`tests/*.py`) | 35 | `pytest tests/test_*.py --no-cov -q` | 231 | **231** | 0 | 19.05s |
 | **Batch 2** | Contract tests (`tests/contract/`) | 22 | `pytest tests/contract --no-cov -q` | 487 | **483** | 4 SKIPPED (PostgreSQL fixture) | 151.41s |
-| **Batch 3** | Security tests (`tests/security/`) | 3 | `pytest tests/security --no-cov -q` | 26 | 0 | **24 xfailed, 2 xpassed** (Expected) | 2.63s |
+| **Batch 3** | Security tests (`tests/security/`) | 3 | `pytest tests/security --no-cov -q` | 26 | 0 | **24 xfailed, 2 xpassed** (Expected baseline) | 2.63s |
 | **Batch 4** | Integration tests (`tests/integration/`) | 12 | `pytest tests/integration --no-cov -q` | 130 | **130** | 0 | 33.48s |
-| **Batch 5** | Unit tests (`tests/unit/`) | 51 | `pytest tests/unit/... --no-cov -q` | 1,921 | **1,921** | 0 | ~195s |
+| **Batch 5** | Unit tests (`tests/unit/`) | 51 | `pytest tests/unit --no-cov -q` | 1,926 | **1,926** | 0 | 245.96s |
 | **Batch 6** | DB tests (`tests/db/`) in CI | 4 | `pytest tests/db -m postgres` | 7 | **7** | Executed in CI `pgvector:pg16` | CI |
 
-**Summary of Full Suite Verification:**
-- **Local Passed Tests:** **2,765**
-- **Skipped Tests:** **4** (genuine PostgreSQL dependency, verified in CI)
-- **Security Baseline:** **24 xfailed, 2 xpassed**
-- **CI Container DB Tests:** **7 passed**
-- **AI Tests:** **47 passed**
-- **Total Verified Tests:** **2,845 total test cases with 0 unexpected failures.**
+#### Resolution of Historical Arithmetic Discrepancy:
+- **Previous 2,845 figure:** An earlier report calculated 2,845 by erroneously treating the 26 security tests (which are 24 xfailed and 2 xpassed) as "passed" tests ($2,791 + 7 + 47 = 2,845$), and before S2-MI01 added 5 new unit tests ($1,921 \to 1,926$).
+- **Verified Current Count:** The exact verified count is **2,770 local backend passed**, **7 CI DB passed**, **47 AI passed** (total **2,824 passed**), plus **4 skipped**, **24 xfailed**, and **2 xpassed**, yielding exactly **2,854 total tests** with **0 unexpected failures**.
 
 ### 7.4 Ruff Linting & Formatting Check
 ```powershell
@@ -289,25 +287,23 @@ cd Finex\backend
 Success: no issues found in 154 source files
 ```
 
-### 7.6 GitHub Actions CI Verification on PR #131
-All CI check runs on PR #131 have completed with status **100% SUCCESS**:
-- `Pytest Postgres (pgvector:pg16)`: **`success`**
-- `quality` (Ruff, Mypy, Formatting): **`success`**
-- `evidence` (Audit & Documentation Proof): **`success`**
-- `Compatibility pilot contract and fixture proof`: **`success`**
-- `Owned S1 and S2 native TCP, restart, expiry and wire capture`: **`success`**
+### 7.6 GitHub Actions CI Verification on PR #131 (Head SHA: `7a0e06e032e0874586f74878567ae63df74a2e77`)
+All 18 check runs on GitHub Actions have completed with status **100% SUCCESS**:
+- `Publish S1 UAT evidence summary`: **`success`**
+- `Flutter journey and accessibility proof`: **`success`**
 - `Owned S3 synthetic API native TCP and durable foundation`: **`success`**
 - `React journey and accessibility proof`: **`success`**
-- `Flutter journey and accessibility proof`: **`success`**
-- `Publish S1 UAT evidence summary`: **`success`**
+- `quality` (Ruff, Mypy, Formatting): **`success`**
+- `Compatibility pilot contract and fixture proof`: **`success`**
+- `evidence` (Audit & Documentation Proof): **`success`**
+- `Owned S1 and S2 native TCP, restart, expiry and wire capture`: **`success`**
+- `Pytest Postgres (pgvector:pg16)`: **`success`**
 
 ---
 
 ## 8. Downstream Handoff Information for S5-MI01
 
-Task `S5-MI01` (`app/jobs/embed_corpus.py`) will ingest and chunk the corpus and compute embeddings for vector database storage in PostgreSQL (`pgvector`).
-
-### Concrete Handoff Guidelines:
+Task `S5-MI01` (`app/jobs/embed_corpus.py`) will ingest and chunk the corpus and compute embeddings for vector database storage in PostgreSQL (`pgvector`):
 1. **Embedding Model Interface:** Call `MiniLMEmbeddingAdapter()` via `EmbeddingPort` interface. Downstream jobs must depend strictly on `EmbeddingPort`, not directly on `sentence-transformers` or PyTorch.
 2. **Dimensionality & Normalization:** Vectors are 384-dimensional and unit-normalized (`is_normalized=True`). Cosine similarity in `pgvector` can be computed directly using inner product (`<#>`) or cosine distance (`<=>`).
 3. **Registry Loading & Resolution:** Use `app.core.document_registry.load_document_registry()` and `resolve_corpus_file_path()`.
