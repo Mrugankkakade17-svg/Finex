@@ -68,7 +68,7 @@ class PostgresUserRepository:
 
     def _get_sync_conn(self) -> PostgresConnection:
         dsn = postgres_dsn(self._database_url)
-        return psycopg.connect(dsn, connect_timeout=1, row_factory=dict_row)
+        return psycopg.connect(dsn, connect_timeout=5, row_factory=dict_row)
 
     def is_db_available(self) -> bool:
         """Check whether the configured PostgreSQL database is reachable."""
@@ -152,8 +152,10 @@ class PostgresUserRepository:
             mem_row = self._memory_users.get(norm_email)
             return self._to_model(mem_row) if mem_row else None
 
-    def get_user_by_id(self, user_id: Union[str, int]) -> Optional[UserModel]:
+    def get_user_by_id(self, user_id: Union[str, int, None]) -> Optional[UserModel]:
         """Fetch a single user by their primary key user_id."""
+        if user_id is None:
+            return None
         uid = str(user_id)
         if self.is_postgres_mode():
             if not self.is_db_available():
@@ -371,8 +373,10 @@ class PostgresUserRepository:
             row = result.fetchone()
             return self._to_model(dict(row._mapping)) if row else None
 
-    async def get_user_by_id_async(self, user_id: Union[str, int]) -> Optional[UserModel]:
+    async def get_user_by_id_async(self, user_id: Union[str, int, None]) -> Optional[UserModel]:
         """Async fetch user by UUID."""
+        if user_id is None:
+            return None
         uid = str(user_id)
         query = text(
             """

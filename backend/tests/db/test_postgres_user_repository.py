@@ -80,14 +80,16 @@ async def test_postgres_user_repository_crud_against_real_db(postgres_db):
 @pytest.mark.asyncio
 async def test_auth_service_real_postgres_integration(postgres_db, monkeypatch):
     """Verify synchronous auth_service.register and auth_service.login against real PostgreSQL."""
-    url = str(postgres_db.url)
+    url = str(postgres_db.url).replace("+asyncpg", "").replace("localhost", "127.0.0.1")
     repo = PostgresUserRepository(database_url=url, require_db=True)
 
     from app.core.exceptions import UnauthorizedException
     from app.services import auth_service
 
     monkeypatch.setattr(auth_service, "user_repository", repo)
+    monkeypatch.setattr("app.repositories.postgres_user_repository.postgres_user_repository", repo)
     monkeypatch.setenv("APP_PERSISTENCE", "postgresql")
+    monkeypatch.setenv("APP_DATABASE_URL", url)
 
     test_uid = None
     email = f"auth_svc_{uuid.uuid4().hex[:8]}@example.com"

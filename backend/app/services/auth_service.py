@@ -341,8 +341,8 @@ def login_or_create_google_user(
                 )
     else:
         if hasattr(repo, "_user_metadata") and user.id is not None:
-            uid = str(user.id)
-            meta = repo._user_metadata.setdefault(uid, {})
+            user_uid_str = str(user.id)
+            meta = repo._user_metadata.setdefault(user_uid_str, {})
             if google_id and not user.google_id:
                 meta["google_id"] = google_id
             if avatar_url and not user.picture:
