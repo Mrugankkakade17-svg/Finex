@@ -1,7 +1,20 @@
 from datetime import datetime
+from decimal import ROUND_HALF_UP, Decimal
 from typing import Any, Dict, List, Tuple
 
 from app.schemas.portfolio import AllocationItem, HoldingResponse
+
+_CENT = Decimal("0.01")
+_ZERO = Decimal("0.00")
+_HUNDRED = Decimal("100")
+
+
+def _decimal(value: object) -> Decimal:
+    return Decimal(str(value))
+
+
+def _cent(value: Decimal) -> Decimal:
+    return value.quantize(_CENT, rounding=ROUND_HALF_UP)
 
 
 def calculate_holding_metrics(
@@ -9,30 +22,23 @@ def calculate_holding_metrics(
     current_price: float,
     portfolio_total_value: float = 0.0,
 ) -> HoldingResponse:
-    """
-    Computes holding cost, current market value, gain/loss ($ and %), and portfolio weight %.
-    """
-    quantity = float(holding_raw["quantity"])
-    avg_buy_price = float(holding_raw["avg_buy_price"])
+    quantity = _decimal(holding_raw["quantity"])
+    average_cost = _decimal(holding_raw["avg_buy_price"])
+    price = _cent(_decimal(current_price))
 
-    total_cost = round(quantity * avg_buy_price, 2)
-    current_value = round(quantity * current_price, 2)
-    unrealized_gain_loss = round(current_value - total_cost, 2)
-
-    if total_cost > 0:
-        unrealized_gain_loss_pct = round((unrealized_gain_loss / total_cost) * 100, 2)
-    else:
-        unrealized_gain_loss_pct = 0.0
-
-    if portfolio_total_value > 0:
-        weight_pct = round((current_value / portfolio_total_value) * 100, 2)
-    else:
-        weight_pct = 0.0
+    total_cost = _cent(quantity * average_cost)
+    current_value = _cent(quantity * price)
+    gain_loss = current_value - total_cost
+    gain_loss_pct = _cent(_HUNDRED * gain_loss / total_cost) if total_cost > 0 else _ZERO
+    weight_pct = (
+        _cent(_HUNDRED * current_value / _decimal(portfolio_total_value))
+        if portfolio_total_value > 0
+        else _ZERO
+    )
 
     created_at = holding_raw.get("created_at")
     if not isinstance(created_at, datetime):
         created_at = None
-
     updated_at = holding_raw.get("updated_at")
     if not isinstance(updated_at, datetime):
         updated_at = None
@@ -44,14 +50,14 @@ def calculate_holding_metrics(
         symbol=str(holding_raw["symbol"]).strip().upper(),
         asset_class=holding_raw.get("asset_class", "EQUITY"),
         sector=holding_raw.get("sector") or "General",
-        quantity=quantity,
-        avg_buy_price=avg_buy_price,
-        current_price=round(current_price, 2),
-        current_value=current_value,
-        total_cost=total_cost,
-        unrealized_gain_loss=unrealized_gain_loss,
-        unrealized_gain_loss_pct=unrealized_gain_loss_pct,
-        weight_pct=weight_pct,
+        quantity=float(quantity),
+        avg_buy_price=float(average_cost),
+        current_price=float(price),
+        current_value=float(current_value),
+        total_cost=float(total_cost),
+        unrealized_gain_loss=float(gain_loss),
+        unrealized_gain_loss_pct=float(gain_loss_pct),
+        weight_pct=float(weight_pct),
         created_at=created_at,
         updated_at=updated_at,
     )
@@ -61,52 +67,39 @@ def compute_portfolio_valuations(
     raw_holdings: List[Dict[str, Any]],
     quotes_map: Dict[str, float],
 ) -> Tuple[float, float, float, float, List[HoldingResponse]]:
-    """
-    Calculates overall portfolio total value, total cost, total gain/loss ($ and %),
-    and returns fully evaluated holding responses with accurate portfolio weight percentages.
-    """
     if not raw_holdings:
         return 0.0, 0.0, 0.0, 0.0, []
 
-    total_value = 0.0
-    total_cost = 0.0
+    total_value = _ZERO
+    total_cost = _ZERO
+    for holding in raw_holdings:
+        symbol = str(holding["symbol"]).strip().upper()
+        price = _decimal(quotes_map.get(symbol, float(holding["avg_buy_price"])))
+        quantity = _decimal(holding["quantity"])
+        average_cost = _decimal(holding["avg_buy_price"])
+        total_value += _cent(quantity * price)
+        total_cost += _cent(quantity * average_cost)
 
-    # First pass: calculate total portfolio value and cost
-    for h in raw_holdings:
-        sym = str(h["symbol"]).strip().upper()
-        price = quotes_map.get(sym, float(h["avg_buy_price"]))
-        qty = float(h["quantity"])
-        avg_price = float(h["avg_buy_price"])
+    gain_loss = total_value - total_cost
+    gain_loss_pct = _cent(_HUNDRED * gain_loss / total_cost) if total_cost > 0 else _ZERO
 
-        total_value += qty * price
-        total_cost += qty * avg_price
-
-    total_value = round(total_value, 2)
-    total_cost = round(total_cost, 2)
-    total_gain_loss = round(total_value - total_cost, 2)
-
-    if total_cost > 0:
-        total_gain_loss_pct = round((total_gain_loss / total_cost) * 100, 2)
-    else:
-        total_gain_loss_pct = 0.0
-
-    # Second pass: calculate per-holding metrics with weight percentages
-    evaluated_holdings: List[HoldingResponse] = []
-    for h in raw_holdings:
-        sym = str(h["symbol"]).strip().upper()
-        price = quotes_map.get(sym, float(h["avg_buy_price"]))
-        metric = calculate_holding_metrics(
-            h,
-            current_price=price,
-            portfolio_total_value=total_value,
+    evaluated_holdings = [
+        calculate_holding_metrics(
+            holding,
+            current_price=quotes_map.get(
+                str(holding["symbol"]).strip().upper(),
+                float(holding["avg_buy_price"]),
+            ),
+            portfolio_total_value=float(total_value),
         )
-        evaluated_holdings.append(metric)
+        for holding in raw_holdings
+    ]
 
     return (
-        total_value,
-        total_cost,
-        total_gain_loss,
-        total_gain_loss_pct,
+        float(total_value),
+        float(total_cost),
+        float(gain_loss),
+        float(gain_loss_pct),
         evaluated_holdings,
     )
 
@@ -116,28 +109,29 @@ def calculate_allocations(
     group_by: str,
     total_value: float,
 ) -> List[AllocationItem]:
-    """
-    Groups holding values by asset_class or sector and computes percentage breakdown.
-    Ensures rounded percentages sum to 100.0% if total value > 0.
-    """
     if not holdings or total_value <= 0:
         return []
 
-    groups: Dict[str, float] = {}
-    for h in holdings:
+    groups: Dict[str, Decimal] = {}
+    total = _decimal(total_value)
+    for holding in holdings:
         if group_by == "asset_class":
-            key = h.asset_class.value if hasattr(h.asset_class, "value") else str(h.asset_class)
+            key = (
+                holding.asset_class.value
+                if hasattr(holding.asset_class, "value")
+                else str(holding.asset_class)
+            )
         else:
-            key = str(h.sector or "General")
+            key = str(holding.sector or "General")
+        groups[key] = groups.get(key, _ZERO) + _decimal(holding.current_value)
 
-        groups[key] = groups.get(key, 0.0) + h.current_value
-
-    allocations: List[AllocationItem] = []
-    for cat, val in groups.items():
-        val_rounded = round(val, 2)
-        pct = round((val / total_value) * 100, 2)
-        allocations.append(AllocationItem(category=cat, value=val_rounded, percentage=pct))
-
-    # Sort descending by value
-    allocations.sort(key=lambda x: x.value, reverse=True)
+    allocations = [
+        AllocationItem(
+            category=category,
+            value=float(_cent(value)),
+            percentage=float(_cent(_HUNDRED * value / total)),
+        )
+        for category, value in groups.items()
+    ]
+    allocations.sort(key=lambda item: item.value, reverse=True)
     return allocations

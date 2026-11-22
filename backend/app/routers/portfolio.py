@@ -27,7 +27,7 @@ async def create_portfolio(
 
     return APIResponse.success(
         message="Portfolio created successfully",
-        data=portfolio.model_dump(),
+        data=portfolio.model_dump(mode="json"),
         status_code=201,
         correlation_id=request.state.correlation_id,
     )
@@ -43,7 +43,7 @@ async def list_portfolios(
 
     return APIResponse.success(
         message="Portfolios retrieved successfully",
-        data=[p.model_dump() for p in portfolios],
+        data=[p.model_dump(mode="json") for p in portfolios],
         correlation_id=request.state.correlation_id,
     )
 
@@ -59,7 +59,7 @@ async def get_portfolio(
 
     return APIResponse.success(
         message="Portfolio retrieved successfully",
-        data=portfolio.model_dump(),
+        data=portfolio.model_dump(mode="json"),
         correlation_id=request.state.correlation_id,
     )
 
@@ -76,7 +76,7 @@ async def update_portfolio(
 
     return APIResponse.success(
         message="Portfolio updated successfully",
-        data=portfolio.model_dump(),
+        data=portfolio.model_dump(mode="json"),
         correlation_id=request.state.correlation_id,
     )
 
@@ -114,7 +114,7 @@ async def add_holding(
 
     return APIResponse.success(
         message="Holding added successfully",
-        data=holding.model_dump(),
+        data=holding.model_dump(mode="json"),
         status_code=201,
         correlation_id=request.state.correlation_id,
     )
@@ -131,7 +131,7 @@ async def list_holdings(
 
     return APIResponse.success(
         message="Holdings retrieved successfully",
-        data=[h.model_dump() for h in holdings],
+        data=[h.model_dump(mode="json") for h in holdings],
         correlation_id=request.state.correlation_id,
     )
 
@@ -149,7 +149,7 @@ async def update_holding(
 
     return APIResponse.success(
         message="Holding updated successfully",
-        data=holding.model_dump(),
+        data=holding.model_dump(mode="json"),
         correlation_id=request.state.correlation_id,
     )
 
@@ -182,7 +182,7 @@ async def get_portfolio_summary(
 
     return APIResponse.success(
         message="Portfolio summary calculated successfully",
-        data=summary.model_dump(),
+        data=summary.model_dump(mode="json"),
         correlation_id=request.state.correlation_id,
         data_status=cast(DataStatus, summary.data_status),
     )
