@@ -7,6 +7,8 @@ from contextlib import contextmanager
 from pathlib import Path
 from typing import Iterator
 
+from sqlalchemy.engine import Engine
+
 from app.config.settings import get_settings
 from app.schemas.sprint4_paper_goals import GoalProjection, GoalResponse
 
@@ -15,6 +17,15 @@ class GoalRepository:
     def __init__(self, db_path: Path | str | None = None) -> None:
         self.settings = get_settings()
         self.db_path = Path(db_path) if db_path is not None else self.settings.local_db_path
+
+    def _postgres_engine(self) -> Engine:
+        from sqlalchemy import create_engine
+        from sqlalchemy.engine import make_url
+
+        url = make_url(self.settings.app_database_url)
+        if url.get_backend_name() not in {"postgres", "postgresql"}:
+            raise ValueError("Goal persistence requires a PostgreSQL database URL")
+        return create_engine(url.set(drivername="postgresql+psycopg"))
 
     @contextmanager
     def _sqlite_connection(self) -> Iterator[sqlite3.Connection]:
@@ -89,12 +100,9 @@ class GoalRepository:
             raise ValueError("user_id is required")
 
         if self.settings.app_persistence == "postgresql" and self.settings.app_database_url:
-            from sqlalchemy import create_engine, text
+            from sqlalchemy import text
 
-            sync_url = self.settings.app_database_url.replace(
-                "postgresql+asyncpg://", "postgresql://"
-            )
-            engine = create_engine(sync_url)
+            engine = self._postgres_engine()
             try:
                 with engine.begin() as connection:
                     connection.execute(
@@ -204,12 +212,9 @@ class GoalRepository:
             return []
 
         if self.settings.app_persistence == "postgresql" and self.settings.app_database_url:
-            from sqlalchemy import create_engine, text
+            from sqlalchemy import text
 
-            sync_url = self.settings.app_database_url.replace(
-                "postgresql+asyncpg://", "postgresql://"
-            )
-            engine = create_engine(sync_url)
+            engine = self._postgres_engine()
             try:
                 with engine.connect() as connection:
                     rows = (

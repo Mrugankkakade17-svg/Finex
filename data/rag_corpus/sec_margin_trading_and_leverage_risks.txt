@@ -1,0 +1,21 @@
+[Section: Metadata]
+Document Title: SEC Investor Bulletin: Understanding Margin Accounts and Leverage Risks
+Issuing Agency: U.S. Securities and Exchange Commission (SEC), Office of Investor Education and Advocacy (OIEA)
+Publication Date: 2023-06-15
+Document Version: 2023.06
+Licence: U.S. Government Work - Public Domain (17 U.S.C. § 105)
+License: U.S. Government Work - Public Domain (17 U.S.C. § 105)
+Authoritative Reference: https://www.sec.gov/oiea/investor-alerts-and-bulletins/ib_marginaccounts
+Audience: Personal finance learners, retail investors, educational platforms
+
+[Section: Cash Accounts Versus Margin Accounts]
+When opening a brokerage account, retail investors must choose between a standard cash account and a margin account. In a standard cash account, the investor must deposit the full cash value of all securities purchased before or on the settlement date. In a margin account, the investor borrows funds from the brokerage firm to purchase securities, using the purchased securities and existing portfolio assets as collateral for the loan. The brokerage firm charges ongoing interest on the borrowed amount, which accrues against the account balance regardless of whether the securities appreciate or decline.
+
+[Section: Initial and Maintenance Margin Requirements]
+Under Federal Reserve Board Regulation T, an investor must typically deposit at least 50 percent of the purchase price of eligible securities when purchasing on margin (the initial margin requirement). Once securities are purchased on margin, regulatory rules established by FINRA require the investor to maintain a minimum level of equity in the account at all times, known as the maintenance margin requirement, typically set at 25 percent of the total market value of the margin securities. Individual brokerage firms often impose higher, more stringent in-house house requirements.
+
+[Section: Mechanics of a Margin Call]
+If the market value of the securities in a margin account declines such that the investor's equity drops below the required maintenance margin threshold, the brokerage firm issues a margin call. A margin call demands that the investor immediately deposit additional cash or marginable securities into the account to restore minimum required equity. If the investor fails to satisfy the margin call promptly, or if market volatility causes account equity to deteriorate rapidly, the broker has the contractual right to liquidate the investor's securities without prior notice to cover the shortfall.
+
+[Section: Substantial Downside Risks of Leverage]
+Trading on margin introduces leverage, which magnifies both potential investment gains and potential losses. While leverage amplifies returns during favorable market upward movements, downside moves are equally magnified. An investor trading on margin can lose substantially more capital than the total amount originally deposited into the brokerage account. Because of these magnified downside vulnerabilities and ongoing borrowing interest costs, margin accounts are unsuitable for emergency savings, conservative wealth preservation goals, or novice retail learners.
