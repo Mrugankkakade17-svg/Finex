@@ -1,0 +1,24 @@
+[Section: Metadata]
+Document Title: SEC Investor Bulletin: Asset Allocation and Diversification
+Issuing Agency: U.S. Securities and Exchange Commission (SEC), Office of Investor Education and Advocacy (OIEA)
+Publication Date: 2021-08-01
+Document Version: 2021.08
+Licence: U.S. Government Work - Public Domain (17 U.S.C. § 105)
+License: U.S. Government Work - Public Domain (17 U.S.C. § 105)
+Authoritative Reference: https://www.sec.gov/investor/alerts/assetallocation.pdf
+Audience: Personal finance learners, retail investors, educational platforms
+
+[Section: Overview of Asset Allocation]
+Asset allocation involves dividing an investment portfolio among different asset categories, such as stocks, bonds, and cash equivalents. The asset allocation that works best for any individual at any given point in their life depends largely on time horizon and ability to tolerate risk. Historically, the returns of the three major asset categories have not moved in lockstep. Market conditions that cause one category to perform well often cause another to produce lower returns. By investing in more than one asset category, you reduce the risk that you will lose money and improve the consistency of your portfolio's investment returns.
+
+[Section: Primary Asset Categories]
+The three core asset categories are equities, fixed income, and cash equivalents. Equities, or stocks, have historically offered the highest potential returns over long periods, accompanied by the highest market volatility. Fixed income instruments, such as government and corporate bonds, are generally less volatile than stocks and provide a predictable stream of income, though they are subject to interest rate and inflation risks. Cash and cash equivalents, including Treasury bills, money market funds, and insured certificates of deposit, are the safest investments in terms of principal preservation, but offer the lowest purchasing-power return over time.
+
+[Section: Principles of Diversification]
+Diversification is a strategy that can be neatly summed up as not putting all your eggs in one basket. In addition to allocating capital across different broad asset categories, effective diversification requires spreading investments within each asset class. For equities, this means investing across diverse economic sectors, market capitalizations (large-cap, mid-cap, small-cap), and geographic jurisdictions. For fixed income, diversification means staggering maturities and blending municipal, corporate, and sovereign bonds. Diversification reduces unsystematic risk—the risk specific to an individual company or sector—without necessarily sacrificing expected returns.
+
+[Section: Portfolio Rebalancing]
+Rebalancing is the process of bringing your portfolio back to your original target asset allocation. Over time, some investments will grow faster than others. As a consequence, your portfolio's asset mix will drift away from your planned allocation. Rebalancing ensures that your portfolio does not overemphasize one category at the expense of another. There are three common rebalancing methods: selling investments from over-weighted categories and reinvesting in under-weighted categories, directing new contributions toward under-weighted categories, or adjusting on a scheduled periodic basis (e.g., quarterly or annually).
+
+[Section: Time Horizon and Risk Tolerance]
+Your time horizon is the expected number of months, years, or decades you will be investing to achieve a particular financial goal. An investor with a thirty-year time horizon until retirement can typically afford to allocate a greater percentage of their portfolio to equities, as they have adequate time to recover from short-term market downturns. Conversely, an investor saving for a home down payment needed in eighteen months has a short time horizon and should emphasize capital preservation through short-term debt instruments or cash equivalents.

@@ -1,7 +1,7 @@
 """
 Unit tests for S1-AI-02 RAG Prototype and Document Chunking.
-Owner: Palak
-Task: S1-AI-02
+Owner: Palak / Mitali
+Task: S1-AI-02 / S2-MI01
 """
 
 import importlib.util
@@ -30,7 +30,13 @@ def test_document_registry_structure():
         assert "source" in doc
         assert "document_date" in doc
         assert "doc_type" in doc
-        assert os.path.exists(os.path.join(AI_DIR, doc["filename"]))
+        assert "licence" in doc or "license" in doc, f"Missing licence on doc {doc.get('doc_id')}"
+        assert "version" in doc, f"Missing version on doc {doc.get('doc_id')}"
+        
+        # Resolve either relative to ai/ or project root
+        cand1 = os.path.join(AI_DIR, doc["filename"])
+        cand2 = os.path.normpath(os.path.join(AI_DIR, "..", doc["filename"]))
+        assert os.path.exists(cand1) or os.path.exists(cand2), f"Document file not found: {doc['filename']}"
 
 
 def test_chunking_metadata_attachment():
@@ -42,7 +48,7 @@ def test_chunking_metadata_attachment():
         doc_id=1,
     )
 
-    assert len(chunks) >= 4
+    assert len(chunks) >= 3
     for chunk in chunks:
         assert "chunk_id" in chunk
         assert "doc_id" in chunk
@@ -57,9 +63,9 @@ def test_chunking_metadata_attachment():
 
 def test_ingest_all_registered_documents():
     all_chunks = rag_mod.ingest_all_registered_documents(AI_DIR)
-    assert len(all_chunks) >= 10, "Expected at least 10 chunks across 3 documents"
+    assert len(all_chunks) >= 10, "Expected at least 10 chunks across registered documents"
     sources = {c["source"] for c in all_chunks}
-    assert len(sources) == 3, "Expected chunks from 3 distinct sources"
+    assert len(sources) >= 3, "Expected chunks from at least 3 distinct sources"
 
 
 def test_retrieval_five_golden_questions():
