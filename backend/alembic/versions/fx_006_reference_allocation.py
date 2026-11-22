@@ -81,4 +81,3 @@ def downgrade() -> None:
     op.drop_table("benchmark_map", schema="finex")
     op.drop_table("allocation_model_targets", schema="finex")
     op.drop_table("allocation_models", schema="finex")
-
