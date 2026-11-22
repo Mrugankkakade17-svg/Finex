@@ -92,5 +92,9 @@ async def test_fx005_ledger_is_append_only_and_blocks_negative_balance(postgres_
                 with pytest.raises(DBAPIError):
                     async with connection.begin_nested():
                         await connection.execute(text(statement), {"id": debit_id})
+
+            with pytest.raises(DBAPIError):
+                async with connection.begin_nested():
+                    await connection.execute(text("TRUNCATE TABLE finex.paper_ledger"))
         finally:
             await transaction.rollback()
