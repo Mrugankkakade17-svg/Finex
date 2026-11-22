@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Award, CheckCircle2, ShieldCheck, FileText, ArrowRight, UserCheck, RefreshCw } from 'lucide-react';
+import { finexApiClient } from '../services/apiClient';
 
 interface UATSignoff {
   signoff_id: string;
@@ -30,18 +31,23 @@ export const ReleasePage: React.FC = () => {
   const [newComments, setNewComments] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [successMsg, setSuccessMsg] = useState('');
+  const [errorMsg, setErrorMsg] = useState('');
 
   const fetchHandoverData = async () => {
     try {
       setLoading(true);
-      const res = await fetch('http://127.0.0.1:8000/api/v1/release/handover');
+      setErrorMsg('');
+      const res = await finexApiClient.request('/api/v1/release/handover');
       if (res.ok) {
         const data = await res.json();
         setRelease(data.release);
         setSignoffs(data.uat_signoffs);
+      } else {
+        setErrorMsg('Release information could not be loaded. Please retry.');
       }
     } catch (err) {
       console.error('Failed to load handover data', err);
+      setErrorMsg('Release information could not be loaded. Please retry.');
     } finally {
       setLoading(false);
     }
@@ -57,7 +63,7 @@ export const ReleasePage: React.FC = () => {
 
     setSubmitting(true);
     try {
-      const res = await fetch('http://127.0.0.1:8000/api/v1/release/uat-signoffs', {
+      const res = await finexApiClient.request('/api/v1/release/uat-signoffs', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -69,14 +75,18 @@ export const ReleasePage: React.FC = () => {
         }),
       });
       if (res.ok) {
+        setErrorMsg('');
         setSuccessMsg('Your UAT Sign-off has been registered!');
         setNewReviewer('');
         setNewComments('');
         fetchHandoverData();
         setTimeout(() => setSuccessMsg(''), 4000);
+      } else {
+        setErrorMsg('Your sign-off could not be submitted. Please retry.');
       }
     } catch (err) {
       console.error('Sign-off error', err);
+      setErrorMsg('Your sign-off could not be submitted. Please retry.');
     } finally {
       setSubmitting(false);
     }
@@ -84,6 +94,7 @@ export const ReleasePage: React.FC = () => {
 
   return (
     <div style={{ maxWidth: '1200px', margin: '0 auto', paddingBottom: '40px' }}>
+      {errorMsg && <div role="alert" className="glass-card" style={{ marginBottom: '16px', padding: '12px', color: '#fecaca' }}>{errorMsg}</div>}
       {/* Release Header */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '24px' }}>
         <div>
