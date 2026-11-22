@@ -22,7 +22,7 @@ debit below zero is rejected and concurrent debits are serialized per account.
 - Mypy type check: **passed in CI**.
 - Alembic PostgreSQL migration round-trip: **passed in CI**.
 - PostgreSQL contract test `tests/db/test_fx005.py`: **passed**; validates deposits,
-  debits, negative-balance rejection, and UPDATE/DELETE rejection.
+  debits, negative-balance rejection, UPDATE/DELETE rejection, and TRUNCATE rejection.
 - PostgreSQL full suite: **2,783 passed, 13 xfailed, 2 xpassed**.
 - Quality job full suite: **2,775 passed, 8 deselected, 13 xfailed, 2 xpassed**.
 - Earlier local full suite: **2,771 passed, 12 skipped, 13 xfailed, 2 xpassed**;
