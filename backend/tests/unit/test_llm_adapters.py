@@ -319,7 +319,7 @@ async def test_hosted_gemini_adapter_success():
     async with httpx.AsyncClient(transport=transport) as client:
         adapter = HostedLLMAdapter(
             provider_type="gemini",
-            api_key="valid_test_key_12345",
+            api_key="mock-gemini-auth-token",
             http_client=client,
         )
         req = LLMRequest(
@@ -360,7 +360,7 @@ async def test_hosted_groq_adapter_success():
     async with httpx.AsyncClient(transport=transport) as client:
         adapter = HostedLLMAdapter(
             provider_type="groq",
-            api_key="gsk_valid_key_12345",
+            api_key="mock-groq-auth-token",
             http_client=client,
         )
         req = LLMRequest(
@@ -400,7 +400,7 @@ async def test_hosted_adapter_429_rate_limit_raises_quota_error():
     async with httpx.AsyncClient(transport=transport) as client:
         adapter = HostedLLMAdapter(
             provider_type="gemini",
-            api_key="valid_key",
+            api_key="mock-valid-token",
             http_client=client,
         )
         req = LLMRequest(
@@ -424,7 +424,7 @@ async def test_hosted_adapter_401_invalid_key_raises_auth_error():
     async with httpx.AsyncClient(transport=transport) as client:
         adapter = HostedLLMAdapter(
             provider_type="gemini",
-            api_key="bad_key",
+            api_key="mock-invalid-token",
             http_client=client,
         )
         req = LLMRequest(
@@ -715,8 +715,8 @@ async def test_composite_health_status_reporting():
 
 def test_settings_llm_fields_and_redaction():
     s = Settings(
-        gemini_api_key="super_secret_gemini_key_12345",
-        groq_api_key="super_secret_groq_key_67890",
+        gemini_api_key="mock-gemini-redacted",
+        groq_api_key="mock-groq-redacted",
     )
     assert s.ollama_base_url == "http://localhost:11434"
     assert s.ollama_model == "llama3.2:1b"
@@ -732,7 +732,7 @@ def test_get_llm_provider_factory():
         ollama_base_url="http://127.0.0.1:11434",
         ollama_model="llama3.2:3b",
         hosted_llm_provider="gemini",
-        gemini_api_key="test_key_123",
+        gemini_api_key="mock-gemini-sample",
     )
     provider = get_llm_provider(s)
     assert isinstance(provider, CompositeLLMProvider)
