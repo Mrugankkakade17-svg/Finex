@@ -64,9 +64,16 @@ Task `S0-MI02` (PR #116 / Issue #12) established the initial empirical evaluatio
 
 ### 3.2 Prototype Scope & Sprint Boundaries Analysis
 The changes to `ai/01_rag_prototype.py` and `ai/test_rag_prototype.py` were carefully analyzed for sprint boundaries and ownership:
-1. **Ownership Origin:** Task `S1-AI-02` (owned by Palak) originally created the prototype script `01_rag_prototype.py`. In that baseline, 4 tests in `ai/test_rag_prototype.py` failed due to missing stubs (`load_document_registry`, `chunk_financial_document(..., doc_id=...)`, `ingest_all_registered_documents`, `run_evaluation_suite`).
-2. **Compatibility Resolution in S2-MI01:** When S2-MI01 introduced new registered documents in `data/rag_corpus/`, the test `test_document_registry_structure` needed to resolve paths in both `ai/` and `data/rag_corpus/`. The stub implementations in `ai/01_rag_prototype.py` were completed purely as **test-compatibility prototype helpers** to allow `ai/test_rag_prototype.py` to run without throwing errors during `pytest ai/`.
-3. **Sprint Boundary Protection:** These prototype functions are **NOT** the production ingestion or chunking pipeline. Production chunking and embedding storage in PostgreSQL (`pgvector`) is officially assigned to task `S5-MI01` (`app/jobs/embed_corpus.py` (N)) in Sprint 5. S2-MI01 strictly confines its production code to `backend/app/ports/`, `backend/app/adapters/`, `backend/app/core/document_registry.py`, `data/rag_corpus/`, and `ai/document_registry.json`.
+1. **Ownership Origin & S1-AI-02 Functionality:** Task `S1-AI-02` (owned by Palak) originally created the prototype script `01_rag_prototype.py`. In that baseline, 4 tests in `ai/test_rag_prototype.py` failed due to missing stubs (`load_document_registry`, `chunk_financial_document(..., doc_id=...)`, `ingest_all_registered_documents`, `run_evaluation_suite`). These four functions constitute the prototype specification for `S1-AI-02`.
+2. **Explicit Scope Delineation (No Cross-Sprint Scope Claim):** Task `S2-MI01` explicitly does **NOT** claim the implementation of these four `S1-AI-02` prototype functions as its own deliverables or acceptance criteria. S2-MI01 deliverables are strictly confined to:
+   - `backend/app/ports/embedding_port.py` (`EmbeddingPort` protocol, metadata, error types)
+   - `backend/app/adapters/minilm_embedding_adapter.py` (`MiniLMEmbeddingAdapter`, lazy loader, L2 normalization)
+   - `backend/app/ports/adapters/minilm_embedding_adapter.py` (architectural re-export)
+   - `backend/app/core/document_registry.py` (security validator, path-traversal prevention)
+   - `data/rag_corpus/` (5 seeded, public-domain educational financial documents)
+   - `ai/document_registry.json` (8 licensed and versioned document entries)
+3. **Preservation of Working Code & Test Compatibility:** The prototype functions in `ai/01_rag_prototype.py` and the dual-path resolution in `ai/test_rag_prototype.py` (`ai/` vs `data/rag_corpus/`) are preserved as non-destructive test-compatibility harnesses. Deleting them would break `ai/test_rag_prototype.py` and regression testing. They are preserved intact without claiming them as S2-MI01 acceptance work.
+4. **Sprint Boundary Protection:** These prototype functions are **NOT** the production ingestion or chunking pipeline. Production chunking and embedding storage in PostgreSQL (`pgvector`) is officially assigned to task `S5-MI01` (`app/jobs/embed_corpus.py` (N)) in Sprint 5. S2-MI01 strictly respects sprint boundaries.
 
 ---
 
