@@ -87,7 +87,6 @@ async def test_auth_service_real_postgres_integration(postgres_db, monkeypatch):
     from app.services import auth_service
 
     monkeypatch.setattr(auth_service, "user_repository", repo)
-    monkeypatch.setattr("app.repositories.postgres_user_repository.postgres_user_repository", repo)
     monkeypatch.setenv("APP_PERSISTENCE", "postgresql")
     monkeypatch.setenv("APP_DATABASE_URL", url)
 
