@@ -76,9 +76,17 @@ def upgrade() -> None:
         FOR EACH ROW EXECUTE FUNCTION finex.reject_paper_ledger_mutation()
         """
     )
+    op.execute(
+        """
+        CREATE TRIGGER trg_paper_ledger_no_truncate
+        BEFORE TRUNCATE ON finex.paper_ledger
+        FOR EACH STATEMENT EXECUTE FUNCTION finex.reject_paper_ledger_mutation()
+        """
+    )
 
 
 def downgrade() -> None:
+    op.execute("DROP TRIGGER trg_paper_ledger_no_truncate ON finex.paper_ledger")
     op.execute("DROP TRIGGER trg_paper_ledger_append_only ON finex.paper_ledger")
     op.execute("DROP FUNCTION finex.reject_paper_ledger_mutation()")
     op.execute("DROP TRIGGER trg_paper_ledger_nonnegative_balance ON finex.paper_ledger")
