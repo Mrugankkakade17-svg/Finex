@@ -236,3 +236,73 @@ def test_adapter_enforces_l2_normalization_on_unnormalized_backend():
     norm = math.sqrt(sum(x * x for x in vec))
     assert math.isclose(norm, 1.0, rel_tol=1e-5)
     assert math.isclose(vec[0], 1.0, rel_tol=1e-5)
+
+
+def test_sentence_transformer_loading_passes_pinned_revision(monkeypatch):
+    """Verify that SentenceTransformer receives the configured pinned revision."""
+    import sys
+    from unittest.mock import MagicMock
+
+    mock_st_class = MagicMock()
+    mock_instance = MagicMock()
+    mock_instance.encode.return_value = [[0.1] * 384]
+    mock_st_class.return_value = mock_instance
+
+    mock_st_module = MagicMock()
+    mock_st_module.SentenceTransformer = mock_st_class
+    monkeypatch.setitem(sys.modules, "sentence_transformers", mock_st_module)
+
+    adapter = MiniLMEmbeddingAdapter(
+        model_name="sentence-transformers/all-MiniLM-L6-v2",
+        model_version="e4ce9877abf3ed59ced85d227e74ce20d8059e63",
+        use_fake=False,
+    )
+    backend = adapter._get_backend()
+    assert backend is mock_instance
+    mock_st_class.assert_called_once_with(
+        "sentence-transformers/all-MiniLM-L6-v2",
+        device="cpu",
+        revision="e4ce9877abf3ed59ced85d227e74ce20d8059e63",
+    )
+
+
+def test_transformers_fallback_loading_passes_pinned_revision(monkeypatch):
+    """Verify that AutoTokenizer and AutoModel fallback both receive the pinned revision."""
+    import sys
+    from unittest.mock import MagicMock
+
+    # Simulate sentence_transformers not available
+    monkeypatch.setitem(sys.modules, "sentence_transformers", None)
+
+    mock_tok_class = MagicMock()
+    mock_tok_instance = MagicMock()
+    mock_tok_class.from_pretrained.return_value = mock_tok_instance
+
+    mock_model_class = MagicMock()
+    mock_model_instance = MagicMock()
+    mock_model_class.from_pretrained.return_value = mock_model_instance
+
+    mock_torch = MagicMock()
+    mock_tf_module = MagicMock()
+    mock_tf_module.AutoTokenizer = mock_tok_class
+    mock_tf_module.AutoModel = mock_model_class
+
+    monkeypatch.setitem(sys.modules, "torch", mock_torch)
+    monkeypatch.setitem(sys.modules, "transformers", mock_tf_module)
+
+    adapter = MiniLMEmbeddingAdapter(
+        model_name="sentence-transformers/all-MiniLM-L6-v2",
+        model_version="custom-pin-789",
+        use_fake=False,
+    )
+    backend = adapter._get_backend()
+    assert backend is not None
+
+    mock_tok_class.from_pretrained.assert_called_once_with(
+        "sentence-transformers/all-MiniLM-L6-v2",
+        revision="custom-pin-789",
+    )
+    mock_model_class.from_pretrained.assert_called_once_with(
+        "sentence-transformers/all-MiniLM-L6-v2",
+        revision="custom-pin-789",
+    )

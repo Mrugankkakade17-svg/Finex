@@ -359,3 +359,137 @@ def test_corpus_files_sha256_checksums():
             f"Doc #{entry.doc_id} ({entry.title}) SHA-256 hash mismatch! "
             f"Expected {expected_hash}, got {actual_hash}"
         )
+
+
+def test_registry_doc_id_positive_integer_validation():
+    """Verify strict doc_id validation: requires doc_id > 0, rejects booleans and invalid types."""
+    with tempfile.TemporaryDirectory() as tmpdir:
+        tmp = Path(tmpdir)
+        reg_file = tmp / "document_registry.json"
+
+        def _make_reg(doc_id_val):
+            reg_file.write_text(
+                json.dumps(
+                    [
+                        {
+                            "doc_id": doc_id_val,
+                            "title": "Test Doc",
+                            "filename": "test.txt",
+                            "version": "1.0",
+                            "licence": "Apache-2.0",
+                        }
+                    ]
+                ),
+                encoding="utf-8",
+            )
+
+        # 1. Valid positive integer passes
+        _make_reg(1)
+        entries = load_document_registry(registry_path=reg_file)
+        assert len(entries) == 1
+        assert entries[0].doc_id == 1
+
+        _make_reg(42)
+        entries = load_document_registry(registry_path=reg_file)
+        assert entries[0].doc_id == 42
+
+        # 2. Zero rejected
+        _make_reg(0)
+        with pytest.raises(RegistrySchemaError) as exc_info:
+            load_document_registry(registry_path=reg_file)
+        assert "invalid doc_id: 0" in str(exc_info.value)
+
+        # 3. Negative integer rejected
+        _make_reg(-1)
+        with pytest.raises(RegistrySchemaError) as exc_info:
+            load_document_registry(registry_path=reg_file)
+        assert "invalid doc_id: -1" in str(exc_info.value)
+
+        # 4. True rejected (bool is subclass of int)
+        _make_reg(True)
+        with pytest.raises(RegistrySchemaError) as exc_info:
+            load_document_registry(registry_path=reg_file)
+        assert "invalid doc_id: True" in str(exc_info.value)
+
+        # 5. False rejected
+        _make_reg(False)
+        with pytest.raises(RegistrySchemaError) as exc_info:
+            load_document_registry(registry_path=reg_file)
+        assert "invalid doc_id: False" in str(exc_info.value)
+
+        # 6. Numeric string rejected
+        _make_reg("1")
+        with pytest.raises(RegistrySchemaError) as exc_info:
+            load_document_registry(registry_path=reg_file)
+        assert "invalid doc_id: '1'" in str(exc_info.value)
+
+        # 7. Float rejected
+        _make_reg(1.5)
+        with pytest.raises(RegistrySchemaError) as exc_info:
+            load_document_registry(registry_path=reg_file)
+        assert "invalid doc_id: 1.5" in str(exc_info.value)
+
+
+def test_registry_is_active_strict_boolean_validation():
+    """Verify strict is_active validation: missing defaults to True, rejects invalid types."""
+    with tempfile.TemporaryDirectory() as tmpdir:
+        tmp = Path(tmpdir)
+        reg_file = tmp / "document_registry.json"
+
+        def _make_reg_active(is_active_val=None, omit=False):
+            doc = {
+                "doc_id": 1,
+                "title": "Active Test Doc",
+                "filename": "test.txt",
+                "version": "1.0",
+                "licence": "Apache-2.0",
+            }
+            if not omit:
+                doc["is_active"] = is_active_val
+            reg_file.write_text(json.dumps([doc]), encoding="utf-8")
+
+        # 1. Missing field defaults to True
+        _make_reg_active(omit=True)
+        entries = load_document_registry(registry_path=reg_file)
+        assert len(entries) == 1
+        assert entries[0].is_active is True
+
+        # 2. JSON true -> True
+        _make_reg_active(is_active_val=True)
+        entries = load_document_registry(registry_path=reg_file)
+        assert entries[0].is_active is True
+
+        # 3. JSON false -> False
+        _make_reg_active(is_active_val=False)
+        entries = load_document_registry(registry_path=reg_file)
+        assert entries[0].is_active is False
+
+        # 4. String "false" -> validation error
+        _make_reg_active(is_active_val="false")
+        with pytest.raises(RegistrySchemaError) as exc_info:
+            load_document_registry(registry_path=reg_file)
+        assert "invalid is_active: 'false'" in str(exc_info.value)
+
+        # 5. String "true" -> validation error
+        _make_reg_active(is_active_val="true")
+        with pytest.raises(RegistrySchemaError) as exc_info:
+            load_document_registry(registry_path=reg_file)
+        assert "invalid is_active: 'true'" in str(exc_info.value)
+
+        # 6. Integer 0 -> validation error
+        _make_reg_active(is_active_val=0)
+        with pytest.raises(RegistrySchemaError) as exc_info:
+            load_document_registry(registry_path=reg_file)
+        assert "invalid is_active: 0" in str(exc_info.value)
+
+        # 7. Integer 1 -> validation error
+        _make_reg_active(is_active_val=1)
+        with pytest.raises(RegistrySchemaError) as exc_info:
+            load_document_registry(registry_path=reg_file)
+        assert "invalid is_active: 1" in str(exc_info.value)
+
+        # 8. Null -> validation error
+        _make_reg_active(is_active_val=None)
+        with pytest.raises(RegistrySchemaError) as exc_info:
+            load_document_registry(registry_path=reg_file)
+        assert "invalid is_active: None" in str(exc_info.value)

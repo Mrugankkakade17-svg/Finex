@@ -160,8 +160,11 @@ def load_document_registry(
             )
 
         doc_id = item.get("doc_id")
-        if doc_id is None or not isinstance(doc_id, int):
-            raise RegistrySchemaError(f"Entry at index {idx} has invalid doc_id: {doc_id}")
+        if isinstance(doc_id, bool) or not isinstance(doc_id, int) or doc_id <= 0:
+            raise RegistrySchemaError(
+                f"Entry at index {idx} has invalid doc_id: {doc_id!r}. "
+                f"Must be a positive integer greater than zero."
+            )
         if doc_id in seen_ids:
             raise DuplicateDocumentIdError(f"Duplicate doc_id {doc_id} detected in registry")
         seen_ids.add(doc_id)
@@ -198,6 +201,18 @@ def load_document_registry(
         if not licence or not isinstance(licence, str) or not licence.strip():
             raise MissingMetadataError(f"Entry {doc_id} ('{title}') is missing mandatory 'licence'")
 
+        if "is_active" in item:
+            is_active_val = item["is_active"]
+            if not isinstance(is_active_val, bool):
+                val_type = type(is_active_val).__name__
+                raise RegistrySchemaError(
+                    f"Entry {doc_id} ('{title}') has invalid is_active: "
+                    f"{is_active_val!r} ({val_type}). Must be a boolean."
+                )
+            is_active = is_active_val
+        else:
+            is_active = True
+
         entries.append(
             DocumentEntry(
                 doc_id=doc_id,
@@ -211,7 +226,7 @@ def load_document_registry(
                 licence=licence.strip(),
                 source_url=item.get("source_url"),
                 uploaded_by=item.get("uploaded_by"),
-                is_active=bool(item.get("is_active", True)),
+                is_active=is_active,
                 metadata={
                     k: v
                     for k, v in item.items()

@@ -164,6 +164,7 @@ class MiniLMEmbeddingAdapter(EmbeddingPort):
             self._loaded_model = SentenceTransformer(
                 self._model_name,
                 device=self._device,
+                revision=self._model_version,
             )
             return self._loaded_model
         except ImportError:
@@ -178,8 +179,14 @@ class MiniLMEmbeddingAdapter(EmbeddingPort):
             import torch
             from transformers import AutoModel, AutoTokenizer
 
-            tokenizer = AutoTokenizer.from_pretrained(self._model_name)
-            model = AutoModel.from_pretrained(self._model_name)
+            tokenizer = AutoTokenizer.from_pretrained(
+                self._model_name,
+                revision=self._model_version,
+            )
+            model = AutoModel.from_pretrained(
+                self._model_name,
+                revision=self._model_version,
+            )
             model.eval()
             if self._device == "cpu":
                 torch.set_num_threads(8)

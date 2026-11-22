@@ -25,7 +25,7 @@ This task establishes:
 3. Dual architectural import paths (`app.adapters.minilm_embedding_adapter` and `app.ports.adapters.minilm_embedding_adapter`) ensuring seamless compatibility across hexagonal layer conventions.
 4. A seeded, legally verified educational financial RAG corpus in `data/rag_corpus/` sourced from public domain materials published by the U.S. Securities and Exchange Commission (SEC) and the Consumer Financial Protection Bureau (CFPB) under 17 U.S.C. § 105, alongside Apache-2.0 internal repository samples.
 5. An updated, strictly validated document registry (`ai/document_registry.json`) with path-traversal hardening (`UnsafePathError`), ensuring every document has a verified licence, version, provenance, and SHA-256 hash.
-6. A comprehensive, passing test suite comprising 42 targeted S2-MI01 tests, 47 AI tests, and zero regressions across the 2,770 passed local backend tests.
+6. A comprehensive, passing test suite comprising 46 targeted S2-MI01 tests, 47 AI tests, and zero regressions across the 2,770 passed local backend tests.
 
 ---
 
@@ -37,17 +37,17 @@ This task establishes:
 | **REQ-PORT-02** | Provide metadata dataclass including model name, dimension, and normalization flag | Handbook §3.4; Issue #44 | `EmbeddingMetadata` in `embedding_port.py` (`is_normalized: bool = True`) | **PASS** (test_embedding_metadata_fields) |
 | **REQ-PORT-03** | Provide dedicated exception hierarchy for input validation and inference failures | Architecture Guide; Issue #44 | `EmptyInputError`, `EmbeddingInferenceError`, `DimensionMismatchError`, `EmbeddingModelLoadError` | **PASS** (test_embedding_exceptions_hierarchy) |
 | **REQ-PORT-04** | Provide both sync (`embed_text`, `embed_batch`) and non-blocking async (`aembed_text`, `aembed_batch`) methods | Handbook §3.4; Issue #44 | `EmbeddingPort` protocol | **PASS** (test_dummy_port_async_methods) |
-| **REQ-ADAPT-01** | Implement MiniLM adapter wrapping `sentence-transformers/all-MiniLM-L6-v2` | Handbook §3.4; Issue #44 | `backend/app/adapters/minilm_embedding_adapter.py` | **PASS** (17 tests) |
+| **REQ-ADAPT-01** | Implement MiniLM adapter wrapping `sentence-transformers/all-MiniLM-L6-v2` | Handbook §3.4; Issue #44 | `backend/app/adapters/minilm_embedding_adapter.py` | **PASS** (19 tests) |
 | **REQ-ADAPT-02** | Lazy model loading (zero torch/sentence-transformers import on adapter init) | Handbook §3.4; Issue #44 | `MiniLMEmbeddingAdapter.__init__` | **PASS** (test_lazy_loading_does_not_initialize_model_on_init) |
 | **REQ-ADAPT-03** | Output fixed 384-dimensional dense vectors with strict L2 unit-normalization | S0-MI02 baseline; Issue #44 | `MiniLMEmbeddingAdapter.embed_batch` | **PASS** (test_adapter_enforces_l2_normalization_on_unnormalized_backend) |
 | **REQ-ADAPT-04** | Injectable offline backend for deterministic zero-dependency CI execution | Handbook §3.4; Issue #44 | `DeterministicMockBackend` in `minilm_embedding_adapter.py` | **PASS** (test_mock_backend_deterministic_output) |
 | **REQ-ADAPT-05** | Dual architectural import paths (`app.adapters` and `app.ports.adapters`) | Architecture Guide | `backend/app/ports/adapters/minilm_embedding_adapter.py` | **PASS** (test_architectural_import_paths) |
 | **REQ-CORP-01** | Seed educational financial RAG corpus in `data/rag_corpus/` | Issue #44 | 5 documents in `data/rag_corpus/` (SEC & CFPB) | **PASS** (test_seeded_corpus_files_exist_on_disk) |
 | **REQ-CORP-02** | Public domain / open licence verification (17 U.S.C. § 105 & Apache-2.0) | Issue #44 AC; DoD | `docs/evidence/s2_mi01_evidence.md` §6 | **PASS** (test_every_registry_document_has_licence_and_version) |
-| **REQ-CORP-03** | Document registry JSON schema with mandatory `licence` and `version` | Acceptance Criteria | `ai/document_registry.json`, `app/core/document_registry.py` | **PASS** (12 tests) |
+| **REQ-CORP-03** | Document registry JSON schema with mandatory `licence` and `version` | Acceptance Criteria | `ai/document_registry.json`, `app/core/document_registry.py` | **PASS** (14 tests) |
 | **REQ-CORP-04** | Path traversal prevention and security validation | Security Hardening | `UnsafePathError`, `resolve_corpus_file_path` | **PASS** (test_registry_rejects_path_traversal) |
 | **REQ-CORP-05** | Cryptographic integrity verification via SHA-256 checksums | Issue #44; DoD | `test_rag_corpus_registry.py` | **PASS** (test_corpus_files_sha256_checksums) |
-| **REQ-TEST-01** | Targeted unit and integration test suite passing with 100% green status | Acceptance Criteria | 42 tests in `tests/unit/` and `tests/integration/` | **PASS** (42/42 passed) |
+| **REQ-TEST-01** | Targeted unit and integration test suite passing with 100% green status | Acceptance Criteria | 46 tests in `tests/unit/` and `tests/integration/` | **PASS** (46/46 passed) |
 | **REQ-TEST-02** | AI directory prototype test suite passing without regressions | S0-MI02 Handover | 47 tests in `ai/` | **PASS** (47/47 passed) |
 | **REQ-TEST-03** | Full backend test suite non-regression verification | DoD | 2,770 passed local tests + 7 CI DB tests | **PASS** (0 unexpected failures) |
 | **REQ-CODE-01** | Static analysis compliance (Ruff lint, Ruff format, Mypy type-checking) | Project Code Standards | `ruff check`, `ruff format --check`, `mypy app` | **PASS** (0 errors) |
@@ -162,8 +162,8 @@ The 3 initial sample documents in `ai/` (`sample_factsheet.txt`, `sample_fund_pr
 
 ## 7. Exact Commands Executed & Verified Test Outputs
 
-### 7.1 Targeted S2-MI01 Unit & Integration Suite (42 Tests - 100% PASS)
-> **Note on Test Hierarchy:** These 42 tests are a **subset** of the backend unit (39 tests) and integration (3 tests) suites below. They are presented here for targeted inspection and must NOT be added to backend totals to avoid double counting.
+### 7.1 Targeted S2-MI01 Unit & Integration Suite (46 Tests - 100% PASS)
+> **Note on Test Hierarchy:** These 46 tests are a **subset** of the backend unit (43 tests) and integration (3 tests) suites below. They are presented here for targeted inspection and must NOT be added to backend totals to avoid double counting.
 
 ```powershell
 cd Finex\backend
@@ -178,7 +178,7 @@ rootdir: C:\Users\ASUS\Downloads\Finex-extracted\Finex\backend
 configfile: pyproject.toml
 plugins: anyio-4.16.0, asyncio-1.4.0, cov-7.1.0
 asyncio: mode=Mode.STRICT, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
-collecting ... collected 42 items
+collecting ... collected 46 items
 
 tests/unit/test_embedding_port.py::test_embedding_port_runtime_checkable PASSED [  2%]
 tests/unit/test_embedding_port.py::test_embedding_port_missing_method_fails_protocol PASSED [  4%]
@@ -206,7 +206,9 @@ tests/unit/test_minilm_adapter.py::test_adapter_inference_failure_handling PASSE
 tests/unit/test_minilm_adapter.py::test_adapter_callable_backend_injection PASSED [ 57%]
 tests/unit/test_minilm_adapter.py::test_adapter_async_methods PASSED     [ 59%]
 tests/unit/test_minilm_adapter.py::test_architectural_import_paths PASSED [ 61%]
-tests/unit/test_minilm_adapter.py::test_adapter_enforces_l2_normalization_on_unnormalized_backend PASSED [ 64%]
+tests/unit/test_minilm_adapter.py::test_adapter_enforces_l2_normalization_on_unnormalized_backend PASSED [ 58%]
+tests/unit/test_minilm_adapter.py::test_sentence_transformer_loading_passes_pinned_revision PASSED [ 60%]
+tests/unit/test_minilm_adapter.py::test_transformers_fallback_loading_passes_pinned_revision PASSED [ 63%]
 tests/unit/test_rag_corpus_registry.py::test_real_project_registry_loads_and_passes_strict_validation PASSED [ 66%]
 tests/unit/test_rag_corpus_registry.py::test_seeded_corpus_files_exist_on_disk PASSED [ 69%]
 tests/unit/test_rag_corpus_registry.py::test_every_registry_document_has_licence_and_version PASSED [ 71%]
@@ -218,12 +220,14 @@ tests/unit/test_rag_corpus_registry.py::test_registry_rejects_unregistered_corpu
 tests/unit/test_rag_corpus_registry.py::test_registry_rejects_malformed_json PASSED [ 85%]
 tests/unit/test_rag_corpus_registry.py::test_registry_rejects_path_traversal PASSED [ 88%]
 tests/unit/test_rag_corpus_registry.py::test_registry_rejects_whitespace_metadata PASSED [ 90%]
-tests/unit/test_rag_corpus_registry.py::test_corpus_files_sha256_checksums PASSED [ 92%]
+tests/unit/test_rag_corpus_registry.py::test_corpus_files_sha256_checksums PASSED [ 89%]
+tests/unit/test_rag_corpus_registry.py::test_registry_doc_id_positive_integer_validation PASSED [ 91%]
+tests/unit/test_rag_corpus_registry.py::test_registry_is_active_strict_boolean_validation PASSED [ 93%]
 tests/integration/test_embedding_integration.py::test_embedding_port_with_minilm_and_corpus_chunks PASSED [ 95%]
 tests/integration/test_embedding_integration.py::test_cross_topic_semantic_separation PASSED [ 97%]
 tests/integration/test_embedding_integration.py::test_async_batch_pipeline_matches_synchronous PASSED [100%]
 
-============================= 42 passed in 0.51s ==============================
+============================= 46 passed in 0.96s ==============================
 ```
 
 ### 7.2 AI Directory Test Suite (47 Tests - 100% PASS)
@@ -305,6 +309,20 @@ All 18 check runs on GitHub Actions have completed with status **100% SUCCESS**:
 - `evidence` (Audit & Documentation Proof): **`success`**
 - `Owned S1 and S2 native TCP, restart, expiry and wire capture`: **`success`**
 - `Pytest Postgres (pgvector:pg16)`: **`success`**
+
+### 7.7 Resolution of Reviewer Mrugank's Comments (PR #131)
+
+All three technical review comments submitted by `@Mrugankkakade17-svg` on PR #131 were addressed and validated with dedicated test coverage:
+
+1. **Comment 4657691752 (`backend/app/adapters/minilm_embedding_adapter.py`): Pin Model Revision**
+   - **Resolution:** Added `revision=self._model_version` to `SentenceTransformer(..., revision=self._model_version)` in `_get_backend()`. Also updated the Hugging Face `transformers` fallback path to pass `revision=self._model_version` to both `AutoTokenizer.from_pretrained` and `AutoModel.from_pretrained`.
+   - **Test Coverage:** Added `test_sentence_transformer_loading_passes_pinned_revision` and `test_transformers_fallback_loading_passes_pinned_revision` in `tests/unit/test_minilm_adapter.py`.
+2. **Comment 4657691757 (`backend/app/core/document_registry.py`): Enforce Strict Positive Integer `doc_id`**
+   - **Resolution:** Enforced explicit boolean rejection (`isinstance(doc_id, bool)`), integer type verification (`isinstance(doc_id, int)`), and positive value check (`doc_id > 0`), raising `RegistrySchemaError` for non-positive or non-integer values (including `0`, `-1`, `True`, `False`, strings, floats).
+   - **Test Coverage:** Added `test_registry_doc_id_positive_integer_validation` in `tests/unit/test_rag_corpus_registry.py`.
+3. **Comment 4657692673 (`backend/app/core/document_registry.py`): Enforce Strict Boolean `is_active`**
+   - **Resolution:** Validated that if `"is_active"` is present in an entry, it must strictly be an instance of `bool` (`isinstance(is_active_val, bool)`). Strings like `"false"` or `"true"`, integers `0` or `1`, and `None` raise `RegistrySchemaError`. If omitted, it defaults to `True`.
+   - **Test Coverage:** Added `test_registry_is_active_strict_boolean_validation` in `tests/unit/test_rag_corpus_registry.py`.
 
 ---
 
