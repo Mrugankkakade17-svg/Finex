@@ -90,6 +90,16 @@ class Settings(BaseSettings):
     llm_provider: str = "openai"
     openai_api_key: str = ""
 
+    # S5-MI03: LLM provider cascade configuration
+    ollama_base_url: str = "http://localhost:11434"
+    ollama_model: str = "llama3.2:1b"
+    hosted_llm_provider: str = "gemini"
+    gemini_api_key: str = ""
+    groq_api_key: str = ""
+    hosted_llm_model: str = "gemini-1.5-flash"
+    llm_timeout_seconds: float = Field(default=10.0, ge=1.0, le=120.0)
+    llm_cascade_enabled: bool = True
+
     market_data_provider: str = "mock"
     market_data_api_key: str = ""
 
@@ -99,6 +109,8 @@ class Settings(BaseSettings):
         "secret_key",
         "databricks_token",
         "openai_api_key",
+        "gemini_api_key",
+        "groq_api_key",
         "market_data_api_key",
         "password",
         "token",
