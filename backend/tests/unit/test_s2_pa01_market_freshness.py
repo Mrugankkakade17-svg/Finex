@@ -290,10 +290,12 @@ async def test_market_service_port_contract_raises_on_unavailable_without_fallba
     yf_primary = YFinanceMarketDataProvider(fail_mode="unavailable")
     fixture_secondary = FixtureMarketDataProvider(fail_mode="unavailable")
 
-    service = MarketService(chain=[
-        ProviderChainEntry("yfinance", yf_primary),
-        ProviderChainEntry("fixture", fixture_secondary),
-    ])
+    service = MarketService(
+        chain=[
+            ProviderChainEntry("yfinance", yf_primary),
+            ProviderChainEntry("fixture", fixture_secondary),
+        ]
+    )
 
     with pytest.raises(ProviderUnavailableException) as exc_info:
         await service.get_quote("AAPL")
