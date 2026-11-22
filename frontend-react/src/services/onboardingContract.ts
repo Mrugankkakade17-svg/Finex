@@ -1,3 +1,5 @@
+import { createApiClient, getApiBaseUrl } from './apiClient';
+
 /**
  * Client boundary for the Sprint 1 onboarding contract.
  *
@@ -92,11 +94,9 @@ let testClient: OnboardingContractClient | undefined;
 
 export function getJourneyConfig(): JourneyConfig {
   const configuredMode = process.env.REACT_APP_ONBOARDING_MODE?.trim().toLowerCase();
-  const configuredBaseUrl = process.env.REACT_APP_FINEX_API_BASE_URL?.trim();
-
   return {
     mode: configuredMode === 'api' ? 'api' : 'fixture',
-    apiBaseUrl: (configuredBaseUrl || 'http://127.0.0.1:8000').replace(/\/$/, ''),
+    apiBaseUrl: getApiBaseUrl(),
   };
 }
 
@@ -286,6 +286,7 @@ const fixtureClient: OnboardingContractClient = {
 };
 
 function apiClient(config: JourneyConfig): OnboardingContractClient {
+  const client = createApiClient({ baseUrl: config.apiBaseUrl });
   async function request<T>(
     path: string,
     correlationId: string,
@@ -294,7 +295,7 @@ function apiClient(config: JourneyConfig): OnboardingContractClient {
   ): Promise<T> {
     let response: Response;
     try {
-      response = await fetch(`${config.apiBaseUrl}${ONBOARDING_API_PATH}${path}`, {
+      response = await client.request(`${ONBOARDING_API_PATH}${path}`, {
         method: 'POST',
         headers: {
           Accept: 'application/json',
@@ -362,3 +363,4 @@ export function setOnboardingClientForTests(client?: OnboardingContractClient): 
 export function resetFixtureJourneysForTests(): void {
   fixtureJourneys.clear();
 }
+
