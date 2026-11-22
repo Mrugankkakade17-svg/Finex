@@ -393,7 +393,13 @@ class TestGoogleSignInCompatibility:
         assert user_by_id.google_id == google_id
         assert user_by_id.picture == picture_url
 
-        # 4. Calling get_or_create_google_user again returns same user
+        # 4. Subsequent retrieval by google_id preserves google_id and picture
+        user_by_gid = repo.get_user_by_google_id(google_id)
+        assert user_by_gid is not None
+        assert user_by_gid.google_id == google_id
+        assert user_by_gid.picture == picture_url
+
+        # 5. Calling get_or_create_google_user again returns same user
         second_res = auth_service.login_or_create_google_user(
             google_id=google_id,
             email=email,

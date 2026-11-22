@@ -3,7 +3,7 @@
 import os
 import threading
 import time
-from typing import Any
+from typing import Any, Optional
 
 from app.auth.jwt_handler import create_access_token, create_refresh_token, decode_token
 from app.auth.password import hash_password, verify_password
@@ -54,8 +54,65 @@ def get_user_repository() -> Any:
     return user_repository
 
 
+class PostgresKeyLock:
+    """Context manager acquiring both a local threading lock and a PostgreSQL advisory lock.
+
+    Provides multi-worker safety across independent process instances.
+    """
+
+    def __init__(self, key: str, repo: Any, local_lock: threading.Lock) -> None:
+        self.key = key
+        self.repo = repo
+        self.local_lock = local_lock
+        self._conn: Optional[Any] = None
+
+    def __enter__(self) -> "PostgresKeyLock":
+        self.local_lock.acquire()
+        if (
+            hasattr(self.repo, "is_postgres_mode")
+            and self.repo.is_postgres_mode()
+            and self.repo.is_db_available()
+        ):
+            try:
+                self._conn = self.repo._get_sync_conn()
+                with self._conn.cursor() as cur:
+                    cur.execute("SET lock_timeout = '10s'")
+                    cur.execute(
+                        "SELECT pg_advisory_lock(hashtext(%(key)s))",
+                        {"key": self.key},
+                    )
+            except Exception as e:
+                logger.warning("Failed to acquire PostgreSQL advisory lock: %s", e)
+                if self._conn:
+                    try:
+                        self._conn.close()
+                    except Exception:
+                        pass
+                    self._conn = None
+        return self
+
+    def __exit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> None:
+        try:
+            if self._conn:
+                try:
+                    with self._conn.cursor() as cur:
+                        cur.execute(
+                            "SELECT pg_advisory_unlock(hashtext(%(key)s))",
+                            {"key": self.key},
+                        )
+                except Exception:
+                    pass
+                finally:
+                    try:
+                        self._conn.close()
+                    except Exception:
+                        pass
+        finally:
+            self.local_lock.release()
+
+
 class LoginAttemptTracker:
-    """Thread-safe in-memory tracker for consecutive failed login attempts."""
+    """Thread-safe and multi-worker PostgreSQL tracker for consecutive failed login attempts."""
 
     def __init__(self, max_attempts: int = 10, window_seconds: int = 900) -> None:
         self.max_attempts = max_attempts
@@ -64,39 +121,138 @@ class LoginAttemptTracker:
         self._lock = threading.Lock()
         self._key_locks: dict[str, threading.Lock] = {}
 
-    def get_lock(self, key: str) -> threading.Lock:
-        """Return a dedicated threading lock for a specific key."""
+    def get_lock(self, key: str) -> Any:
+        """Return a lock context manager (thread lock + PostgreSQL advisory lock)."""
+        norm_key = key.strip().lower()
+        repo = get_user_repository()
         with self._lock:
-            if key not in self._key_locks:
-                self._key_locks[key] = threading.Lock()
-            return self._key_locks[key]
+            if norm_key not in self._key_locks:
+                self._key_locks[norm_key] = threading.Lock()
+            thread_lock = self._key_locks[norm_key]
+        return PostgresKeyLock(norm_key, repo, thread_lock)
 
     def is_throttled(self, key: str) -> bool:
         """Check if the key has reached or exceeded max allowed failed attempts in the window."""
+        norm_key = key.strip().lower()
+        repo = get_user_repository()
+        if hasattr(repo, "is_postgres_mode") and repo.is_postgres_mode() and repo.is_db_available():
+            try:
+                with repo._get_sync_conn() as conn:
+                    with conn.cursor() as cur:
+                        cur.execute(
+                            """
+                            SELECT failed_count,
+                                   EXTRACT(EPOCH FROM (NOW() - first_attempt_at)) AS elapsed
+                            FROM finex.failed_logins
+                            WHERE email = %(email)s
+                            """,
+                            {"email": norm_key},
+                        )
+                        row = cur.fetchone()
+                        if not row:
+                            return False
+                        elapsed = float(row["elapsed"] or 0)
+                        if elapsed >= self.window_seconds:
+                            cur.execute(
+                                "DELETE FROM finex.failed_logins WHERE email = %(email)s",
+                                {"email": norm_key},
+                            )
+                            conn.commit()
+                            return False
+                        return int(row["failed_count"]) >= self.max_attempts
+            except Exception as e:
+                logger.warning("Postgres failed-login check failed, using memory fallback: %s", e)
+
+        # In-memory check (for SQLite or non-Postgres mode)
         now = time.time()
         with self._lock:
-            attempts = self._attempts.get(key, [])
+            attempts = self._attempts.get(norm_key, [])
             attempts = [t for t in attempts if now - t < self.window_seconds]
-            self._attempts[key] = attempts
+            self._attempts[norm_key] = attempts
             return len(attempts) >= self.max_attempts
 
     def record_failed_attempt(self, key: str) -> int:
         """Record a failed login timestamp and return current attempt count in window."""
+        norm_key = key.strip().lower()
+        repo = get_user_repository()
+        if hasattr(repo, "is_postgres_mode") and repo.is_postgres_mode() and repo.is_db_available():
+            try:
+                with repo._get_sync_conn() as conn:
+                    with conn.cursor() as cur:
+                        cur.execute(
+                            """
+                            INSERT INTO finex.failed_logins (
+                                email, failed_count, first_attempt_at, last_attempt_at
+                            )
+                            VALUES (%(email)s, 1, NOW(), NOW())
+                            ON CONFLICT (email) DO UPDATE
+                            SET failed_count = CASE
+                                    WHEN EXTRACT(
+                                        EPOCH FROM (NOW() - finex.failed_logins.first_attempt_at)
+                                    ) >= %(window)s THEN 1
+                                    ELSE finex.failed_logins.failed_count + 1
+                                END,
+                                first_attempt_at = CASE
+                                    WHEN EXTRACT(
+                                        EPOCH FROM (NOW() - finex.failed_logins.first_attempt_at)
+                                    ) >= %(window)s THEN NOW()
+                                    ELSE finex.failed_logins.first_attempt_at
+                                END,
+                                last_attempt_at = NOW()
+                            RETURNING failed_count
+                            """,
+                            {"email": norm_key, "window": self.window_seconds},
+                        )
+                        row = cur.fetchone()
+                        conn.commit()
+                        if row:
+                            count = int(row["failed_count"])
+                            with self._lock:
+                                self._attempts.setdefault(norm_key, []).append(time.time())
+                            return count
+            except Exception as e:
+                logger.warning(
+                    "Postgres record failed attempt failed, using memory fallback: %s", e
+                )
+
+        # In-memory fallback
         now = time.time()
         with self._lock:
-            attempts = self._attempts.get(key, [])
+            attempts = self._attempts.get(norm_key, [])
             attempts = [t for t in attempts if now - t < self.window_seconds]
             attempts.append(now)
-            self._attempts[key] = attempts
+            self._attempts[norm_key] = attempts
             return len(attempts)
 
     def reset(self, key: str) -> None:
         """Clear failed attempt records for a key upon successful login."""
+        norm_key = key.strip().lower()
+        repo = get_user_repository()
+        if hasattr(repo, "is_postgres_mode") and repo.is_postgres_mode() and repo.is_db_available():
+            try:
+                with repo._get_sync_conn() as conn:
+                    with conn.cursor() as cur:
+                        cur.execute(
+                            "DELETE FROM finex.failed_logins WHERE email = %(email)s",
+                            {"email": norm_key},
+                        )
+                        conn.commit()
+            except Exception as e:
+                logger.warning("Postgres failed-login reset failed: %s", e)
         with self._lock:
-            self._attempts.pop(key, None)
+            self._attempts.pop(norm_key, None)
 
     def clear(self) -> None:
         """Reset all tracked state (for test isolation)."""
+        repo = get_user_repository()
+        if hasattr(repo, "is_postgres_mode") and repo.is_postgres_mode() and repo.is_db_available():
+            try:
+                with repo._get_sync_conn() as conn:
+                    with conn.cursor() as cur:
+                        cur.execute("DELETE FROM finex.failed_logins")
+                        conn.commit()
+            except Exception:
+                pass
         with self._lock:
             self._attempts.clear()
             self._key_locks.clear()

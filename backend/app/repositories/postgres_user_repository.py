@@ -13,6 +13,7 @@ from sqlalchemy import text
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.config.logging import logger
 from app.config.settings import get_settings
 from app.core.exceptions import BadRequestException, DatabaseUnavailableException
 from app.models.user import UserModel
@@ -132,7 +133,8 @@ class PostgresUserRepository:
                         cur.execute(
                             """
                             SELECT user_id, email, password_hash, name, role,
-                                   risk_profile, is_active, created_at, updated_at
+                                   risk_profile, is_active, google_id, picture,
+                                   created_at, updated_at
                             FROM finex.users
                             WHERE LOWER(email) = LOWER(%(email)s)
                             """,
@@ -169,7 +171,8 @@ class PostgresUserRepository:
                         cur.execute(
                             """
                             SELECT user_id, email, password_hash, name, role,
-                                   risk_profile, is_active, created_at, updated_at
+                                   risk_profile, is_active, google_id, picture,
+                                   created_at, updated_at
                             FROM finex.users
                             WHERE user_id = %(uid)s
                             """,
@@ -188,6 +191,46 @@ class PostgresUserRepository:
         else:
             for m_row in self._memory_users.values():
                 if str(m_row.get("user_id")) == uid:
+                    return self._to_model(m_row)
+            return None
+
+    def get_user_by_google_id(self, google_id: str) -> Optional[UserModel]:
+        """Fetch a single user by their unique google_id."""
+        if not google_id:
+            return None
+        gid = str(google_id).strip()
+        if self.is_postgres_mode():
+            if not self.is_db_available():
+                raise DatabaseUnavailableException(
+                    message="PostgreSQL database is unavailable",
+                    error_code="DATABASE_UNAVAILABLE",
+                )
+            try:
+                with self._get_sync_conn() as conn:
+                    with conn.cursor() as cur:
+                        cur.execute(
+                            """
+                            SELECT user_id, email, password_hash, name, role,
+                                   risk_profile, is_active, google_id, picture,
+                                   created_at, updated_at
+                            FROM finex.users
+                            WHERE google_id = %(gid)s
+                            """,
+                            {"gid": gid},
+                        )
+                        row = cur.fetchone()
+                        if row:
+                            return self._to_model(row)
+                        return None
+            except (psycopg.OperationalError, psycopg.DatabaseError) as exc:
+                self._db_available = False
+                raise DatabaseUnavailableException(
+                    message=f"PostgreSQL database error: {exc}",
+                    error_code="DATABASE_UNAVAILABLE",
+                ) from exc
+        else:
+            for m_row in self._memory_users.values():
+                if m_row.get("google_id") == gid:
                     return self._to_model(m_row)
             return None
 
@@ -233,28 +276,60 @@ class PostgresUserRepository:
                                 error_code="EMAIL_EXISTS",
                             )
 
-                        cur.execute(
-                            """
-                            INSERT INTO finex.users (
-                                user_id, email, password_hash, name, role,
-                                risk_profile, is_active, created_at, updated_at
+                        try:
+                            cur.execute(
+                                """
+                                INSERT INTO finex.users (
+                                    user_id, email, password_hash, name, role,
+                                    risk_profile, is_active, google_id, picture,
+                                    created_at, updated_at
+                                )
+                                VALUES (
+                                    %(uid)s, %(email)s, %(pw)s, %(name)s, %(role)s,
+                                    %(risk)s, TRUE, %(google_id)s, %(picture)s, NOW(), NOW()
+                                )
+                                RETURNING user_id, email, password_hash, name, role,
+                                          risk_profile, is_active, google_id, picture,
+                                          created_at, updated_at
+                                """,
+                                {
+                                    "uid": uid,
+                                    "email": norm_email,
+                                    "pw": hashed_password,
+                                    "name": name,
+                                    "role": role,
+                                    "risk": risk_profile,
+                                    "google_id": google_id,
+                                    "picture": picture,
+                                },
                             )
-                            VALUES (
-                                %(uid)s, %(email)s, %(pw)s, %(name)s, %(role)s,
-                                %(risk)s, TRUE, NOW(), NOW()
+                        except (
+                            psycopg.errors.UndefinedColumn,
+                            psycopg.errors.InvalidColumnReference,
+                        ):
+                            # Fallback if migration fx_006 not yet applied
+                            cur.execute(
+                                """
+                                INSERT INTO finex.users (
+                                    user_id, email, password_hash, name, role,
+                                    risk_profile, is_active, created_at, updated_at
+                                )
+                                VALUES (
+                                    %(uid)s, %(email)s, %(pw)s, %(name)s, %(role)s,
+                                    %(risk)s, TRUE, NOW(), NOW()
+                                )
+                                RETURNING user_id, email, password_hash, name, role,
+                                          risk_profile, is_active, created_at, updated_at
+                                """,
+                                {
+                                    "uid": uid,
+                                    "email": norm_email,
+                                    "pw": hashed_password,
+                                    "name": name,
+                                    "role": role,
+                                    "risk": risk_profile,
+                                },
                             )
-                            RETURNING user_id, email, password_hash, name, role,
-                                      risk_profile, is_active, created_at, updated_at
-                            """,
-                            {
-                                "uid": uid,
-                                "email": norm_email,
-                                "pw": hashed_password,
-                                "name": name,
-                                "role": role,
-                                "risk": risk_profile,
-                            },
-                        )
                         row = cur.fetchone()
                         conn.commit()
                         if row:
@@ -305,19 +380,89 @@ class PostgresUserRepository:
         picture: Optional[str] = None,
         avatar_url: Optional[str] = None,
     ) -> UserModel:
-        """Find existing user by email or create new OAuth user with google_id and picture."""
+        """Find existing user by google_id or email, link metadata, or create new OAuth user."""
         pic = picture or avatar_url
         norm_email = email.strip().lower()
+
+        # 1. First check if user already exists with this exact google_id
+        if google_id:
+            user_by_google = self.get_user_by_google_id(google_id)
+            if user_by_google:
+                if pic and not user_by_google.picture:
+                    if self.is_postgres_mode() and self.is_db_available():
+                        try:
+                            with self._get_sync_conn() as conn:
+                                with conn.cursor() as cur:
+                                    cur.execute(
+                                        """
+                                        UPDATE finex.users
+                                        SET picture = %(pic)s, updated_at = NOW()
+                                        WHERE user_id = %(uid)s
+                                        RETURNING user_id, email, password_hash, name, role,
+                                                  risk_profile, is_active, google_id, picture,
+                                                  created_at, updated_at
+                                        """,
+                                        {"pic": pic, "uid": str(user_by_google.id)},
+                                    )
+                                    row = cur.fetchone()
+                                    conn.commit()
+                                    if row:
+                                        return self._to_model(row)
+                        except Exception as e:
+                            logger.warning("Failed to update picture in PostgreSQL: %s", e)
+                return user_by_google
+
+        # 2. Check if user already exists with this email
         user = self.get_user_by_email(norm_email)
         if user:
             uid = str(user.id)
             meta = self._user_metadata.setdefault(uid, {})
+            needs_update = False
+            new_google_id = user.google_id
+            new_picture = user.picture
+
             if google_id and not user.google_id:
                 meta["google_id"] = google_id
+                new_google_id = google_id
+                needs_update = True
+            elif google_id and user.google_id and user.google_id != google_id:
+                raise BadRequestException(
+                    message="Email is already linked to another Google account",
+                    error_code="GOOGLE_ACCOUNT_CONFLICT",
+                )
+
             if pic and not user.picture:
                 meta["picture"] = pic
+                new_picture = pic
+                needs_update = True
+
+            if needs_update and self.is_postgres_mode() and self.is_db_available():
+                try:
+                    with self._get_sync_conn() as conn:
+                        with conn.cursor() as cur:
+                            cur.execute(
+                                """
+                                UPDATE finex.users
+                                SET google_id = COALESCE(google_id, %(gid)s),
+                                    picture = COALESCE(picture, %(pic)s),
+                                    updated_at = NOW()
+                                WHERE user_id = %(uid)s
+                                RETURNING user_id, email, password_hash, name, role,
+                                          risk_profile, is_active, google_id, picture,
+                                          created_at, updated_at
+                                """,
+                                {"gid": new_google_id, "pic": new_picture, "uid": uid},
+                            )
+                            row = cur.fetchone()
+                            conn.commit()
+                            if row:
+                                return self._to_model(row)
+                except Exception as exc:
+                    logger.warning("Failed to update Google metadata in PostgreSQL: %s", exc)
+
             return self.get_user_by_id(user.id) or user
 
+        # 3. Create new OAuth user
         return self.create_user(
             name=name,
             email=norm_email,
@@ -358,7 +503,7 @@ class PostgresUserRepository:
         query = text(
             """
             SELECT user_id, email, password_hash, name, role,
-                   risk_profile, is_active, created_at, updated_at
+                   risk_profile, is_active, google_id, picture, created_at, updated_at
             FROM finex.users
             WHERE LOWER(email) = LOWER(:email)
             """
@@ -381,7 +526,7 @@ class PostgresUserRepository:
         query = text(
             """
             SELECT user_id, email, password_hash, name, role,
-                   risk_profile, is_active, created_at, updated_at
+                   risk_profile, is_active, google_id, picture, created_at, updated_at
             FROM finex.users
             WHERE user_id = :uid
             """
@@ -428,14 +573,14 @@ class PostgresUserRepository:
             """
             INSERT INTO finex.users (
                 user_id, email, password_hash, name, role,
-                risk_profile, is_active, created_at, updated_at
+                risk_profile, is_active, google_id, picture, created_at, updated_at
             )
             VALUES (
                 :uid, :email, :pw, :name, :role,
-                :risk, TRUE, NOW(), NOW()
+                :risk, TRUE, :google_id, :picture, NOW(), NOW()
             )
             RETURNING user_id, email, password_hash, name, role,
-                      risk_profile, is_active, created_at, updated_at
+                      risk_profile, is_active, google_id, picture, created_at, updated_at
             """
         )
         params = {
@@ -445,6 +590,8 @@ class PostgresUserRepository:
             "name": name,
             "role": role,
             "risk": risk_profile,
+            "google_id": google_id,
+            "picture": picture,
         }
 
         try:

@@ -145,3 +145,186 @@ async def test_auth_service_real_postgres_integration(postgres_db, monkeypatch):
                     {"uid": str(test_uid)},
                 )
                 await session.commit()
+
+
+@pytest.mark.asyncio
+async def test_google_sign_in_persists_to_real_postgres(postgres_db):
+    """Verify Google OAuth metadata survives repository reinitialization in PostgreSQL."""
+    raw_url = os.getenv("DATABASE_URL") or postgres_db.url.render_as_string(hide_password=False)
+    url = raw_url.replace("+asyncpg", "").replace("localhost", "127.0.0.1")
+
+    # Instance 1: Initial creation
+    repo1 = PostgresUserRepository(database_url=url, require_db=True)
+    google_id = f"g_{uuid.uuid4().hex[:12]}"
+    email = f"google_persist_{uuid.uuid4().hex[:8]}@example.com"
+    picture = "https://lh3.googleusercontent.com/a/real_avatar.png"
+    name = "Persistent Google User"
+
+    test_uid = None
+    try:
+        user1 = repo1.get_or_create_google_user(
+            google_id=google_id,
+            email=email,
+            name=name,
+            picture=picture,
+        )
+        assert user1 is not None
+        assert user1.google_id == google_id
+        assert user1.picture == picture
+        test_uid = str(user1.id)
+
+        # 1. Directly query finex.users SQL table to verify database row has columns populated
+        async with AsyncSession(postgres_db) as session:
+            result = await session.execute(
+                text(
+                    "SELECT user_id, email, google_id, picture "
+                    "FROM finex.users WHERE user_id = :uid"
+                ),
+                {"uid": test_uid},
+            )
+            row = result.fetchone()
+            assert row is not None
+            assert row.email == email.lower()
+            assert row.google_id == google_id
+            assert row.picture == picture
+
+        # 2. Instantiate a fresh repository instance (simulating app restart / new worker)
+        repo2 = PostgresUserRepository(database_url=url, require_db=True)
+        assert len(repo2._user_metadata) == 0  # Verify empty in-memory cache
+
+        # 3. Reload by email from PostgreSQL
+        user2_by_email = repo2.get_user_by_email(email)
+        assert user2_by_email is not None
+        assert str(user2_by_email.id) == test_uid
+        assert user2_by_email.google_id == google_id
+        assert user2_by_email.picture == picture
+
+        # 4. Reload by ID from PostgreSQL
+        user2_by_id = repo2.get_user_by_id(test_uid)
+        assert user2_by_id is not None
+        assert user2_by_id.google_id == google_id
+        assert user2_by_id.picture == picture
+
+        # 5. Reload by google_id from PostgreSQL
+        user2_by_google = repo2.get_user_by_google_id(google_id)
+        assert user2_by_google is not None
+        assert str(user2_by_google.id) == test_uid
+        assert user2_by_google.email == email.lower()
+
+        # 6. Idempotent call with existing user on repo2 returns same persisted data
+        user2_relogin = repo2.get_or_create_google_user(
+            google_id=google_id,
+            email=email,
+            name=name,
+            picture=picture,
+        )
+        assert str(user2_relogin.id) == test_uid
+        assert user2_relogin.google_id == google_id
+        assert user2_relogin.picture == picture
+
+    finally:
+        if test_uid:
+            async with AsyncSession(postgres_db) as session:
+                await session.execute(
+                    text("DELETE FROM finex.users WHERE user_id = :uid"),
+                    {"uid": test_uid},
+                )
+                await session.commit()
+
+
+@pytest.mark.asyncio
+async def test_multi_worker_failed_login_throttling_postgres(postgres_db, monkeypatch):
+    """Verify failed login rate limit is shared across worker instances via PostgreSQL."""
+    raw_url = os.getenv("DATABASE_URL") or postgres_db.url.render_as_string(hide_password=False)
+    url = raw_url.replace("+asyncpg", "").replace("localhost", "127.0.0.1")
+
+    from app.core.exceptions import LoginRateLimitExceededException, UnauthorizedException
+    from app.services import auth_service
+    from app.services.auth_service import LoginAttemptTracker
+
+    monkeypatch.setenv("APP_PERSISTENCE", "postgresql")
+    monkeypatch.setenv("APP_DATABASE_URL", url)
+
+    # Worker A and Worker B simulated as two independent repository & tracker instances
+    repo_worker_a = PostgresUserRepository(database_url=url, require_db=True)
+    repo_worker_b = PostgresUserRepository(database_url=url, require_db=True)
+
+    tracker_worker_a = LoginAttemptTracker(max_attempts=10, window_seconds=900)
+    tracker_worker_b = LoginAttemptTracker(max_attempts=10, window_seconds=900)
+
+    email = f"multiworker_{uuid.uuid4().hex[:8]}@example.com"
+    raw_pw = "WorkerPass@2026"
+    test_uid = None
+
+    try:
+        # Create user via Worker A
+        created = repo_worker_a.create_user(
+            name="Worker User", email=email, hashed_password=hash_password(raw_pw)
+        )
+        test_uid = str(created.id)
+
+        # Clear any prior state for this email
+        tracker_worker_a.reset(email)
+
+        # Send 5 failed attempts through Worker A
+        monkeypatch.setattr(auth_service, "user_repository", repo_worker_a)
+        monkeypatch.setattr(auth_service, "login_tracker", tracker_worker_a)
+        for i in range(1, 6):
+            with pytest.raises(UnauthorizedException):
+                auth_service.login(email=email, password="BadPassword")
+
+        # Send 5 failed attempts through Worker B (attempts 6-10)
+        monkeypatch.setattr(auth_service, "user_repository", repo_worker_b)
+        monkeypatch.setattr(auth_service, "login_tracker", tracker_worker_b)
+        for i in range(6, 11):
+            with pytest.raises(UnauthorizedException):
+                auth_service.login(email=email, password="BadPassword")
+
+        # Attempt 11 on Worker A -> Must be throttled with HTTP 429
+        monkeypatch.setattr(auth_service, "user_repository", repo_worker_a)
+        monkeypatch.setattr(auth_service, "login_tracker", tracker_worker_a)
+        with pytest.raises(LoginRateLimitExceededException) as exc_a:
+            auth_service.login(email=email, password="BadPassword")
+        assert exc_a.value.status_code == 429
+
+        # Attempt 12 on Worker B -> Must also be throttled with HTTP 429 across process boundary
+        monkeypatch.setattr(auth_service, "user_repository", repo_worker_b)
+        monkeypatch.setattr(auth_service, "login_tracker", tracker_worker_b)
+        with pytest.raises(LoginRateLimitExceededException) as exc_b:
+            auth_service.login(email=email, password="BadPassword")
+        assert exc_b.value.status_code == 429
+
+        # Direct database query: verify failed_count in finex.failed_logins is >= 10
+        async with AsyncSession(postgres_db) as session:
+            result = await session.execute(
+                text("SELECT email, failed_count FROM finex.failed_logins WHERE email = :email"),
+                {"email": email.lower()},
+            )
+            row = result.fetchone()
+            assert row is not None
+            assert row.failed_count >= 10
+
+        # Successful login resets the counter in PostgreSQL
+        tracker_worker_a.reset(email)
+        login_res = auth_service.login(email=email, password=raw_pw)
+        assert "access_token" in login_res
+
+        # After reset, Worker B can attempt again without 429
+        monkeypatch.setattr(auth_service, "user_repository", repo_worker_b)
+        monkeypatch.setattr(auth_service, "login_tracker", tracker_worker_b)
+        with pytest.raises(UnauthorizedException):
+            auth_service.login(email=email, password="WrongPasswordAfterReset")
+
+    finally:
+        tracker_worker_a.reset(email)
+        if test_uid:
+            async with AsyncSession(postgres_db) as session:
+                await session.execute(
+                    text("DELETE FROM finex.users WHERE user_id = :uid"),
+                    {"uid": test_uid},
+                )
+                await session.execute(
+                    text("DELETE FROM finex.failed_logins WHERE email = :email"),
+                    {"email": email.lower()},
+                )
+                await session.commit()
