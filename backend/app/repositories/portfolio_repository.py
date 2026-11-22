@@ -58,7 +58,7 @@ class PortfolioRepository:
             "user_id": record.user_id,
             "name": record.name,
             "description": record.description,
-            "portfolio_type": "INDIVIDUAL",
+            "portfolio_type": record.portfolio_type,
             "currency": record.currency,
             "created_at": record.created_at,
             "updated_at": record.updated_at,
@@ -66,17 +66,18 @@ class PortfolioRepository:
 
     def _postgres_holding_raw(self, record: LocalHoldingRecord) -> Dict[str, Any]:
         symbol = record.instrument_id.removeprefix("SYN:")
-        _, asset_class, sector = self._instrument_details(symbol)
+        _, catalog_asset_class, catalog_sector = self._instrument_details(symbol)
         return {
             "holding_id": record.holding_id,
             "portfolio_id": record.portfolio_id,
             "user_id": record.user_id,
             "symbol": symbol,
-            "asset_class": asset_class,
-            "sector": sector,
+            "asset_class": record.asset_class or catalog_asset_class,
+            "sector": record.sector or catalog_sector,
             "quantity": float(record.quantity),
             "avg_buy_price": float(record.average_cost),
-            "notes": None,
+            "currency": record.currency,
+            "notes": record.notes,
             "created_at": record.created_at,
             "updated_at": record.updated_at,
         }
@@ -110,6 +111,7 @@ class PortfolioRepository:
                 currency=currency.upper(),
                 created_at=now,
                 updated_at=now,
+                portfolio_type=portfolio_type,
             )
             with self._postgres_store.transaction(write=True) as transaction:
                 transaction.insert_portfolio(record)
@@ -183,6 +185,9 @@ class PortfolioRepository:
                     currency=currency.upper() if currency is not None else previous.currency,
                     created_at=previous.created_at,
                     updated_at=datetime.now(timezone.utc),
+                    portfolio_type=(
+                        portfolio_type if portfolio_type is not None else previous.portfolio_type
+                    ),
                 )
                 transaction.update_portfolio(updated)
             return self._postgres_portfolio_raw(updated)
@@ -252,21 +257,24 @@ class PortfolioRepository:
                 Decimal(str(avg_buy_price)).quantize(Decimal("0.0001"), rounding=ROUND_HALF_UP),
                 "f",
             )
-            record = LocalHoldingRecord(
-                user_id=str(user_id),
-                portfolio_id=str(portfolio_id),
-                holding_id=str(uuid.uuid4()),
-                instrument_id=instrument_id,
-                quantity=quantity_text,
-                average_cost=average_cost_text,
-                currency="USD",
-                created_at=now,
-                updated_at=now,
-            )
             with self._postgres_store.transaction(write=True) as transaction:
                 parent = transaction.get_portfolio(str(user_id), str(portfolio_id))
                 if parent is None:
                     return None
+                record = LocalHoldingRecord(
+                    user_id=str(user_id),
+                    portfolio_id=str(portfolio_id),
+                    holding_id=str(uuid.uuid4()),
+                    instrument_id=instrument_id,
+                    quantity=quantity_text,
+                    average_cost=average_cost_text,
+                    currency=parent.currency,
+                    created_at=now,
+                    updated_at=now,
+                    asset_class=asset_class,
+                    sector=sector.strip() if sector else "General",
+                    notes=notes.strip() if notes else None,
+                )
                 transaction.insert_holding(record)
             return self._postgres_holding_raw(record)
         p = self._portfolios.get(portfolio_id)
@@ -348,7 +356,8 @@ class PortfolioRepository:
         if self._postgres_store is not None:
             with self._postgres_store.transaction(write=True) as transaction:
                 previous = transaction.get_holding(str(user_id), portfolio_id, holding_id)
-                if previous is None:
+                parent = transaction.get_portfolio(str(user_id), portfolio_id)
+                if previous is None or parent is None:
                     return None
                 quantity_text = (
                     format(
@@ -370,6 +379,12 @@ class PortfolioRepository:
                     if avg_buy_price is not None
                     else previous.average_cost
                 )
+                updated_sector = previous.sector
+                if sector is not None:
+                    updated_sector = sector.strip() or "General"
+                updated_notes = previous.notes
+                if notes is not None:
+                    updated_notes = notes.strip() or None
                 updated = LocalHoldingRecord(
                     user_id=str(user_id),
                     portfolio_id=portfolio_id,
@@ -377,9 +392,12 @@ class PortfolioRepository:
                     instrument_id=previous.instrument_id,
                     quantity=quantity_text,
                     average_cost=cost_text,
-                    currency="USD",
+                    currency=parent.currency,
                     created_at=previous.created_at,
                     updated_at=datetime.now(timezone.utc),
+                    asset_class=asset_class if asset_class is not None else previous.asset_class,
+                    sector=updated_sector,
+                    notes=updated_notes,
                 )
                 transaction.update_holding(updated)
             return self._postgres_holding_raw(updated)

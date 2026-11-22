@@ -50,6 +50,7 @@ def calculate_holding_metrics(
         symbol=str(holding_raw["symbol"]).strip().upper(),
         asset_class=holding_raw.get("asset_class", "EQUITY"),
         sector=holding_raw.get("sector") or "General",
+        notes=holding_raw.get("notes"),
         quantity=float(quantity),
         avg_buy_price=float(average_cost),
         current_price=float(price),

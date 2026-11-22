@@ -183,6 +183,24 @@ def test_valid_records_preserve_identity_and_support_nonuuid_internal_owner() ->
     assert validate_portfolio_record(PORTFOLIO, user_id="synthetic-owner") is PORTFOLIO
     assert validate_holding_record(HOLDING, user_id="synthetic-owner", portfolio_id=PID) is HOLDING
     assert validate_portfolio_record(replace(PORTFOLIO, description="")) is not None
+    assert (
+        validate_portfolio_record(
+            replace(PORTFOLIO, currency="EUR", portfolio_type="RETIREMENT")
+        ).currency
+        == "EUR"
+    )
+    assert (
+        validate_holding_record(
+            replace(
+                HOLDING,
+                currency="EUR",
+                asset_class="FIXED_INCOME",
+                sector="Government",
+                notes="Long-term allocation",
+            )
+        ).notes
+        == "Long-term allocation"
+    )
 
 
 @pytest.mark.parametrize(
@@ -198,7 +216,9 @@ def test_valid_records_preserve_identity_and_support_nonuuid_internal_owner() ->
         {"description": False},
         {"description": " x "},
         {"description": "x" * 501},
-        {"currency": "EUR"},
+        {"currency": "eur"},
+        {"currency": "EURO"},
+        {"portfolio_type": "UNKNOWN"},
         {"created_at": NOW.replace(tzinfo=None)},
         {"updated_at": NOW - timedelta(seconds=1)},
         {"updated_at": NOW.astimezone(timezone(timedelta(hours=1)))},
@@ -221,7 +241,10 @@ def test_portfolio_record_corruption_is_rejected(changes: dict) -> None:
         {"quantity": True},
         {"average_cost": "-0.0000"},
         {"average_cost": 1},
-        {"currency": "EUR"},
+        {"currency": "eur"},
+        {"currency": "EURO"},
+        {"asset_class": "UNKNOWN"},
+        {"notes": "x" * 501},
         {"created_at": NOW.replace(tzinfo=None)},
         {"updated_at": NOW - timedelta(seconds=1)},
     ],

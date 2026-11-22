@@ -27,6 +27,10 @@ _QUANTITY_PATTERN = re.compile(r"(?:0|[1-9][0-9]{0,6})\.[0-9]{6}")
 _COST_PATTERN = re.compile(r"(?:0|[1-9][0-9]{0,6})\.[0-9]{4}")
 _UUID4_PATTERN = re.compile(r"[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}")
 _INSTRUMENT_PATTERN = re.compile(r"SYN:[A-Z][A-Z0-9_]{0,31}")
+_PORTFOLIO_TYPES = frozenset(
+    {"INDIVIDUAL", "RETIREMENT", "GROWTH", "BALANCED", "CONSERVATIVE", "TRADING"}
+)
+_ASSET_CLASSES = frozenset({"EQUITY", "FIXED_INCOME", "CASH", "CRYPTO", "COMMODITY", "REAL_ESTATE"})
 
 
 @dataclass(frozen=True)
@@ -38,6 +42,7 @@ class LocalPortfolioRecord:
     currency: str
     created_at: datetime
     updated_at: datetime
+    portfolio_type: str = "INDIVIDUAL"
 
 
 @dataclass(frozen=True)
@@ -51,6 +56,9 @@ class LocalHoldingRecord:
     currency: str
     created_at: datetime
     updated_at: datetime
+    asset_class: str | None = None
+    sector: str | None = None
+    notes: str | None = None
 
 
 @dataclass(frozen=True)
@@ -184,8 +192,14 @@ def validate_portfolio_record(
         or len(record.description) > 500
     ):
         raise ValueError("Invalid portfolio description")
-    if record.currency != "USD":
+    if not isinstance(record.currency, str) or re.fullmatch(r"[A-Z]{3}", record.currency) is None:
         raise ValueError("Invalid portfolio currency")
+    if (
+        not isinstance(record.portfolio_type, str)
+        or record.portfolio_type != record.portfolio_type.strip()
+        or record.portfolio_type not in _PORTFOLIO_TYPES
+    ):
+        raise ValueError("Invalid portfolio type")
     _record_times(record.created_at, record.updated_at)
     return record
 
@@ -203,7 +217,23 @@ def validate_holding_record(
     canonical_instrument_id(record.instrument_id)
     quantity_units(record.quantity)
     cost_units(record.average_cost)
-    if record.currency != "USD":
+    if not isinstance(record.currency, str) or re.fullmatch(r"[A-Z]{3}", record.currency) is None:
         raise ValueError("Invalid holding currency")
+    if record.asset_class is not None and (
+        not isinstance(record.asset_class, str)
+        or record.asset_class != record.asset_class.strip()
+        or record.asset_class not in _ASSET_CLASSES
+    ):
+        raise ValueError("Invalid holding asset class")
+    if record.sector is not None and (
+        not isinstance(record.sector, str) or record.sector != record.sector.strip()
+    ):
+        raise ValueError("Invalid holding sector")
+    if record.notes is not None and (
+        not isinstance(record.notes, str)
+        or record.notes != record.notes.strip()
+        or len(record.notes) > 500
+    ):
+        raise ValueError("Invalid holding notes")
     _record_times(record.created_at, record.updated_at)
     return record
