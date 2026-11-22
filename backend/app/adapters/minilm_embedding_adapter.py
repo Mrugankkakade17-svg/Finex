@@ -124,6 +124,7 @@ class MiniLMEmbeddingAdapter(EmbeddingPort):
             provider=provider,
             license=MODEL_LICENSE,
             description="Dense semantic embeddings using all-MiniLM-L6-v2 (384-dimensional).",
+            is_normalized=self._normalize_embeddings,
         )
 
     def _validate_single_input(self, text: str) -> str:
@@ -276,7 +277,7 @@ class MiniLMEmbeddingAdapter(EmbeddingPort):
                         f"Expected embedding dimension {self.dimension}, got {len(v)}"
                     )
 
-                if self._normalize_embeddings and not hasattr(backend, "encode"):
+                if self._normalize_embeddings:
                     v = self._normalize_vector(v)
 
                 vectors.append(v)

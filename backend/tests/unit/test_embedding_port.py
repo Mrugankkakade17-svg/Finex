@@ -92,6 +92,7 @@ def test_embedding_metadata_fields():
     assert meta.provider == "local-cpu"
     assert meta.license == "Apache-2.0"
     assert meta.description is not None
+    assert meta.is_normalized is True
 
 
 def test_embedding_exceptions_hierarchy():

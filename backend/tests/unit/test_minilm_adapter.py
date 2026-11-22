@@ -173,3 +173,66 @@ async def test_adapter_async_methods():
     assert len(batch) == 2
     assert len(batch[0]) == 384
     assert len(batch[1]) == 384
+
+
+def test_architectural_import_paths():
+    # 1. Primary app.adapters import
+    from app.adapters import (
+        DEFAULT_MODEL_NAME as M1,
+    )
+    from app.adapters import (
+        EXPECTED_DIMENSION as D1,
+    )
+    from app.adapters import (
+        DeterministicMockBackend as B1,
+    )
+    from app.adapters import (
+        MiniLMEmbeddingAdapter as A1,
+    )
+
+    # 3. Domain protocol import
+    from app.ports import EmbeddingMetadata, EmbeddingPort
+
+    # 2. Ports re-export import
+    from app.ports.adapters.minilm_embedding_adapter import (
+        DEFAULT_MODEL_NAME as M2,
+    )
+    from app.ports.adapters.minilm_embedding_adapter import (
+        EXPECTED_DIMENSION as D2,
+    )
+    from app.ports.adapters.minilm_embedding_adapter import (
+        DeterministicMockBackend as B2,
+    )
+    from app.ports.adapters.minilm_embedding_adapter import (
+        MiniLMEmbeddingAdapter as A2,
+    )
+
+    assert A1 is A2
+    assert B1 is B2
+    assert M1 == M2 == "sentence-transformers/all-MiniLM-L6-v2"
+    assert D1 == D2 == 384
+
+    adapter1 = A1(use_fake=True)
+    adapter2 = A2(use_fake=True)
+    assert isinstance(adapter1, EmbeddingPort)
+    assert isinstance(adapter2, EmbeddingPort)
+
+    meta1 = adapter1.get_metadata()
+    assert isinstance(meta1, EmbeddingMetadata)
+    assert meta1.is_normalized is True
+
+
+def test_adapter_enforces_l2_normalization_on_unnormalized_backend():
+    class UnnormalizedBackendWithEncode:
+        def encode(self, texts):
+            # Return vectors with norm != 1.0 (magnitude = 2.0)
+            return [[2.0] + [0.0] * 383 for _ in texts]
+
+    adapter = MiniLMEmbeddingAdapter(
+        backend=UnnormalizedBackendWithEncode(),
+        normalize_embeddings=True,
+    )
+    vec = adapter.embed_text("Test unnormalized backend")
+    norm = math.sqrt(sum(x * x for x in vec))
+    assert math.isclose(norm, 1.0, rel_tol=1e-5)
+    assert math.isclose(vec[0], 1.0, rel_tol=1e-5)

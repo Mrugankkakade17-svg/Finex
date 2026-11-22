@@ -57,6 +57,7 @@ class EmbeddingMetadata:
     provider: str = "local"
     license: str = "Apache-2.0"
     description: str | None = None
+    is_normalized: bool = True
 
 
 @runtime_checkable

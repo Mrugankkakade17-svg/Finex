@@ -30,6 +30,10 @@ class RegistrySchemaError(DocumentRegistryError, ValueError):
     """Raised when registry JSON does not conform to required schema."""
 
 
+class UnsafePathError(RegistrySchemaError):
+    """Raised when a document path attempts directory traversal or is an absolute path."""
+
+
 class MissingMetadataError(DocumentRegistryError, ValueError):
     """Raised when a document is missing mandatory metadata such as licence or version."""
 
@@ -74,25 +78,57 @@ def get_default_registry_path(repo_root: Path | str | None = None) -> Path:
 
 
 def resolve_corpus_file_path(filename: str, repo_root: Path | str | None = None) -> Path | None:
-    """Resolve a document's filename against canonical locations (repo root or ai/)."""
-    root = Path(repo_root) if repo_root else get_default_repo_root()
+    """Resolve a document's filename against canonical locations.
+
+    Checks repo root, ai/, or data/rag_corpus/. Guarantees that resolved paths are
+    strictly contained within the repository root and rejects path traversal components
+    (e.g., '..') or absolute paths.
+    """
+    root = (Path(repo_root) if repo_root else get_default_repo_root()).resolve()
+
+    # Reject absolute paths and directory traversal
+    raw_path = Path(filename)
+    if raw_path.is_absolute() or any(part == ".." for part in raw_path.parts):
+        return None
 
     # Candidate 1: relative to repo root
-    cand1 = root / filename
+    cand1 = (root / filename).resolve()
     if cand1.is_file():
-        return cand1
+        try:
+            cand1.relative_to(root)
+            return cand1
+        except ValueError:
+            return None
 
     # Candidate 2: relative to ai/
-    cand2 = root / "ai" / filename
+    cand2 = (root / "ai" / filename).resolve()
     if cand2.is_file():
-        return cand2
+        try:
+            cand2.relative_to(root)
+            return cand2
+        except ValueError:
+            return None
 
     # Candidate 3: relative to data/rag_corpus/
-    cand3 = root / "data" / "rag_corpus" / filename
+    cand3 = (root / "data" / "rag_corpus" / filename).resolve()
     if cand3.is_file():
-        return cand3
+        try:
+            cand3.relative_to(root)
+            return cand3
+        except ValueError:
+            return None
 
     return None
+
+
+def compute_file_sha256(file_path: Path | str) -> str:
+    """Calculate the SHA-256 hexadecimal digest of a file."""
+    import hashlib
+
+    p = Path(file_path)
+    if not p.is_file():
+        raise FileNotFoundError(f"File not found for checksum calculation: {p}")
+    return hashlib.sha256(p.read_bytes()).hexdigest()
 
 
 def load_document_registry(
@@ -137,6 +173,22 @@ def load_document_registry(
         filename = item.get("filename") or item.get("filepath")
         if not filename or not isinstance(filename, str) or not filename.strip():
             raise RegistrySchemaError(f"Entry {doc_id} is missing valid filename")
+
+        # Reject path traversal and absolute paths
+        raw_path = Path(filename)
+        if raw_path.is_absolute() or any(p == ".." for p in raw_path.parts):
+            raise UnsafePathError(
+                f"Entry {doc_id} ('{title}') contains unsafe or escaping path: {filename}"
+            )
+
+        filepath_val = item.get("filepath")
+        if filepath_val and isinstance(filepath_val, str):
+            raw_fpath = Path(filepath_val)
+            if raw_fpath.is_absolute() or any(p == ".." for p in raw_fpath.parts):
+                raise UnsafePathError(
+                    f"Entry {doc_id} ('{title}') contains unsafe or escaping filepath: "
+                    f"{filepath_val}"
+                )
 
         version = item.get("version")
         if not version or not isinstance(version, str) or not version.strip():
@@ -223,3 +275,21 @@ def validate_document_registry(
                         raise UnregisteredCorpusDocumentError(unreg_msg)
 
     return entries
+
+
+__all__ = [
+    "DocumentRegistryError",
+    "RegistrySchemaError",
+    "UnsafePathError",
+    "MissingMetadataError",
+    "DuplicateDocumentIdError",
+    "CorpusFileNotFoundError",
+    "UnregisteredCorpusDocumentError",
+    "DocumentEntry",
+    "get_default_repo_root",
+    "get_default_registry_path",
+    "resolve_corpus_file_path",
+    "compute_file_sha256",
+    "load_document_registry",
+    "validate_document_registry",
+]
