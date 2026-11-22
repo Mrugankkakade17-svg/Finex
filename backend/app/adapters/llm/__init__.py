@@ -52,10 +52,7 @@ def get_llm_provider(settings: Optional[Settings] = None) -> LLMProvider:
 
     hosted_type = getattr(settings, "hosted_llm_provider", "gemini")
     gemini_key = getattr(settings, "gemini_api_key", None)
-    groq_key = getattr(settings, "groq_api_key", None)
     hosted_model = getattr(settings, "hosted_llm_model", None)
-
-    api_key = groq_key if hosted_type == "groq" else gemini_key
 
     primary = OllamaLLMAdapter(
         base_url=ollama_url,
@@ -65,12 +62,12 @@ def get_llm_provider(settings: Optional[Settings] = None) -> LLMProvider:
 
     hosted = (
         HostedLLMAdapter(
-            provider_type="groq" if hosted_type == "groq" else "gemini",
-            api_key=api_key or None,
+            provider_type="gemini",
+            api_key=gemini_key or None,
             model_name=hosted_model,
             timeout_seconds=timeout,
         )
-        if hosted_type in ("gemini", "groq")
+        if hosted_type == "gemini"
         else None
     )
 

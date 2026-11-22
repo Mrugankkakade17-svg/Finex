@@ -95,8 +95,7 @@ class Settings(BaseSettings):
     ollama_model: str = "llama3.2:1b"
     hosted_llm_provider: str = "gemini"
     gemini_api_key: str = ""
-    groq_api_key: str = ""
-    hosted_llm_model: str = "gemini-1.5-flash"
+    hosted_llm_model: str = "gemini-3.5-flash-lite"
     llm_timeout_seconds: float = Field(default=10.0, ge=1.0, le=120.0)
     llm_cascade_enabled: bool = True
 
@@ -110,7 +109,6 @@ class Settings(BaseSettings):
         "databricks_token",
         "openai_api_key",
         "gemini_api_key",
-        "groq_api_key",
         "market_data_api_key",
         "password",
         "token",

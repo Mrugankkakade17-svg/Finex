@@ -1,8 +1,10 @@
 """
 hosted_adapter.py
 
-Free-tier hosted LLM provider adapter (Google Gemini API, Groq).
+Free-tier hosted LLM provider adapter using Google Gemini API (`gemini-3.5-flash-lite`).
 Used as secondary fallback when local Ollama is offline or times out.
+Enforces strict client-side data minimization, PII/financial scrubbing,
+and header-based API key authentication (x-goog-api-key).
 Task: S5-MI03
 Owner: Mitali (@mitali2701)
 """
@@ -12,7 +14,8 @@ from __future__ import annotations
 import json
 import logging
 import os
-from typing import Literal
+import re
+from typing import Any, Literal
 
 import httpx
 
@@ -29,37 +32,91 @@ from app.ports.llm_provider import LLMProvider, LLMRequest, LLMResponse
 
 logger = logging.getLogger(__name__)
 
-DEFAULT_GEMINI_MODEL = "gemini-1.5-flash"
-DEFAULT_GROQ_MODEL = "llama-3.1-8b-instant"
+# Currently supported and active Google Gemini model with verified free-tier (July 2026 update)
+DEFAULT_GEMINI_MODEL = "gemini-3.5-flash-lite"
 DEFAULT_TIMEOUT_SECONDS = 10.0
 DEFAULT_CONNECT_TIMEOUT_SECONDS = 3.0
 
+# Privacy Whitelist: Only conceptual, curriculum, and non-PII keys may reach hosted provider
+SAFE_CONTEXT_KEYS: frozenset[str] = frozenset(
+    {
+        "query",
+        "question",
+        "message",
+        "topic",
+        "concept",
+        "goal_name",
+        "risk_category",
+        "willingness_score",
+        "capacity_score",
+        "composite_score",
+        "chunks",
+        "citations",
+        "retriever_version",
+    }
+)
+
+# Explicit sensitive financial and personal identifiers prohibited from transmission
+SENSITIVE_CONTEXT_KEYS: frozenset[str] = frozenset(
+    {
+        "user_id",
+        "email",
+        "phone",
+        "pan",
+        "aadhaar",
+        "ssn",
+        "account_id",
+        "account_number",
+        "iban",
+        "balance",
+        "available_balance",
+        "current_balance",
+        "transactions",
+        "holdings",
+        "portfolio_value",
+        "total_wealth",
+        "salary",
+        "net_worth",
+        "password",
+        "token",
+        "secret",
+        "credentials",
+    }
+)
+
+# Regex patterns for masking sensitive PII / financial numbers in freeform text queries
+EMAIL_REGEX = re.compile(r"[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+")
+PAN_REGEX = re.compile(r"\b[A-Z]{5}[0-9]{4}[A-Z]\b")
+IDENTIFIER_REGEX = re.compile(r"\b\d{10,16}\b")
+AMOUNT_REGEX = re.compile(r"(?:Rs\.?|INR|₹|\$)\s*[\d,]+(?:\.\d+)?", re.IGNORECASE)
+
 
 class HostedLLMAdapter(LLMProvider):
-    """Free-tier hosted LLM provider adapter supporting Google Gemini and Groq."""
+    """
+    Free-tier hosted LLM provider adapter connecting to Google Gemini REST API.
+    Enforces strict client-side data minimization and header-based credential authentication.
+    """
 
     def __init__(
         self,
-        provider_type: Literal["gemini", "groq"] = "gemini",
+        provider_type: Literal["gemini"] = "gemini",
         api_key: str | None = None,
         model_name: str | None = None,
         timeout_seconds: float = DEFAULT_TIMEOUT_SECONDS,
         connect_timeout_seconds: float = DEFAULT_CONNECT_TIMEOUT_SECONDS,
         http_client: httpx.AsyncClient | None = None,
     ) -> None:
+        if provider_type != "gemini":
+            raise ValueError(
+                f"Unsupported hosted provider type: '{provider_type}'. "
+                "S5-MI03 designates Google Gemini API ('gemini') as the free hosted fallback."
+            )
         self.provider_type = provider_type
+        self.model_name = model_name or DEFAULT_GEMINI_MODEL
+        self.api_key = api_key or os.getenv("GEMINI_API_KEY", "").strip()
         self.timeout_seconds = timeout_seconds
         self.connect_timeout_seconds = connect_timeout_seconds
         self._external_client = http_client
-
-        if self.provider_type == "gemini":
-            self.model_name = model_name or DEFAULT_GEMINI_MODEL
-            self.api_key = api_key or os.getenv("GEMINI_API_KEY", "").strip()
-        elif self.provider_type == "groq":
-            self.model_name = model_name or DEFAULT_GROQ_MODEL
-            self.api_key = api_key or os.getenv("GROQ_API_KEY", "").strip()
-        else:
-            raise ValueError(f"Unsupported hosted provider type: '{provider_type}'")
 
     def _get_client(self) -> httpx.AsyncClient:
         if self._external_client is not None:
@@ -70,6 +127,49 @@ class HostedLLMAdapter(LLMProvider):
         )
         return httpx.AsyncClient(timeout=timeout)
 
+    @classmethod
+    def mask_pii_text(cls, text: str) -> str:
+        """Mask sensitive email, PAN, account numbers, and currency amounts in text strings."""
+        if not text:
+            return text
+        sanitized = EMAIL_REGEX.sub("[REDACTED_EMAIL]", text)
+        sanitized = PAN_REGEX.sub("[REDACTED_PAN]", sanitized)
+        sanitized = IDENTIFIER_REGEX.sub("[REDACTED_IDENTIFIER]", sanitized)
+        sanitized = AMOUNT_REGEX.sub("[REDACTED_AMOUNT]", sanitized)
+        return sanitized
+
+    @classmethod
+    def sanitize_context_for_external_provider(cls, context: dict[str, Any]) -> dict[str, Any]:
+        """
+        Enforce strict data minimization:
+        - Whitelists only safe conceptual/curriculum keys.
+        - Excludes all sensitive financial fields (balances, accounts, PAN, user_id).
+        - Masks any PII/amounts in freeform text fields.
+        """
+        sanitized: dict[str, Any] = {}
+        for key, val in context.items():
+            if key in SENSITIVE_CONTEXT_KEYS:
+                # Omit sensitive keys completely from external transmission
+                continue
+            if key in SAFE_CONTEXT_KEYS:
+                if isinstance(val, str):
+                    sanitized[key] = cls.mask_pii_text(val)
+                elif isinstance(val, list):
+                    clean_list: list[Any] = []
+                    for item in val:
+                        if isinstance(item, str):
+                            clean_list.append(cls.mask_pii_text(item))
+                        elif isinstance(item, dict):
+                            clean_list.append(cls.sanitize_context_for_external_provider(item))
+                        else:
+                            clean_list.append(item)
+                    sanitized[key] = clean_list
+                elif isinstance(val, dict):
+                    sanitized[key] = cls.sanitize_context_for_external_provider(val)
+                else:
+                    sanitized[key] = val
+        return sanitized
+
     def _build_prompts(self, request: LLMRequest) -> tuple[str, str]:
         system_prompt = (
             "You are FinEx educational assistant. Provide clear financial explanations.\n"
@@ -79,12 +179,20 @@ class HostedLLMAdapter(LLMProvider):
             f"3. Return ONLY valid JSON matching schema '{request.output_schema_ref}'.\n"
             "4. Do not wrap output in extra commentary or text outside the JSON structure."
         )
+        # Apply client-side privacy sanitization before serializing context
+        sanitized_context = self.sanitize_context_for_external_provider(request.context)
         user_prompt = (
             f"Prompt ID: {request.prompt_id} (Version: {request.prompt_version})\n"
             f"Output Schema: {request.output_schema_ref}\n"
-            f"Context: {json.dumps(request.context, default=str)}"
+            f"Context: {json.dumps(sanitized_context, default=str)}"
         )
         return system_prompt, user_prompt
+
+    def _sanitize_error_message(self, message: str) -> str:
+        """Ensure API keys are never exposed in exceptions or logs."""
+        if self.api_key and self.api_key in message:
+            return message.replace(self.api_key, "[REDACTED_API_KEY]")
+        return message
 
     def _extract_citations(self, request: LLMRequest) -> list[str]:
         citations = []
@@ -109,10 +217,10 @@ class HostedLLMAdapter(LLMProvider):
         return list(dict.fromkeys(citations))
 
     async def generate(self, request: LLMRequest) -> LLMResponse:
-        """Call hosted provider REST endpoint with error handling and fallback metadata."""
+        """Call Gemini REST endpoint with header auth, privacy scrubbing, and validation."""
         if not self.api_key:
             raise ProviderAuthenticationError(
-                f"No API key configured for hosted provider '{self.provider_type}'",
+                "No API key configured for Google Gemini hosted provider (GEMINI_API_KEY is empty)",
                 provider=self.provider_type,
             )
 
@@ -121,10 +229,7 @@ class HostedLLMAdapter(LLMProvider):
         system_prompt, user_prompt = self._build_prompts(request)
 
         try:
-            if self.provider_type == "gemini":
-                content = await self._call_gemini(client, system_prompt, user_prompt)
-            else:
-                content = await self._call_groq(client, system_prompt, user_prompt)
+            content = await self._call_gemini(client, system_prompt, user_prompt)
 
             validated_output = SchemaValidator.parse_and_validate(
                 content,
@@ -146,13 +251,22 @@ class HostedLLMAdapter(LLMProvider):
             )
 
         except httpx.ConnectError as exc:
-            logger.warning("Hosted provider connection error (%s): %s", self.provider_type, exc)
+            sanitized_msg = self._sanitize_error_message(str(exc))
+            logger.warning(
+                "Hosted provider connection error (%s): %s",
+                self.provider_type,
+                sanitized_msg,
+            )
             raise ProviderConnectionError(
-                f"Hosted provider connection failed: {exc}",
+                f"Hosted provider connection failed: {sanitized_msg}",
                 provider=self.provider_type,
             ) from exc
         except httpx.TimeoutException as exc:
-            logger.warning("Hosted provider timed out (%s): %s", self.provider_type, exc)
+            logger.warning(
+                "Hosted provider timed out (%s) after %ss",
+                self.provider_type,
+                self.timeout_seconds,
+            )
             raise ProviderTimeoutError(
                 f"Hosted provider timed out after {self.timeout_seconds}s",
                 provider=self.provider_type,
@@ -170,11 +284,15 @@ class HostedLLMAdapter(LLMProvider):
         system_prompt: str,
         user_prompt: str,
     ) -> str:
-        """Execute request against Google Gemini REST API."""
-        url = (
-            f"https://generativelanguage.googleapis.com/v1beta/models/"
-            f"{self.model_name}:generateContent?key={self.api_key}"
-        )
+        """
+        Execute request against Google Gemini REST API.
+        Transmits API key via 'x-goog-api-key' header; never in URL parameters.
+        """
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/{self.model_name}:generateContent"
+        headers = {
+            "x-goog-api-key": self.api_key,
+            "Content-Type": "application/json",
+        }
         payload = {
             "contents": [
                 {
@@ -188,7 +306,12 @@ class HostedLLMAdapter(LLMProvider):
             },
         }
 
-        resp = await client.post(url, json=payload)
+        resp = await client.post(url, headers=headers, json=payload)
+        if resp.status_code == 404:
+            raise ProviderResponseError(
+                f"Gemini model '{self.model_name}' not found (HTTP 404)",
+                provider="gemini",
+            )
         if resp.status_code == 429:
             raise ProviderQuotaExceededError(
                 "Gemini free-tier rate limit exceeded (HTTP 429)",
@@ -200,8 +323,9 @@ class HostedLLMAdapter(LLMProvider):
                 provider="gemini",
             )
         if resp.status_code != 200:
+            cleaned_text = self._sanitize_error_message(resp.text[:200])
             raise ProviderResponseError(
-                f"Gemini returned HTTP {resp.status_code}: {resp.text[:200]}",
+                f"Gemini returned HTTP {resp.status_code}: {cleaned_text}",
                 provider="gemini",
             )
 
@@ -224,60 +348,13 @@ class HostedLLMAdapter(LLMProvider):
                 provider="gemini",
             ) from exc
 
-    async def _call_groq(
-        self,
-        client: httpx.AsyncClient,
-        system_prompt: str,
-        user_prompt: str,
-    ) -> str:
-        """Execute request against Groq REST API (OpenAI-compatible)."""
-        url = "https://api.groq.com/openai/v1/chat/completions"
-        headers = {
-            "Authorization": f"Bearer {self.api_key}",
-            "Content-Type": "application/json",
-        }
-        payload = {
-            "model": self.model_name,
-            "messages": [
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": user_prompt},
-            ],
-            "response_format": {"type": "json_object"},
-            "temperature": 0.2,
-        }
-
-        resp = await client.post(url, headers=headers, json=payload)
-        if resp.status_code == 429:
-            raise ProviderQuotaExceededError(
-                "Groq free-tier rate limit exceeded (HTTP 429)",
-                provider="groq",
-            )
-        if resp.status_code in (401, 403):
-            raise ProviderAuthenticationError(
-                f"Groq API key rejected (HTTP {resp.status_code})",
-                provider="groq",
-            )
-        if resp.status_code != 200:
-            raise ProviderResponseError(
-                f"Groq returned HTTP {resp.status_code}: {resp.text[:200]}",
-                provider="groq",
-            )
-
-        data = resp.json()
-        try:
-            choices = data.get("choices", [])
-            if not choices:
-                raise SchemaValidationError("Groq response contained no choices", provider="groq")
-            content = choices[0].get("message", {}).get("content", "")
-            return content
-        except (KeyError, IndexError) as exc:
-            raise SchemaValidationError(
-                f"Unexpected Groq response structure: {exc}",
-                provider="groq",
-            ) from exc
-
     def _handle_http_status_error(self, exc: httpx.HTTPStatusError) -> None:
         code = exc.response.status_code
+        if code == 404:
+            raise ProviderResponseError(
+                "Hosted provider endpoint not found (HTTP 404)",
+                provider=self.provider_type,
+            ) from exc
         if code == 429:
             raise ProviderQuotaExceededError(
                 "Hosted provider rate limit exceeded (HTTP 429)",
@@ -288,11 +365,12 @@ class HostedLLMAdapter(LLMProvider):
                 f"Hosted provider authentication failed (HTTP {code})",
                 provider=self.provider_type,
             ) from exc
+        cleaned_text = self._sanitize_error_message(exc.response.text[:200])
         raise ProviderResponseError(
-            f"Hosted provider error HTTP {code}: {exc.response.text[:200]}",
+            f"Hosted provider error HTTP {code}: {cleaned_text}",
             provider=self.provider_type,
         ) from exc
 
     async def is_quota_available(self) -> bool:
-        """Return True if an API key is configured for the free hosted tier."""
+        """Return True if an API key is configured for Google Gemini."""
         return bool(self.api_key and len(self.api_key.strip()) >= 8)

@@ -3,7 +3,7 @@ test_llm_adapters.py
 
 Comprehensive unit and contract test suite for FinEx LLM provider adapters:
 - Ollama local adapter (primary)
-- Free hosted fallback adapter (Gemini, Groq)
+- Free hosted fallback adapter (Google Gemini gemini-3.5-flash-lite)
 - Deterministic offline fallback adapter (tertiary)
 - Resilient composite provider with outage resilience cascade
 Task: S5-MI03
@@ -285,7 +285,8 @@ async def test_ollama_is_quota_available_check():
 
 
 # ==============================================================================
-# 4. HostedLLMAdapter Unit Tests (Gemini & Groq)
+# ==============================================================================
+# 4. HostedLLMAdapter Unit Tests (Google Gemini API & Privacy Boundary)
 # ==============================================================================
 
 
@@ -310,12 +311,13 @@ async def test_hosted_gemini_adapter_success():
             }
         ]
     }
-    mock_response = httpx.Response(
-        200,
-        json=gemini_payload,
-        request=httpx.Request("POST", "https://generativelanguage.googleapis.com"),
-    )
-    transport = httpx.MockTransport(lambda req: mock_response)
+    captured_requests: list[httpx.Request] = []
+
+    def mock_handler(req: httpx.Request) -> httpx.Response:
+        captured_requests.append(req)
+        return httpx.Response(200, json=gemini_payload, request=req)
+
+    transport = httpx.MockTransport(mock_handler)
     async with httpx.AsyncClient(transport=transport) as client:
         adapter = HostedLLMAdapter(
             provider_type="gemini",
@@ -329,50 +331,240 @@ async def test_hosted_gemini_adapter_success():
             output_schema_ref="sprint6_ai_chat",
         )
         res = await adapter.generate(req)
-        assert res.model == "gemini-1.5-flash"
+        assert res.model == "gemini-3.5-flash-lite"
         assert res.fallback_used is True
         assert res.output["answer_text"] == "Gemini hosted educational answer."
 
+        # Verify header-based authentication and zero key in URL
+        assert len(captured_requests) == 1
+        sent_req = captured_requests[0]
+        assert sent_req.headers.get("x-goog-api-key") == "mock-gemini-auth-token"
+        assert "key=" not in str(sent_req.url)
+        assert "gemini-3.5-flash-lite" in str(sent_req.url)
+
 
 @pytest.mark.asyncio
-async def test_hosted_groq_adapter_success():
-    groq_payload = {
-        "choices": [
+async def test_hosted_adapter_privacy_context_sanitization():
+    """Verify that financial details, balances, and PII are stripped before transmission."""
+    gemini_payload = {
+        "candidates": [
             {
-                "message": {
-                    "content": json.dumps(
+                "content": {
+                    "parts": [
                         {
-                            "intent": "CONCEPT_EDUCATION",
-                            "answer_text": "Groq hosted educational answer.",
-                            "limitations_disclaimer": "Educational only.",
+                            "text": json.dumps(
+                                {
+                                    "intent": "CONCEPT_EDUCATION",
+                                    "answer_text": "Safe educational response.",
+                                    "limitations_disclaimer": "Educational only.",
+                                }
+                            )
                         }
-                    )
+                    ]
                 }
             }
         ]
     }
+    captured_body: list[bytes] = []
+
+    def mock_handler(req: httpx.Request) -> httpx.Response:
+        captured_body.append(req.content)
+        return httpx.Response(200, json=gemini_payload, request=req)
+
+    transport = httpx.MockTransport(mock_handler)
+    async with httpx.AsyncClient(transport=transport) as client:
+        adapter = HostedLLMAdapter(
+            provider_type="gemini",
+            api_key="mock-gemini-auth-token",
+            http_client=client,
+        )
+        # Context contains sensitive financial and personal data
+        req = LLMRequest(
+            prompt_id="privacy_audit_check",
+            prompt_version="v1",
+            context={
+                "user_id": "usr_confidential_999",
+                "email": "user@example.com",
+                "pan": "ABCDE1234F",
+                "account_id": "acc_private_888",
+                "balance": 250000.50,
+                "transactions": [{"id": 1, "amount": 1000}],
+                "portfolio_value": 1500000.0,
+                "query": "Explain asset diversification principles",
+                "topic": "Asset Allocation",
+            },
+            output_schema_ref="sprint6_ai_chat",
+        )
+        res = await adapter.generate(req)
+        assert res.fallback_used is True
+
+        assert len(captured_body) == 1
+        payload_str = captured_body[0].decode("utf-8")
+
+        # Assert all sensitive financial fields and identifiers were stripped
+        assert "usr_confidential_999" not in payload_str
+        assert "user_id" not in payload_str
+        assert "acc_private_888" not in payload_str
+        assert "account_id" not in payload_str
+        assert "250000.5" not in payload_str
+        assert "balance" not in payload_str
+        assert "portfolio_value" not in payload_str
+        assert "transactions" not in payload_str
+
+        # Assert allowed educational context was preserved
+        assert "Explain asset diversification principles" in payload_str
+        assert "Asset Allocation" in payload_str
+
+
+@pytest.mark.asyncio
+async def test_hosted_adapter_privacy_query_pii_masking():
+    """Verify that PII patterns inside user queries are masked before external transmission."""
+    gemini_payload = {
+        "candidates": [
+            {
+                "content": {
+                    "parts": [
+                        {
+                            "text": json.dumps(
+                                {
+                                    "intent": "CONCEPT_EDUCATION",
+                                    "answer_text": "Sanitized response.",
+                                    "limitations_disclaimer": "Educational only.",
+                                }
+                            )
+                        }
+                    ]
+                }
+            }
+        ]
+    }
+    captured_body: list[bytes] = []
+
+    def mock_handler(req: httpx.Request) -> httpx.Response:
+        captured_body.append(req.content)
+        return httpx.Response(200, json=gemini_payload, request=req)
+
+    transport = httpx.MockTransport(mock_handler)
+    async with httpx.AsyncClient(transport=transport) as client:
+        adapter = HostedLLMAdapter(
+            provider_type="gemini",
+            api_key="mock-gemini-auth-token",
+            http_client=client,
+        )
+        req = LLMRequest(
+            prompt_id="query_pii_check",
+            prompt_version="v1",
+            context={
+                "query": (
+                    "My email is confidential@fintech.org, my PAN is ABCDE1234F, "
+                    "account is 98765432101234, and balance is Rs 50,000. How to save?"
+                )
+            },
+            output_schema_ref="sprint6_ai_chat",
+        )
+        await adapter.generate(req)
+        payload_str = captured_body[0].decode("utf-8")
+
+        assert "confidential@fintech.org" not in payload_str
+        assert "ABCDE1234F" not in payload_str
+        assert "98765432101234" not in payload_str
+        assert "50,000" not in payload_str
+        assert "[REDACTED_EMAIL]" in payload_str
+        assert "[REDACTED_PAN]" in payload_str
+        assert "[REDACTED_IDENTIFIER]" in payload_str
+        assert "[REDACTED_AMOUNT]" in payload_str
+
+
+@pytest.mark.asyncio
+async def test_hosted_adapter_404_model_not_found():
     mock_response = httpx.Response(
-        200,
-        json=groq_payload,
-        request=httpx.Request("POST", "https://api.groq.com/openai/v1/chat/completions"),
+        404,
+        text="Model gemini-3.5-flash-lite not found",
+        request=httpx.Request("POST", "https://generativelanguage.googleapis.com"),
     )
     transport = httpx.MockTransport(lambda req: mock_response)
     async with httpx.AsyncClient(transport=transport) as client:
         adapter = HostedLLMAdapter(
-            provider_type="groq",
-            api_key="mock-groq-auth-token",
+            provider_type="gemini",
+            api_key="mock-valid-token",
             http_client=client,
         )
         req = LLMRequest(
-            prompt_id="test_groq",
+            prompt_id="test",
             prompt_version="v1",
-            context={"query": "Test Groq"},
+            context={},
             output_schema_ref="sprint6_ai_chat",
         )
-        res = await adapter.generate(req)
-        assert res.model == "llama-3.1-8b-instant"
-        assert res.fallback_used is True
-        assert res.output["answer_text"] == "Groq hosted educational answer."
+        with pytest.raises(ProviderResponseError, match="HTTP 404"):
+            await adapter.generate(req)
+
+
+@pytest.mark.asyncio
+async def test_hosted_adapter_500_server_error():
+    mock_response = httpx.Response(
+        500,
+        text="Internal Server Error",
+        request=httpx.Request("POST", "https://generativelanguage.googleapis.com"),
+    )
+    transport = httpx.MockTransport(lambda req: mock_response)
+    async with httpx.AsyncClient(transport=transport) as client:
+        adapter = HostedLLMAdapter(
+            provider_type="gemini",
+            api_key="mock-valid-token",
+            http_client=client,
+        )
+        req = LLMRequest(
+            prompt_id="test",
+            prompt_version="v1",
+            context={},
+            output_schema_ref="sprint6_ai_chat",
+        )
+        with pytest.raises(ProviderResponseError, match="HTTP 500"):
+            await adapter.generate(req)
+
+
+@pytest.mark.asyncio
+async def test_hosted_adapter_timeout_error():
+    def timeout_handler(req: httpx.Request) -> httpx.Response:
+        raise httpx.ReadTimeout("Request timed out", request=req)
+
+    transport = httpx.MockTransport(timeout_handler)
+    async with httpx.AsyncClient(transport=transport) as client:
+        adapter = HostedLLMAdapter(
+            provider_type="gemini",
+            api_key="mock-valid-token",
+            http_client=client,
+        )
+        req = LLMRequest(
+            prompt_id="test",
+            prompt_version="v1",
+            context={},
+            output_schema_ref="sprint6_ai_chat",
+        )
+        with pytest.raises(ProviderTimeoutError):
+            await adapter.generate(req)
+
+
+@pytest.mark.asyncio
+async def test_hosted_adapter_connection_error():
+    def connect_error_handler(req: httpx.Request) -> httpx.Response:
+        raise httpx.ConnectError("Failed to establish connection", request=req)
+
+    transport = httpx.MockTransport(connect_error_handler)
+    async with httpx.AsyncClient(transport=transport) as client:
+        adapter = HostedLLMAdapter(
+            provider_type="gemini",
+            api_key="mock-valid-token",
+            http_client=client,
+        )
+        req = LLMRequest(
+            prompt_id="test",
+            prompt_version="v1",
+            context={},
+            output_schema_ref="sprint6_ai_chat",
+        )
+        with pytest.raises(ProviderConnectionError):
+            await adapter.generate(req)
 
 
 @pytest.mark.asyncio
@@ -581,7 +773,7 @@ async def test_composite_cascade_stage_2_primary_fails_hosted_succeeds():
             "answer_text": "Hosted Gemini answer.",
             "limitations_disclaimer": "None",
         },
-        model="gemini-1.5-flash",
+        model="gemini-3.5-flash-lite",
         prompt_id="test",
         prompt_version="v1",
         retriever_version=None,
@@ -602,7 +794,7 @@ async def test_composite_cascade_stage_2_primary_fails_hosted_succeeds():
     res = await composite.generate(req)
 
     assert res.fallback_used is True
-    assert res.model == "gemini-1.5-flash"
+    assert res.model == "gemini-3.5-flash-lite"
     assert composite.last_provider_used == "hosted_fallback"
     mock_primary.generate.assert_awaited_once_with(req)
     mock_hosted.generate.assert_awaited_once_with(req)
@@ -716,15 +908,14 @@ async def test_composite_health_status_reporting():
 def test_settings_llm_fields_and_redaction():
     s = Settings(
         gemini_api_key="mock-gemini-redacted",
-        groq_api_key="mock-groq-redacted",
     )
     assert s.ollama_base_url == "http://localhost:11434"
     assert s.ollama_model == "llama3.2:1b"
     assert s.hosted_llm_provider == "gemini"
+    assert s.hosted_llm_model == "gemini-3.5-flash-lite"
 
     redacted = s.redacted_dict()
     assert redacted["gemini_api_key"] == "[REDACTED]"
-    assert redacted["groq_api_key"] == "[REDACTED]"
 
 
 def test_get_llm_provider_factory():

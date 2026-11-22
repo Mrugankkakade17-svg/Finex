@@ -26,7 +26,7 @@ class CompositeLLMProvider(LLMProvider):
     """
     Composite LLM provider implementing the cascade:
     1. Primary: Local Ollama
-    2. Secondary: Free Hosted Fallback (Gemini or Groq)
+    2. Secondary: Free Hosted Fallback (Google Gemini API: gemini-3.5-flash-lite)
     3. Tertiary: 100% Offline Deterministic Fallback
     """
 
