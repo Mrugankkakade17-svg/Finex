@@ -167,7 +167,7 @@ def setup_probe_resources() -> Generator[None, None, None]:
 # SPRINT 0 AUTH PROBE & SPRINT 1 TRANSITION:
 # Routes secured under Sprint 1 (e.g. S1-MR05: Ops, Release, Privacy) now strictly enforce
 # authentication and pass cleanly. Routes not yet migrated retain xfail(strict=False).
-SECURED_ROUTERS_S1 = {"ops_hardening", "release_handover", "privacy"}
+SECURED_ROUTERS_S1 = {"goals", "ops_hardening", "release_handover", "privacy"}
 
 
 def _build_test_params() -> list[Any]:
