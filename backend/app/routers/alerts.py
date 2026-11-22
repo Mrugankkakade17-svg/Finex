@@ -4,7 +4,6 @@ In-app notification center is the authoritative record; FCM delivery is best-eff
 """
 
 from datetime import datetime, timezone
-from typing import Dict, List
 from uuid import uuid4
 
 from fastapi import APIRouter, Depends, HTTPException, Request
@@ -15,7 +14,6 @@ from app.repositories.alert_repository import alert_repository
 from app.schemas.sprint6_ai_alerts import (
     AlertRule,
     AlertRuleCreate,
-    NotificationItem,
 )
 
 router = APIRouter(
@@ -23,41 +21,6 @@ router = APIRouter(
     tags=["Sprint 6 - Alerts & Notifications"],
     dependencies=[Depends(get_current_principal)],
 )
-
-_rules_db: Dict[str, AlertRule] = {
-    "rule-001": AlertRule(
-        rule_id="rule-001",
-        rule_name="AAPL Price Above 200",
-        condition_type="PRICE_THRESHOLD",
-        target_symbol_or_goal="AAPL",
-        comparison_operator="GT",
-        threshold_value=200.0,
-        cooldown_minutes=60,
-        is_active=True,
-        created_at="2026-10-01T12:00:00Z",
-    )
-}
-
-_notifications_db: List[NotificationItem] = [
-    NotificationItem(
-        notification_id="notif-001",
-        rule_id="rule-001",
-        title="Simulated Price Alert",
-        body="AAPL crossed threshold of $195.00 (Current: $195.50).",
-        severity="INFO",
-        created_at=datetime.now(timezone.utc).isoformat(),
-        is_read=False,
-    ),
-    NotificationItem(
-        notification_id="notif-002",
-        rule_id=None,
-        title="Welcome to FinEx Simulation",
-        body="Your virtual paper portfolio has been initialized with $50,000.",
-        severity="INFO",
-        created_at=datetime.now(timezone.utc).isoformat(),
-        is_read=True,
-    ),
-]
 
 
 @router.get("/rules", summary="List configured smart alert rules")
@@ -95,7 +58,6 @@ def create_rule(
         created_at=datetime.now(timezone.utc).isoformat(),
     )
     alert_repository.create_rule(principal.user_id, rule)
-    _rules_db[rule_id] = rule
 
     return APIResponse.success(
         message="Alert rule created",
@@ -113,7 +75,6 @@ def delete_rule(
     correlation_id = getattr(request.state, "correlation_id", str(uuid4()))
     if not alert_repository.delete_rule(principal.user_id, rule_id):
         raise HTTPException(status_code=404, detail="Alert rule not found.")
-    _rules_db.pop(rule_id, None)
     return APIResponse.success(
         message="Alert rule deleted",
         data={"rule_id": rule_id, "deleted": True},

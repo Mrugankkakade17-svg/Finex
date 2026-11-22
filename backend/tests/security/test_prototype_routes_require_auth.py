@@ -144,24 +144,28 @@ def setup_probe_resources() -> Generator[None, None, None]:
         projections=[],
     )
 
-    # Seed an alert rule for DELETE /api/v1/alerts/rules/{rule_id}
-    alerts._rules_db[SEED_RULE_ID] = alerts.AlertRule(
-        rule_id=SEED_RULE_ID,
-        rule_name="Rule to delete",
-        condition_type="PRICE_THRESHOLD",
-        target_symbol_or_goal="AAPL",
-        comparison_operator="GT",
-        threshold_value=200.0,
-        cooldown_minutes=60,
-        is_active=True,
-        created_at="2026-10-01T12:00:00Z",
+    # Seed an alert rule in persistent storage for DELETE /api/v1/alerts/rules/{rule_id}.
+    alerts.alert_repository.delete_rule("auth-probe-user", SEED_RULE_ID)
+    alerts.alert_repository.create_rule(
+        "auth-probe-user",
+        alerts.AlertRule(
+            rule_id=SEED_RULE_ID,
+            rule_name="Rule to delete",
+            condition_type="PRICE_THRESHOLD",
+            target_symbol_or_goal="AAPL",
+            comparison_operator="GT",
+            threshold_value=200.0,
+            cooldown_minutes=60,
+            is_active=True,
+            created_at="2026-10-01T12:00:00Z",
+        ),
     )
 
     yield
 
     # Clean up seeded resources
     goals._goals_db.pop(SEED_GOAL_ID, None)
-    alerts._rules_db.pop(SEED_RULE_ID, None)
+    alerts.alert_repository.delete_rule("auth-probe-user", SEED_RULE_ID)
 
 
 # SPRINT 0 AUTH PROBE & SPRINT 1 TRANSITION:

@@ -16,7 +16,6 @@ from app.repositories.spending_repository import spending_repository
 from app.schemas.sprint5_privacy_spending import (
     CategoryCorrectionRequest,
     MonthlyCategoryTrend,
-    SpendingTransaction,
     SpendingTrendResponse,
 )
 
@@ -25,38 +24,6 @@ router = APIRouter(
     tags=["Sprint 5 - Spending & Trends"],
     dependencies=[Depends(get_current_principal)],
 )
-
-# Pre-populated transactions with masked descriptions
-_transactions_db: Dict[str, SpendingTransaction] = {
-    "tx-001": SpendingTransaction(
-        transaction_id="tx-001",
-        date="2026-10-05",
-        description_masked="GROCERY STORE #***12",
-        amount=Decimal("84.50"),
-        category="Groceries",
-    ),
-    "tx-002": SpendingTransaction(
-        transaction_id="tx-002",
-        date="2026-10-12",
-        description_masked="ELECTRIC UTILITY CO #***99",
-        amount=Decimal("115.00"),
-        category="Utilities",
-    ),
-    "tx-003": SpendingTransaction(
-        transaction_id="tx-003",
-        date="2026-10-18",
-        description_masked="STREAMING SUBSCRIPTION #***44",
-        amount=Decimal("14.99"),
-        category="Entertainment",
-    ),
-    "tx-004": SpendingTransaction(
-        transaction_id="tx-004",
-        date="2026-10-22",
-        description_masked="METRO TRANSIT PASS #***01",
-        amount=Decimal("45.00"),
-        category="Transportation",
-    ),
-}
 
 
 def _mask_raw_description(raw: str) -> str:
