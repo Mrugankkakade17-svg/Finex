@@ -146,6 +146,40 @@ class TestFailedLoginThrottling:
         login_b = auth_service.login(email=email_b, password="PasswordB@123")
         assert "access_token" in login_b
 
+    def test_concurrent_failed_logins_cannot_bypass_throttle(self):
+        """Simultaneous failed logins across multiple threads must be throttled atomically."""
+        import concurrent.futures
+
+        email = f"concurrent_throttle_{uuid.uuid4().hex[:8]}@finex.com"
+        password = "GoodPassword@123"
+        auth_service.register(name="Concurrent User", email=email, password=password)
+
+        results = []
+
+        def attempt_login():
+            try:
+                auth_service.login(email=email, password="BadPassword@123")
+                return 200
+            except UnauthorizedException:
+                return 401
+            except LoginRateLimitExceededException:
+                return 429
+            except Exception as e:
+                return str(e)
+
+        # Launch 20 concurrent failed login attempts
+        with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
+            futures = [executor.submit(attempt_login) for _ in range(20)]
+            for f in concurrent.futures.as_completed(futures):
+                results.append(f.result())
+
+        count_401 = results.count(401)
+        count_429 = results.count(429)
+
+        assert count_401 == 10, f"Expected exactly 10 401s, got {count_401}"
+        assert count_429 == 10, f"Expected exactly 10 429s, got {count_429}"
+        assert len(results) == 20
+
 
 class TestPasswordHashNotLogged:
     """Verifies that plaintext passwords, password hashes, and tokens are never logged."""
@@ -275,3 +309,165 @@ class TestPostgresUserRepositoryUnit:
         assert user.id == "mock-uuid-1"
         assert user.email == "async@finex.com"
         assert user.hashed_password == "$2b$12$mockhash"
+
+
+class TestDatabaseUrlConsistencyAndNoSilentFallback:
+    """Verifies that database URL adheres to Settings and no silent fallback in DB mode."""
+
+    def test_database_url_sourced_from_settings_or_env(self, monkeypatch):
+        from app.config.settings import get_settings
+
+        monkeypatch.delenv("DATABASE_URL", raising=False)
+        monkeypatch.delenv("APP_DATABASE_URL", raising=False)
+
+        repo = PostgresUserRepository()
+        assert repo._database_url == get_settings().app_database_url
+
+    def test_database_url_explicit_override(self):
+        custom_url = "postgresql://user:pass@dbhost:5432/custom_db"
+        repo = PostgresUserRepository(database_url=custom_url)
+        assert repo._database_url == custom_url
+
+    def test_no_silent_fallback_in_postgres_mode(self):
+        from app.core.exceptions import DatabaseUnavailableException
+
+        repo = PostgresUserRepository(
+            database_url="postgresql://invalid_host:5432/finex",
+            require_db=True,
+        )
+        repo._db_available = False
+
+        # create_user must raise DatabaseUnavailableException
+        with pytest.raises(DatabaseUnavailableException):
+            repo.create_user(
+                name="Fail User",
+                email="fail@finex.com",
+                hashed_password="hash",
+            )
+        # Ensure user was NOT silently saved into memory
+        assert "fail@finex.com" not in repo._memory_users
+
+        # get_user_by_email must raise DatabaseUnavailableException
+        with pytest.raises(DatabaseUnavailableException):
+            repo.get_user_by_email("fail@finex.com")
+
+        # get_user_by_id must raise DatabaseUnavailableException
+        with pytest.raises(DatabaseUnavailableException):
+            repo.get_user_by_id("some-uuid")
+
+
+class TestGoogleSignInCompatibility:
+    """Verifies that google_id and picture survive Google sign-in and retrieval."""
+
+    def setup_method(self):
+        login_tracker.clear()
+        auth_service.user_repository = PostgresUserRepository(require_db=False)
+        auth_service.user_repository._db_available = False
+
+    def test_google_sign_in_preserves_google_id_and_picture(self):
+        email = f"google_user_{uuid.uuid4().hex[:8]}@example.com"
+        google_id = f"g_{uuid.uuid4().hex[:12]}"
+        picture_url = "https://lh3.googleusercontent.com/a/test_avatar.jpg"
+        name = "Google Test User"
+
+        # 1. Login or create google user
+        res = auth_service.login_or_create_google_user(
+            google_id=google_id,
+            email=email,
+            name=name,
+            avatar_url=picture_url,
+        )
+        assert res["user"]["email"] == email
+        assert res["user"]["picture"] == picture_url
+
+        repo = auth_service.get_user_repository()
+        # 2. Subsequent retrieval by email preserves google_id and picture
+        user_by_email = repo.get_user_by_email(email)
+        assert user_by_email is not None
+        assert user_by_email.google_id == google_id
+        assert user_by_email.picture == picture_url
+
+        # 3. Subsequent retrieval by id preserves google_id and picture
+        user_by_id = repo.get_user_by_id(user_by_email.id)
+        assert user_by_id is not None
+        assert user_by_id.google_id == google_id
+        assert user_by_id.picture == picture_url
+
+        # 4. Calling get_or_create_google_user again returns same user
+        second_res = auth_service.login_or_create_google_user(
+            google_id=google_id,
+            email=email,
+            name=name,
+            avatar_url=picture_url,
+        )
+        assert second_res["user"]["id"] == res["user"]["id"]
+        assert second_res["user"]["picture"] == picture_url
+
+
+class TestUserRoutesUuidCompatibility:
+    """Verifies that user routes support both UUID string IDs and integer IDs."""
+
+    def setup_method(self):
+        login_tracker.clear()
+        auth_service.user_repository = PostgresUserRepository(require_db=False)
+        auth_service.user_repository._db_available = False
+
+    def test_users_me_and_get_user_with_uuid(self):
+        from app.auth.jwt_handler import create_access_token
+
+        repo = auth_service.get_user_repository()
+        user_uuid = str(uuid.uuid4())
+        email = f"uuid_user_{uuid.uuid4().hex[:8]}@example.com"
+        repo.create_user(
+            name="UUID User",
+            email=email,
+            hashed_password=hash_password("Pass@123"),
+            user_id=user_uuid,
+        )
+
+        token = create_access_token(data={"sub": email, "user_id": user_uuid})
+        headers = {"Authorization": f"Bearer {token}"}
+
+        # 1. GET /api/v1/users/me with UUID
+        res_me = client.get("/api/v1/users/me", headers=headers)
+        assert res_me.status_code == 200
+        data_me = res_me.json()["data"]
+        assert str(data_me["id"]) == user_uuid
+        assert data_me["email"] == email
+
+        # 2. GET /api/v1/users/{user_id} with UUID
+        res_uid = client.get(f"/api/v1/users/{user_uuid}", headers=headers)
+        assert res_uid.status_code == 200
+        data_uid = res_uid.json()["data"]
+        assert str(data_uid["id"]) == user_uuid
+        assert data_uid["email"] == email
+
+        # 3. GET /api/v1/users/{other_uuid} returns 404 (user isolation)
+        other_uuid = str(uuid.uuid4())
+        res_other = client.get(f"/api/v1/users/{other_uuid}", headers=headers)
+        assert res_other.status_code == 404
+
+    def test_users_me_and_get_user_with_int_id(self):
+        from app.auth.jwt_handler import create_access_token
+        from app.repositories.user_repository import user_repository as mem_repo
+
+        auth_service.user_repository = mem_repo
+        email = f"int_user_{uuid.uuid4().hex[:8]}@example.com"
+        user = mem_repo.create_user(
+            name="Int User",
+            email=email,
+            hashed_password=hash_password("Pass@123"),
+        )
+        int_id = user.id
+        token = create_access_token(data={"sub": email, "user_id": int_id})
+        headers = {"Authorization": f"Bearer {token}"}
+
+        # 1. GET /api/v1/users/me with int id
+        res_me = client.get("/api/v1/users/me", headers=headers)
+        assert res_me.status_code == 200
+        assert res_me.json()["data"]["id"] == int_id
+
+        # 2. GET /api/v1/users/{user_id} with int id
+        res_uid = client.get(f"/api/v1/users/{int_id}", headers=headers)
+        assert res_uid.status_code == 200
+        assert res_uid.json()["data"]["id"] == int_id

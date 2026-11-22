@@ -39,6 +39,21 @@ def _resolve_initial_user_repository() -> Any:
 user_repository: Any = _resolve_initial_user_repository()
 
 
+def get_user_repository() -> Any:
+    """Resolve the active user repository based on configuration and overrides."""
+    if user_repository is not default_user_repo:
+        return user_repository
+    persistence = os.getenv("APP_PERSISTENCE", "").strip().lower()
+    if persistence == "postgresql":
+        return postgres_user_repository
+    try:
+        if get_settings().app_persistence == "postgresql":
+            return postgres_user_repository
+    except Exception:
+        pass
+    return user_repository
+
+
 class LoginAttemptTracker:
     """Thread-safe in-memory tracker for consecutive failed login attempts."""
 
@@ -47,6 +62,14 @@ class LoginAttemptTracker:
         self.window_seconds = window_seconds
         self._attempts: dict[str, list[float]] = {}
         self._lock = threading.Lock()
+        self._key_locks: dict[str, threading.Lock] = {}
+
+    def get_lock(self, key: str) -> threading.Lock:
+        """Return a dedicated threading lock for a specific key."""
+        with self._lock:
+            if key not in self._key_locks:
+                self._key_locks[key] = threading.Lock()
+            return self._key_locks[key]
 
     def is_throttled(self, key: str) -> bool:
         """Check if the key has reached or exceeded max allowed failed attempts in the window."""
@@ -76,6 +99,7 @@ class LoginAttemptTracker:
         """Reset all tracked state (for test isolation)."""
         with self._lock:
             self._attempts.clear()
+            self._key_locks.clear()
 
 
 login_tracker = LoginAttemptTracker(max_attempts=10, window_seconds=900)
@@ -87,8 +111,9 @@ def register(name: str, email: str, password: str) -> dict:
     Never logs plaintext passwords or password hashes.
     """
     normalized_email = email.strip().lower()
+    repo = get_user_repository()
 
-    existing = user_repository.get_user_by_email(normalized_email)
+    existing = repo.get_user_by_email(normalized_email)
     if existing:
         logger.warning("Registration rejected: email already registered")
         raise BadRequestException(
@@ -98,9 +123,9 @@ def register(name: str, email: str, password: str) -> dict:
 
     hashed = hash_password(password)
 
-    user = user_repository.create_user(name=name, email=normalized_email, hashed_password=hashed)
+    user = repo.create_user(name=name, email=normalized_email, hashed_password=hashed)
 
-    if user_repository is not default_user_repo and hasattr(default_user_repo, "_users"):
+    if repo is not default_user_repo and hasattr(default_user_repo, "_users"):
         try:
             rec = {
                 "id": user.id,
@@ -150,72 +175,74 @@ def login(email: str, password: str) -> dict:
     """
     normalized_email = email.strip().lower()
 
-    if login_tracker.is_throttled(normalized_email):
-        logger.warning("Login throttled: rate limit exceeded")
-        raise LoginRateLimitExceededException(
-            message="Too many failed login attempts. Please try again later.",
-            retry_after_seconds=login_tracker.window_seconds,
-        )
+    with login_tracker.get_lock(normalized_email):
+        if login_tracker.is_throttled(normalized_email):
+            logger.warning("Login throttled: rate limit exceeded")
+            raise LoginRateLimitExceededException(
+                message="Too many failed login attempts. Please try again later.",
+                retry_after_seconds=login_tracker.window_seconds,
+            )
 
-    user = user_repository.get_user_by_email(normalized_email)
-    stored_hash = getattr(user, "hashed_password", None) or getattr(user, "password_hash", None)
+        repo = get_user_repository()
+        user = repo.get_user_by_email(normalized_email)
+        stored_hash = getattr(user, "hashed_password", None) or getattr(user, "password_hash", None)
 
-    if not user or not stored_hash or not verify_password(password, stored_hash):
-        count = login_tracker.record_failed_attempt(normalized_email)
-        logger.warning("Invalid credentials attempt=%d", count)
-        raise UnauthorizedException(
-            message="Invalid email or password",
-            error_code="INVALID_CREDENTIALS",
-        )
+        if not user or not stored_hash or not verify_password(password, stored_hash):
+            count = login_tracker.record_failed_attempt(normalized_email)
+            logger.warning("Invalid credentials attempt=%d", count)
+            raise UnauthorizedException(
+                message="Invalid email or password",
+                error_code="INVALID_CREDENTIALS",
+            )
 
-    # Successful login: reset failed attempt tracker
-    login_tracker.reset(normalized_email)
+        # Successful login: reset failed attempt tracker
+        login_tracker.reset(normalized_email)
 
-    if hasattr(user_repository, "update_user_login") and user.id is not None:
-        user_repository.update_user_login(user.id)
+        if hasattr(repo, "update_user_login") and user.id is not None:
+            repo.update_user_login(user.id)
 
-    uid: Any
-    if isinstance(user.id, int):
-        uid = user.id
-    elif user.id is not None and str(user.id).isdigit():
-        uid = int(str(user.id))
-    else:
-        uid = user.id or ""
+        uid: Any
+        if isinstance(user.id, int):
+            uid = user.id
+        elif user.id is not None and str(user.id).isdigit():
+            uid = int(str(user.id))
+        else:
+            uid = user.id or ""
 
-    # Ensure in-memory repo has the record if uid is int
-    if (
-        user_repository is not default_user_repo
-        and hasattr(default_user_repo, "_users")
-        and not default_user_repo.get_user_by_id(uid)
-    ):
-        try:
-            default_user_repo._users[uid] = {
-                "id": uid,
-                "name": user.name,
-                "email": user.email,
-                "hashed_password": stored_hash,
-                "google_id": user.google_id,
-                "picture": user.picture,
-                "created_at": user.created_at,
-                "updated_at": user.updated_at,
-                "is_active": user.is_active,
-                "role": user.role,
-                "risk_profile": user.risk_profile,
-            }
-        except Exception:
-            pass
+        # Ensure in-memory repo has the record if uid is int
+        if (
+            repo is not default_user_repo
+            and hasattr(default_user_repo, "_users")
+            and not default_user_repo.get_user_by_id(uid)
+        ):
+            try:
+                default_user_repo._users[uid] = {
+                    "id": uid,
+                    "name": user.name,
+                    "email": user.email,
+                    "hashed_password": stored_hash,
+                    "google_id": user.google_id,
+                    "picture": user.picture,
+                    "created_at": user.created_at,
+                    "updated_at": user.updated_at,
+                    "is_active": user.is_active,
+                    "role": user.role,
+                    "risk_profile": user.risk_profile,
+                }
+            except Exception:
+                pass
 
-    access_token = create_access_token(data={"sub": user.email, "user_id": uid})
-    refresh_token = create_refresh_token(data={"sub": user.email, "user_id": uid})
+        access_token = create_access_token(data={"sub": user.email, "user_id": uid})
+        refresh_token = create_refresh_token(data={"sub": user.email, "user_id": uid})
 
-    logger.info("User login successful user_id=%s", uid)
+        logger.info("User login successful user_id=%s", uid)
 
-    return {
-        "access_token": access_token,
-        "refresh_token": refresh_token,
-        "token_type": "bearer",
-        "user": {"id": uid, "email": user.email, "name": user.name},
-    }
+        return {
+            "access_token": access_token,
+            "refresh_token": refresh_token,
+            "token_type": "bearer",
+            "user": {"id": uid, "email": user.email, "name": user.name},
+        }
 
 
 def get_current_user(token: str) -> dict:
@@ -286,25 +313,43 @@ def login_or_create_google_user(
 ) -> dict:
     """Find existing user by email or create new OAuth user."""
     normalized_email = email.strip().lower()
-    user = user_repository.get_user_by_email(normalized_email)
+    repo = get_user_repository()
+    user = repo.get_user_by_email(normalized_email)
 
     if not user:
-        try:
-            user = user_repository.create_user(
-                name=name,
-                email=normalized_email,
-                hashed_password="",
+        if hasattr(repo, "get_or_create_google_user"):
+            user = repo.get_or_create_google_user(
                 google_id=google_id,
-                picture=avatar_url,
-            )
-        except TypeError:
-            user = user_repository.create_user(
-                name=name,
                 email=normalized_email,
-                hashed_password="",
+                name=name,
+                avatar_url=avatar_url,
             )
+        else:
+            try:
+                user = repo.create_user(
+                    name=name,
+                    email=normalized_email,
+                    hashed_password="",
+                    google_id=google_id,
+                    picture=avatar_url,
+                )
+            except TypeError:
+                user = repo.create_user(
+                    name=name,
+                    email=normalized_email,
+                    hashed_password="",
+                )
+    else:
+        if hasattr(repo, "_user_metadata") and user.id is not None:
+            uid = str(user.id)
+            meta = repo._user_metadata.setdefault(uid, {})
+            if google_id and not user.google_id:
+                meta["google_id"] = google_id
+            if avatar_url and not user.picture:
+                meta["picture"] = avatar_url
+            user = repo.get_user_by_id(user.id) or user
 
-    if user_repository is not default_user_repo and hasattr(default_user_repo, "_users") and user:
+    if repo is not default_user_repo and hasattr(default_user_repo, "_users") and user:
         try:
             default_user_repo._users[user.id] = {
                 "id": user.id,
@@ -333,6 +378,8 @@ def login_or_create_google_user(
     access_token = create_access_token(data={"sub": user.email, "user_id": uid})
     refresh_token = create_refresh_token(data={"sub": user.email, "user_id": uid})
 
+    picture = getattr(user, "picture", None) or avatar_url
+
     return {
         "access_token": access_token,
         "refresh_token": refresh_token,
@@ -341,7 +388,7 @@ def login_or_create_google_user(
             "id": uid,
             "email": user.email,
             "name": user.name,
-            "picture": avatar_url,
+            "picture": picture,
             "risk_profile": user.risk_profile,
         },
     }

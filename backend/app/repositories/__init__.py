@@ -13,4 +13,3 @@ __all__ = [
     "PostgresUserRepository",
     "postgres_user_repository",
 ]
-

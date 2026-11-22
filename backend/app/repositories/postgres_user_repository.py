@@ -13,7 +13,8 @@ from sqlalchemy import text
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.exceptions import BadRequestException
+from app.config.settings import get_settings
+from app.core.exceptions import BadRequestException, DatabaseUnavailableException
 from app.models.user import UserModel
 from app.ports.adapters.lakebase import AsyncSessionLocal
 from app.ports.adapters.postgres_local_store import postgres_dsn
@@ -32,17 +33,38 @@ class PostgresUserRepository:
         self,
         session: Optional[AsyncSession] = None,
         database_url: Optional[str] = None,
+        require_db: Optional[bool] = None,
     ) -> None:
         self.session = session
-        self._database_url = (
-            database_url
-            or os.getenv("DATABASE_URL")
-            or os.getenv("APP_DATABASE_URL")
-            or "postgresql://postgres:postgres@localhost:5432/finex_test"
-        )
+        if database_url is not None:
+            self._database_url = database_url
+        else:
+            try:
+                settings_url = get_settings().app_database_url
+            except Exception:
+                settings_url = ""
+            self._database_url = (
+                settings_url or os.getenv("DATABASE_URL") or os.getenv("APP_DATABASE_URL") or ""
+            )
+        self._require_db = require_db
         self._memory_users: dict[str, dict[str, Any]] = {}
+        self._user_metadata: dict[str, dict[str, Any]] = {}
         self._db_available: Optional[bool] = None
         self._next_id: int = 1
+
+    def is_postgres_mode(self) -> bool:
+        """Determine if the repository is configured to operate in PostgreSQL mode."""
+        if self._require_db is not None:
+            return self._require_db
+        persistence = os.getenv("APP_PERSISTENCE", "").strip().lower()
+        if persistence == "postgresql":
+            return True
+        try:
+            if get_settings().app_persistence == "postgresql":
+                return True
+        except Exception:
+            pass
+        return bool(self._database_url)
 
     def _get_sync_conn(self) -> PostgresConnection:
         dsn = postgres_dsn(self._database_url)
@@ -50,6 +72,9 @@ class PostgresUserRepository:
 
     def is_db_available(self) -> bool:
         """Check whether the configured PostgreSQL database is reachable."""
+        if not self._database_url:
+            self._db_available = False
+            return False
         if self._db_available is not None:
             return self._db_available
         try:
@@ -62,8 +87,7 @@ class PostgresUserRepository:
             self._db_available = False
             return False
 
-    @staticmethod
-    def _to_model(row: Union[DictRow, Mapping[str, Any], dict[str, Any]]) -> UserModel:
+    def _to_model(self, row: Union[DictRow, Mapping[str, Any], dict[str, Any]]) -> UserModel:
         raw_id = row["user_id"]
         parsed_id: Union[int, str]
         try:
@@ -71,13 +95,17 @@ class PostgresUserRepository:
         except (ValueError, TypeError):
             parsed_id = str(raw_id)
 
+        meta = self._user_metadata.get(str(parsed_id), {})
+        google_id = row.get("google_id") or meta.get("google_id")
+        picture = row.get("picture") or meta.get("picture")
+
         return UserModel(
             id=parsed_id,
             name=str(row["name"]),
             email=str(row["email"]),
             hashed_password=str(row["password_hash"]),
-            google_id=row.get("google_id"),
-            picture=row.get("picture"),
+            google_id=google_id,
+            picture=picture,
             created_at=row.get("created_at"),
             updated_at=row.get("updated_at"),
             is_active=bool(row.get("is_active", True)),
@@ -92,58 +120,70 @@ class PostgresUserRepository:
     def get_user_by_email(self, email: str) -> Optional[UserModel]:
         """Fetch a single user by normalized email."""
         norm_email = email.strip().lower()
-        if not self.is_db_available():
-            mem_row = self._memory_users.get(norm_email)
-            return self._to_model(mem_row) if mem_row else None
-
-        try:
-            with self._get_sync_conn() as conn:
-                with conn.cursor() as cur:
-                    cur.execute(
-                        """
-                        SELECT user_id, email, password_hash, name, role,
-                               risk_profile, is_active, created_at, updated_at
-                        FROM finex.users
-                        WHERE LOWER(email) = LOWER(%(email)s)
-                        """,
-                        {"email": norm_email},
-                    )
-                    row = cur.fetchone()
-                    if row:
-                        return self._to_model(row)
-                    return None
-        except (psycopg.OperationalError, psycopg.DatabaseError):
-            self._db_available = False
+        if self.is_postgres_mode():
+            if not self.is_db_available():
+                raise DatabaseUnavailableException(
+                    message="PostgreSQL database is unavailable",
+                    error_code="DATABASE_UNAVAILABLE",
+                )
+            try:
+                with self._get_sync_conn() as conn:
+                    with conn.cursor() as cur:
+                        cur.execute(
+                            """
+                            SELECT user_id, email, password_hash, name, role,
+                                   risk_profile, is_active, created_at, updated_at
+                            FROM finex.users
+                            WHERE LOWER(email) = LOWER(%(email)s)
+                            """,
+                            {"email": norm_email},
+                        )
+                        row = cur.fetchone()
+                        if row:
+                            return self._to_model(row)
+                        return None
+            except (psycopg.OperationalError, psycopg.DatabaseError) as exc:
+                self._db_available = False
+                raise DatabaseUnavailableException(
+                    message=f"PostgreSQL database error: {exc}",
+                    error_code="DATABASE_UNAVAILABLE",
+                ) from exc
+        else:
             mem_row = self._memory_users.get(norm_email)
             return self._to_model(mem_row) if mem_row else None
 
     def get_user_by_id(self, user_id: Union[str, int]) -> Optional[UserModel]:
         """Fetch a single user by their primary key user_id."""
         uid = str(user_id)
-        if not self.is_db_available():
-            for m_row in self._memory_users.values():
-                if str(m_row.get("user_id")) == uid:
-                    return self._to_model(m_row)
-            return None
-
-        try:
-            with self._get_sync_conn() as conn:
-                with conn.cursor() as cur:
-                    cur.execute(
-                        """
-                        SELECT user_id, email, password_hash, name, role,
-                               risk_profile, is_active, created_at, updated_at
-                        FROM finex.users
-                        WHERE user_id = %(uid)s
-                        """,
-                        {"uid": uid},
-                    )
-                    row = cur.fetchone()
-                    if row:
-                        return self._to_model(row)
-                    return None
-        except (psycopg.OperationalError, psycopg.DatabaseError):
-            self._db_available = False
+        if self.is_postgres_mode():
+            if not self.is_db_available():
+                raise DatabaseUnavailableException(
+                    message="PostgreSQL database is unavailable",
+                    error_code="DATABASE_UNAVAILABLE",
+                )
+            try:
+                with self._get_sync_conn() as conn:
+                    with conn.cursor() as cur:
+                        cur.execute(
+                            """
+                            SELECT user_id, email, password_hash, name, role,
+                                   risk_profile, is_active, created_at, updated_at
+                            FROM finex.users
+                            WHERE user_id = %(uid)s
+                            """,
+                            {"uid": uid},
+                        )
+                        row = cur.fetchone()
+                        if row:
+                            return self._to_model(row)
+                        return None
+            except (psycopg.OperationalError, psycopg.DatabaseError) as exc:
+                self._db_available = False
+                raise DatabaseUnavailableException(
+                    message=f"PostgreSQL database error: {exc}",
+                    error_code="DATABASE_UNAVAILABLE",
+                ) from exc
+        else:
             for m_row in self._memory_users.values():
                 if str(m_row.get("user_id")) == uid:
                     return self._to_model(m_row)
@@ -157,84 +197,83 @@ class PostgresUserRepository:
         role: str = "user",
         risk_profile: Optional[str] = None,
         user_id: Optional[str] = None,
+        google_id: Optional[str] = None,
+        picture: Optional[str] = None,
     ) -> UserModel:
         """Insert a new user record into finex.users. Raises BadRequestException if email exists."""
         norm_email = email.strip().lower()
         uid = str(user_id) if user_id is not None else str(uuid.uuid4())
         now = datetime.now(timezone.utc)
 
-        if not self.is_db_available():
-            if norm_email in self._memory_users:
-                raise BadRequestException(
-                    message="Email already registered",
-                    error_code="EMAIL_EXISTS",
-                )
-            mem_row = {
-                "user_id": uid,
-                "email": norm_email,
-                "password_hash": hashed_password,
-                "name": name,
-                "role": role,
-                "risk_profile": risk_profile,
-                "is_active": True,
-                "created_at": now,
-                "updated_at": now,
+        if google_id or picture:
+            self._user_metadata[uid] = {
+                "google_id": google_id,
+                "picture": picture,
             }
-            self._memory_users[norm_email] = mem_row
-            return self._to_model(mem_row)
 
-        try:
-            with self._get_sync_conn() as conn:
-                with conn.cursor() as cur:
-                    # Check existing user
-                    cur.execute(
-                        "SELECT user_id FROM finex.users WHERE LOWER(email) = LOWER(%(email)s)",
-                        {"email": norm_email},
-                    )
-                    if cur.fetchone():
+        if self.is_postgres_mode():
+            if not self.is_db_available():
+                raise DatabaseUnavailableException(
+                    message="PostgreSQL database is unavailable for user registration",
+                    error_code="DATABASE_UNAVAILABLE",
+                )
+            try:
+                with self._get_sync_conn() as conn:
+                    with conn.cursor() as cur:
+                        # Check existing user
+                        cur.execute(
+                            "SELECT user_id FROM finex.users WHERE LOWER(email) = LOWER(%(email)s)",
+                            {"email": norm_email},
+                        )
+                        if cur.fetchone():
+                            raise BadRequestException(
+                                message="Email already registered",
+                                error_code="EMAIL_EXISTS",
+                            )
+
+                        cur.execute(
+                            """
+                            INSERT INTO finex.users (
+                                user_id, email, password_hash, name, role,
+                                risk_profile, is_active, created_at, updated_at
+                            )
+                            VALUES (
+                                %(uid)s, %(email)s, %(pw)s, %(name)s, %(role)s,
+                                %(risk)s, TRUE, NOW(), NOW()
+                            )
+                            RETURNING user_id, email, password_hash, name, role,
+                                      risk_profile, is_active, created_at, updated_at
+                            """,
+                            {
+                                "uid": uid,
+                                "email": norm_email,
+                                "pw": hashed_password,
+                                "name": name,
+                                "role": role,
+                                "risk": risk_profile,
+                            },
+                        )
+                        row = cur.fetchone()
+                        conn.commit()
+                        if row:
+                            self._memory_users[norm_email] = dict(row)
+                            return self._to_model(row)
                         raise BadRequestException(
-                            message="Email already registered",
-                            error_code="EMAIL_EXISTS",
+                            message="Failed to insert user record",
+                            error_code="USER_CREATION_FAILED",
                         )
-
-                    cur.execute(
-                        """
-                        INSERT INTO finex.users (
-                            user_id, email, password_hash, name, role,
-                            risk_profile, is_active, created_at, updated_at
-                        )
-                        VALUES (
-                            %(uid)s, %(email)s, %(pw)s, %(name)s, %(role)s,
-                            %(risk)s, TRUE, NOW(), NOW()
-                        )
-                        RETURNING user_id, email, password_hash, name, role,
-                                  risk_profile, is_active, created_at, updated_at
-                        """,
-                        {
-                            "uid": uid,
-                            "email": norm_email,
-                            "pw": hashed_password,
-                            "name": name,
-                            "role": role,
-                            "risk": risk_profile,
-                        },
-                    )
-                    row = cur.fetchone()
-                    conn.commit()
-                    if row:
-                        self._memory_users[norm_email] = dict(row)
-                        return self._to_model(row)
-                    raise BadRequestException(
-                        message="Failed to insert user record",
-                        error_code="USER_CREATION_FAILED",
-                    )
-        except UniqueViolation:
-            raise BadRequestException(
-                message="Email already registered",
-                error_code="EMAIL_EXISTS",
-            )
-        except (psycopg.OperationalError, psycopg.DatabaseError):
-            self._db_available = False
+            except UniqueViolation:
+                raise BadRequestException(
+                    message="Email already registered",
+                    error_code="EMAIL_EXISTS",
+                )
+            except (psycopg.OperationalError, psycopg.DatabaseError) as exc:
+                self._db_available = False
+                raise DatabaseUnavailableException(
+                    message=f"PostgreSQL database error during user creation: {exc}",
+                    error_code="DATABASE_UNAVAILABLE",
+                ) from exc
+        else:
             if norm_email in self._memory_users:
                 raise BadRequestException(
                     message="Email already registered",
@@ -250,30 +289,58 @@ class PostgresUserRepository:
                 "is_active": True,
                 "created_at": now,
                 "updated_at": now,
+                "google_id": google_id,
+                "picture": picture,
             }
             self._memory_users[norm_email] = mem_row
             return self._to_model(mem_row)
+
+    def get_or_create_google_user(
+        self,
+        google_id: str,
+        email: str,
+        name: str,
+        picture: Optional[str] = None,
+        avatar_url: Optional[str] = None,
+    ) -> UserModel:
+        """Find existing user by email or create new OAuth user with google_id and picture."""
+        pic = picture or avatar_url
+        norm_email = email.strip().lower()
+        user = self.get_user_by_email(norm_email)
+        if user:
+            uid = str(user.id)
+            meta = self._user_metadata.setdefault(uid, {})
+            if google_id and not user.google_id:
+                meta["google_id"] = google_id
+            if pic and not user.picture:
+                meta["picture"] = pic
+            return self.get_user_by_id(user.id) or user
+
+        return self.create_user(
+            name=name,
+            email=norm_email,
+            hashed_password="",
+            google_id=google_id,
+            picture=pic,
+        )
 
     def update_user_login(self, user_id: Union[str, int]) -> None:
         """Update updated_at timestamp upon successful authentication."""
         uid = str(user_id)
-        if not self.is_db_available():
-            for row in self._memory_users.values():
-                if str(row.get("user_id")) == uid:
-                    row["updated_at"] = datetime.now(timezone.utc)
-                    break
-            return
-
-        try:
-            with self._get_sync_conn() as conn:
-                with conn.cursor() as cur:
-                    cur.execute(
-                        "UPDATE finex.users SET updated_at = NOW() WHERE user_id = %(uid)s",
-                        {"uid": uid},
-                    )
-                    conn.commit()
-        except (psycopg.OperationalError, psycopg.DatabaseError):
-            self._db_available = False
+        if self.is_postgres_mode():
+            if not self.is_db_available():
+                return
+            try:
+                with self._get_sync_conn() as conn:
+                    with conn.cursor() as cur:
+                        cur.execute(
+                            "UPDATE finex.users SET updated_at = NOW() WHERE user_id = %(uid)s",
+                            {"uid": uid},
+                        )
+                        conn.commit()
+            except (psycopg.OperationalError, psycopg.DatabaseError):
+                self._db_available = False
+        else:
             for row in self._memory_users.values():
                 if str(row.get("user_id")) == uid:
                     row["updated_at"] = datetime.now(timezone.utc)
@@ -333,10 +400,18 @@ class PostgresUserRepository:
         role: str = "user",
         risk_profile: Optional[str] = None,
         user_id: Optional[str] = None,
+        google_id: Optional[str] = None,
+        picture: Optional[str] = None,
     ) -> UserModel:
         """Async insert user record with duplicate check."""
         norm_email = email.strip().lower()
         uid = str(user_id) if user_id is not None else str(uuid.uuid4())
+
+        if google_id or picture:
+            self._user_metadata[uid] = {
+                "google_id": google_id,
+                "picture": picture,
+            }
 
         existing = await self.get_user_by_email_async(norm_email)
         if existing:

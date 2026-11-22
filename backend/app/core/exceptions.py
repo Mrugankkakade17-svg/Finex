@@ -184,6 +184,25 @@ class RateLimitExceededException(FinExException):
         )
 
 
+class DatabaseUnavailableException(FinExException):
+    """Raised when the database cannot be reached."""
+
+    def __init__(
+        self,
+        message: str = "Database is unavailable",
+        error_code: str = "DATABASE_UNAVAILABLE",
+        status_code: int = 503,
+    ):
+        super().__init__(
+            message=message,
+            error_code=error_code,
+            status_code=status_code,
+        )
+
+
+DatabaseError = DatabaseUnavailableException
+
+
 class LoginRateLimitExceededException(FinExException):
     """Raised when consecutive failed login attempts exceed the allowed threshold."""
 
