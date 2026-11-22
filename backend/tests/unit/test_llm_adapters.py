@@ -738,3 +738,96 @@ def test_get_llm_provider_factory():
     assert isinstance(provider, CompositeLLMProvider)
     assert isinstance(provider.primary_provider, OllamaLLMAdapter)
     assert provider.primary_provider.model_name == "llama3.2:3b"
+
+
+def test_hosted_adapter_unsupported_type_raises_value_error():
+    import pytest
+
+    with pytest.raises(ValueError, match="Unsupported hosted provider type"):
+        HostedLLMAdapter(provider_type="unsupported_provider")  # type: ignore[arg-type]
+
+
+@pytest.mark.asyncio
+async def test_hosted_adapter_quota_availability():
+    empty_adapter = HostedLLMAdapter(provider_type="gemini", api_key="")
+    assert await empty_adapter.is_quota_available() is False
+
+    short_adapter = HostedLLMAdapter(provider_type="gemini", api_key="short")
+    assert await short_adapter.is_quota_available() is False
+
+    valid_adapter = HostedLLMAdapter(
+        provider_type="gemini",
+        api_key="mock-gemini-valid-key",
+    )
+    assert await valid_adapter.is_quota_available() is True
+
+
+def test_adapters_package_clean_exports():
+    from app.adapters import (
+        CompositeLLMProvider as TopComposite,
+    )
+    from app.adapters import (
+        DeterministicFallbackAdapter as TopDeterministic,
+    )
+    from app.adapters import (
+        HostedLLMAdapter as TopHosted,
+    )
+    from app.adapters import (
+        OllamaLLMAdapter as TopOllama,
+    )
+    from app.adapters import (
+        get_llm_provider as top_get_provider,
+    )
+
+    assert TopComposite is CompositeLLMProvider
+    assert TopOllama is OllamaLLMAdapter
+    assert TopHosted is HostedLLMAdapter
+    assert TopDeterministic is DeterministicFallbackAdapter
+    assert top_get_provider is get_llm_provider
+
+
+@pytest.mark.asyncio
+async def test_deterministic_fallback_goal_and_generic_schemas():
+    adapter = DeterministicFallbackAdapter()
+
+    # Test goal explanation schema
+    goal_req = LLMRequest(
+        prompt_id="a3_goal_explanation",
+        prompt_version="v1",
+        context={"goal_name": "Emergency Fund Target"},
+        output_schema_ref="schemas/a3_goal_explanation.json",
+    )
+    goal_resp = await adapter.generate(goal_req)
+    assert goal_resp.fallback_used is True
+    assert "explanation" in goal_resp.output
+    assert "disclaimer" in goal_resp.output
+    assert "Emergency Fund Target" in goal_resp.output["explanation"]
+
+    # Test generic schema
+    gen_req = LLMRequest(
+        prompt_id="generic_query",
+        prompt_version="v1",
+        context={"query": "Explain compounding"},
+        output_schema_ref="schemas/generic.json",
+    )
+    gen_resp = await adapter.generate(gen_req)
+    assert gen_resp.fallback_used is True
+    assert "response" in gen_resp.output
+    assert "disclaimer" in gen_resp.output
+
+
+@pytest.mark.asyncio
+async def test_composite_disabled_stages_cascades_to_deterministic():
+    composite = CompositeLLMProvider(
+        enable_primary=False,
+        enable_hosted=False,
+    )
+    req = LLMRequest(
+        prompt_id="a3_goal_explanation",
+        prompt_version="v1",
+        context={"goal_name": "Retirement Corpus"},
+        output_schema_ref="schemas/a3_goal_explanation.json",
+    )
+    resp = await composite.generate(req)
+    assert resp.fallback_used is True
+    assert composite.last_provider_used == "deterministic_fallback"
