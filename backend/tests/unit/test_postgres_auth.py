@@ -233,7 +233,7 @@ class TestPostgresUserRepositoryUnit:
     """Unit tests for PostgresUserRepository operations."""
 
     def setup_method(self):
-        self.repo = PostgresUserRepository()
+        self.repo = PostgresUserRepository(require_db=False)
         self.repo._memory_users.clear()
         self.repo._db_available = False  # Test in-memory unit fallback
 

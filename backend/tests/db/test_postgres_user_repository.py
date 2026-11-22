@@ -1,5 +1,6 @@
 """PostgreSQL Integration tests for PostgresUserRepository against real finex.users table."""
 
+import os
 import uuid
 
 import pytest
@@ -80,7 +81,8 @@ async def test_postgres_user_repository_crud_against_real_db(postgres_db):
 @pytest.mark.asyncio
 async def test_auth_service_real_postgres_integration(postgres_db, monkeypatch):
     """Verify synchronous auth_service.register and auth_service.login against real PostgreSQL."""
-    url = str(postgres_db.url).replace("+asyncpg", "").replace("localhost", "127.0.0.1")
+    raw_url = os.getenv("DATABASE_URL") or postgres_db.url.render_as_string(hide_password=False)
+    url = raw_url.replace("+asyncpg", "").replace("localhost", "127.0.0.1")
     repo = PostgresUserRepository(database_url=url, require_db=True)
 
     from app.core.exceptions import UnauthorizedException
