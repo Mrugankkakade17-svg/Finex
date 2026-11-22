@@ -51,4 +51,3 @@ async def test_fx006_seed_is_idempotent_and_database_constraints_hold(postgres_d
                     )
         finally:
             await transaction.rollback()
-
