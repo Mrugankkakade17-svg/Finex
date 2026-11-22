@@ -64,9 +64,7 @@ class GoalRepository:
             )
             """
         )
-        connection.execute(
-            "CREATE INDEX IF NOT EXISTS ix_goals_user_id ON goals(user_id)"
-        )
+        connection.execute("CREATE INDEX IF NOT EXISTS ix_goals_user_id ON goals(user_id)")
         connection.commit()
 
     @staticmethod
@@ -214,27 +212,35 @@ class GoalRepository:
             engine = create_engine(sync_url)
             try:
                 with engine.connect() as connection:
-                    rows = connection.execute(
-                        text(
-                            """
+                    rows = (
+                        connection.execute(
+                            text(
+                                """
                             SELECT * FROM finex.goals
                             WHERE user_id = :user_id
                             """
-                        ),
-                        {"user_id": user_id},
-                    ).mappings().all()
+                            ),
+                            {"user_id": user_id},
+                        )
+                        .mappings()
+                        .all()
+                    )
                     goals: list[GoalResponse] = []
                     for row in rows:
-                        projection_rows = connection.execute(
-                            text(
-                                """
+                        projection_rows = (
+                            connection.execute(
+                                text(
+                                    """
                                 SELECT * FROM finex.goal_projections
                                 WHERE user_id = :user_id AND goal_id = :goal_id
                                 ORDER BY year
                                 """
-                            ),
-                            {"user_id": user_id, "goal_id": row["goal_id"]},
-                        ).mappings().all()
+                                ),
+                                {"user_id": user_id, "goal_id": row["goal_id"]},
+                            )
+                            .mappings()
+                            .all()
+                        )
                         goals.append(
                             GoalResponse(
                                 goal_id=row["goal_id"],
@@ -295,11 +301,7 @@ class GoalRepository:
 
         if self.settings.app_persistence == "postgresql" and self.settings.app_database_url:
             return next(
-                (
-                    goal
-                    for goal in self.list_goals(user_id)
-                    if goal.goal_id == goal_id
-                ),
+                (goal for goal in self.list_goals(user_id) if goal.goal_id == goal_id),
                 None,
             )
 

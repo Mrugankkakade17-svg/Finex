@@ -43,11 +43,7 @@ class GoalService:
                 )
             )
 
-        final_balance = (
-            projections[-1].projected_balance
-            if projections
-            else current_amount
-        )
+        final_balance = projections[-1].projected_balance if projections else current_amount
         return (
             final_balance,
             projections,
@@ -71,9 +67,7 @@ class GoalService:
             monthly_contribution=goal_in.monthly_contribution,
             expected_annual_return_pct=goal_in.expected_annual_return_pct,
             projected_final_amount=final_balance,
-            shortfall_or_surplus=(final_balance - goal_in.target_amount).quantize(
-                Decimal("0.01")
-            ),
+            shortfall_or_surplus=(final_balance - goal_in.target_amount).quantize(Decimal("0.01")),
             is_on_track=is_on_track,
             assumptions_statement=(
                 "Deterministic model based on constant monthly compounding. "
