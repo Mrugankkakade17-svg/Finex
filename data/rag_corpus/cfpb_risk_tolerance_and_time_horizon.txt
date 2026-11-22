@@ -1,0 +1,21 @@
+[Section: Metadata]
+Document Title: CFPB Consumer Guide: Understanding Investment Risk and Time Horizon
+Issuing Agency: Consumer Financial Protection Bureau (CFPB)
+Publication Date: 2022-11-20
+Document Version: 2022.11
+Licence: U.S. Government Work - Public Domain (17 U.S.C. § 105)
+License: U.S. Government Work - Public Domain (17 U.S.C. § 105)
+Authoritative Reference: https://www.consumerfinance.gov/about-us/blog/understanding-risk-and-return-in-investing/
+Audience: Personal finance learners, retail investors, educational platforms
+
+[Section: Fundamentals of Financial Risk]
+Risk in investing refers to the possibility that an investment's actual return will be different than expected, including the potential loss of some or all of the original principal invested. A fundamental principle of modern finance is the direct relationship between risk and expected return: higher potential returns generally require taking on greater investment risks. Low-risk investments, such as insured bank savings accounts or short-term treasury bills, offer safety of principal but yield modest returns that may not keep pace with inflation over multi-year horizons.
+
+[Section: Risk Willingness Versus Risk Capacity]
+A complete assessment of an investor's risk profile requires distinguishing between risk willingness and risk capacity. Risk willingness is an emotional and psychological characteristic reflecting an individual's personal comfort with market uncertainty and temporary paper portfolio drawdowns. In contrast, risk capacity is an objective financial measurement determined by tangible economic factors, including net income, household debt obligations, monthly expenditure commitments, and time horizon until funds are needed. Even if an investor has high emotional willingness to gamble, limited liquid reserves restrict their objective capacity to endure losses.
+
+[Section: Primary Types of Investment Risk]
+Investors face several distinct categories of risk. Market risk, or systematic risk, represents the vulnerability of entire asset classes to broad economic, political, or interest rate events. Inflation risk represents the erosion of future purchasing power caused by rising living costs. Liquidity risk occurs when an investor cannot quickly sell an asset at fair market value without incurring substantial price concessions. Credit risk, or default risk, applies to fixed income bonds when a borrower or corporate issuer fails to make timely scheduled interest or principal repayments.
+
+[Section: Importance of Emergency Reserves]
+Before committing capital to volatile securities markets or long-term illiquid assets, financial education standards recommend establishing a dedicated emergency fund. An adequate emergency fund consists of three to six months of essential living expenses held in highly liquid, principal-protected cash equivalents. Maintaining sufficient emergency reserves protects investors from being forced to prematurely liquidate equity or bond holdings at an unfavorable loss during unexpected life disruptions, such as unexpected medical expenses or temporary job loss.
