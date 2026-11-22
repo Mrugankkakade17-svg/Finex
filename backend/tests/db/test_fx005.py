@@ -94,4 +94,3 @@ async def test_fx005_ledger_is_append_only_and_blocks_negative_balance(postgres_
                         await connection.execute(text(statement), {"id": debit_id})
         finally:
             await transaction.rollback()
-
