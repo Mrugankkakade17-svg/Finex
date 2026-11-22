@@ -1,0 +1,12 @@
+S1-MR05 current full backend test output
+GitHub Actions: Backend Postgres Tests, run 37
+URL: https://github.com/Mrugankkakade17-svg/Finex/actions/runs/44932024340
+Commit: 1e9ee3836e9751f2d520dcca024dbc263f541c4e
+Command (working directory: backend/):
+  python -m pytest -q
+
+Final output:
+  Required test coverage of 70% reached. Total coverage: 86.06%
+  2758 passed, 15 xfailed, 2484 warnings in 161.41s (0:02:41)
+
+The full GitHub Actions log is available at the workflow run URL above.

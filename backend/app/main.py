@@ -30,6 +30,7 @@ from app.ports.local_risk_store import LocalRiskStore
 from app.routers.ai_assistant import router as ai_assistant_router
 from app.routers.alerts import router as alerts_router
 from app.routers.auth import router as auth_router
+from app.routers.capabilities import router as capabilities_router
 from app.routers.consent_profile import router as consent_profile_router
 from app.routers.demo import router as demo_router
 from app.routers.goals import router as goals_router
@@ -109,6 +110,7 @@ def create_app(
     application.add_middleware(CORSMiddleware, **get_cors_middleware_kwargs(active_settings))
 
     application.include_router(health_router)
+    application.include_router(capabilities_router)
     legacy_dependencies = [Depends(require_local_legacy_auth)]
     application.include_router(auth_router, dependencies=legacy_dependencies)
     application.include_router(users_router, dependencies=legacy_dependencies)

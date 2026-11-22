@@ -7,8 +7,9 @@ import time
 from typing import Dict
 from uuid import uuid4
 
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Request
 
+from app.auth.principal import Principal, get_current_principal, require_admin_role
 from app.core.responses import APIResponse
 from app.schemas.sprint7_ops_hardening import (
     DependencyHealth,
@@ -17,7 +18,11 @@ from app.schemas.sprint7_ops_hardening import (
     SystemObservabilityReport,
 )
 
-router = APIRouter(prefix="/api/v1/ops", tags=["Sprint 7 - Production Hardening & Ops"])
+router = APIRouter(
+    prefix="/api/v1/ops",
+    tags=["Sprint 7 - Production Hardening & Ops"],
+    dependencies=[Depends(get_current_principal)],
+)
 
 _START_TIME = time.time()
 
@@ -87,7 +92,12 @@ def list_feature_flags(request: Request):
 @router.post(
     "/flags/{flag_key}/toggle", summary="Toggle feature flag state for emergency circuit breaking"
 )
-def toggle_flag(flag_key: str, enabled: bool, request: Request):
+def toggle_flag(
+    flag_key: str,
+    enabled: bool,
+    request: Request,
+    admin: Principal = Depends(require_admin_role),
+):
     correlation_id = getattr(request.state, "correlation_id", str(uuid4()))
     if flag_key not in _flags_db:
         raise HTTPException(status_code=404, detail="Feature flag not found.")
