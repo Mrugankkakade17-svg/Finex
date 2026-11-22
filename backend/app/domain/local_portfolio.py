@@ -174,7 +174,7 @@ def _record_times(created_at: object, updated_at: object) -> None:
 
 
 def validate_portfolio_record(
-    record: LocalPortfolioRecord, *, user_id: str | None = None
+    record: LocalPortfolioRecord, *, user_id: str | None = None, allow_non_usd: bool = False
 ) -> LocalPortfolioRecord:
     if not isinstance(record, LocalPortfolioRecord):
         raise ValueError("Invalid portfolio record")
@@ -194,6 +194,8 @@ def validate_portfolio_record(
         raise ValueError("Invalid portfolio description")
     if not isinstance(record.currency, str) or re.fullmatch(r"[A-Z]{3}", record.currency) is None:
         raise ValueError("Invalid portfolio currency")
+    if not allow_non_usd and record.currency != "USD":
+        raise ValueError("Invalid portfolio currency")
     if (
         not isinstance(record.portfolio_type, str)
         or record.portfolio_type != record.portfolio_type.strip()
@@ -205,7 +207,11 @@ def validate_portfolio_record(
 
 
 def validate_holding_record(
-    record: LocalHoldingRecord, *, user_id: str | None = None, portfolio_id: str | None = None
+    record: LocalHoldingRecord,
+    *,
+    user_id: str | None = None,
+    portfolio_id: str | None = None,
+    allow_non_usd: bool = False,
 ) -> LocalHoldingRecord:
     if not isinstance(record, LocalHoldingRecord):
         raise ValueError("Invalid holding record")
@@ -218,6 +224,8 @@ def validate_holding_record(
     quantity_units(record.quantity)
     cost_units(record.average_cost)
     if not isinstance(record.currency, str) or re.fullmatch(r"[A-Z]{3}", record.currency) is None:
+        raise ValueError("Invalid holding currency")
+    if not allow_non_usd and record.currency != "USD":
         raise ValueError("Invalid holding currency")
     if record.asset_class is not None and (
         not isinstance(record.asset_class, str)

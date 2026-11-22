@@ -7,6 +7,7 @@
 - Wired `PortfolioRepository` Postgres mode to `PostgresLocalPortfolioStore` with owner and parent checks.
 - Persisted portfolio type, holding asset class, sector, notes, and parent-derived currency in Postgres, including idempotent upgrades for existing local portfolio tables.
 - Exposed holding notes in create, update, and list responses.
+- Kept the local educational portfolio path USD-only while allowing supported three-letter currencies in the PostgreSQL-backed portfolio API.
 - Replaced legacy float portfolio arithmetic with half-up Decimal rounding to match the S0 canonical fractional fixture.
 - Updated the C1 create path to use the authenticated principal instead of a caller-supplied `X-User-ID`.
 

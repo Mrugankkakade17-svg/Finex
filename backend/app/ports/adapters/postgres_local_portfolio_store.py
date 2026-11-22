@@ -37,6 +37,7 @@ def _portfolio(row: DictRow, user_id: str) -> LocalPortfolioRecord:
             portfolio_type=stored_text(row["portfolio_type"]),
         ),
         user_id=user_id,
+        allow_non_usd=True,
     )
 
 
@@ -58,6 +59,7 @@ def _holding(row: DictRow, user_id: str, portfolio_id: str) -> LocalHoldingRecor
         ),
         user_id=user_id,
         portfolio_id=portfolio_id,
+        allow_non_usd=True,
     )
 
 
@@ -89,7 +91,7 @@ class PostgresLocalPortfolioTransaction(PostgresAuthorizationTransaction):
         return stored_integer(row["count"])
 
     def insert_portfolio(self, record: LocalPortfolioRecord) -> LocalPortfolioRecord:
-        validate_portfolio_record(record)
+        validate_portfolio_record(record, allow_non_usd=True)
         self._connection.execute(
             "INSERT INTO finex.local_manual_portfolios"
             "(portfolio_id,user_id,name,description,portfolio_type,currency,created_at,updated_at)"
@@ -108,7 +110,7 @@ class PostgresLocalPortfolioTransaction(PostgresAuthorizationTransaction):
         return record
 
     def update_portfolio(self, record: LocalPortfolioRecord) -> LocalPortfolioRecord:
-        validate_portfolio_record(record)
+        validate_portfolio_record(record, allow_non_usd=True)
         previous = self.get_portfolio(record.user_id, record.portfolio_id)
         if previous is None or record.created_at != previous.created_at:
             raise ValueError("The manual update is not an existing immutable resource.")
@@ -187,7 +189,7 @@ class PostgresLocalPortfolioTransaction(PostgresAuthorizationTransaction):
         return _holding(row, user_id, portfolio_id) if row else None
 
     def insert_holding(self, record: LocalHoldingRecord) -> LocalHoldingRecord:
-        validate_holding_record(record)
+        validate_holding_record(record, allow_non_usd=True)
         parent = self.get_portfolio(record.user_id, record.portfolio_id)
         if parent is None or record.currency != parent.currency:
             raise ValueError("The holding currency must match its portfolio.")
@@ -214,7 +216,7 @@ class PostgresLocalPortfolioTransaction(PostgresAuthorizationTransaction):
         return record
 
     def update_holding(self, record: LocalHoldingRecord) -> LocalHoldingRecord:
-        validate_holding_record(record)
+        validate_holding_record(record, allow_non_usd=True)
         previous = self.get_holding(record.user_id, record.portfolio_id, record.holding_id)
         parent = self.get_portfolio(record.user_id, record.portfolio_id)
         if (

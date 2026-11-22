@@ -185,7 +185,8 @@ def test_valid_records_preserve_identity_and_support_nonuuid_internal_owner() ->
     assert validate_portfolio_record(replace(PORTFOLIO, description="")) is not None
     assert (
         validate_portfolio_record(
-            replace(PORTFOLIO, currency="EUR", portfolio_type="RETIREMENT")
+            replace(PORTFOLIO, currency="EUR", portfolio_type="RETIREMENT"),
+            allow_non_usd=True,
         ).currency
         == "EUR"
     )
@@ -197,7 +198,8 @@ def test_valid_records_preserve_identity_and_support_nonuuid_internal_owner() ->
                 asset_class="FIXED_INCOME",
                 sector="Government",
                 notes="Long-term allocation",
-            )
+            ),
+            allow_non_usd=True,
         ).notes
         == "Long-term allocation"
     )
