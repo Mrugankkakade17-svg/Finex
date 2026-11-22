@@ -76,4 +76,3 @@ def downgrade() -> None:
     op.drop_index("ix_paper_ledger_account_created", table_name="paper_ledger", schema="finex")
     op.drop_table("paper_ledger", schema="finex")
     op.drop_table("paper_accounts", schema="finex")
-
