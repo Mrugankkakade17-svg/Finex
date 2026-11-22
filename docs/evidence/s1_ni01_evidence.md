@@ -46,5 +46,5 @@ The first full backend run hit Windows execution policy in 10 launcher tests. I 
 - Backend pytest: all 2,628 tests passed. The final rerun used a process-only policy setting; the machine-wide policy was not changed.
 - Authentication: the shared client sends Bearer tokens when supplied, and existing session-bound local clients use it. The current Chat and Release backend routes have no documented auth contract or token source in those pages, so their existing tokenless behavior is preserved. If S1-NI01 requires those routes to become authenticated, that needs an explicit backend/session contract.
 - No database migration was applicable.
-- The provided handbook PDF remains unread. No PDF text extractor was available, and desktop viewing could not be safely controlled, so repository contracts and the issue/screenshot were used for implementation.
-- The provided source folder contains no `.git` directory, and the GitHub connector returned 404 for the repository named in the project docs. A feature branch and commit could not be created from this ZIP checkout.
+- The assignment PDF was reviewed. Its S1-NI01 row confirms the shared API client, the Chat and Release pages, onboarding and risk contracts, and the no-literal-origin acceptance criterion.
+- Changes are committed on `feature/s1-ni01`, based on `dev`. No PR was opened and no reviewer was assigned, per the user's instruction.
