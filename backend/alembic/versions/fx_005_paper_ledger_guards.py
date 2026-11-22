@@ -83,4 +83,3 @@ def downgrade() -> None:
     op.execute("DROP FUNCTION finex.reject_paper_ledger_mutation()")
     op.execute("DROP TRIGGER trg_paper_ledger_nonnegative_balance ON finex.paper_ledger")
     op.execute("DROP FUNCTION finex.enforce_paper_ledger_balance()")
-
