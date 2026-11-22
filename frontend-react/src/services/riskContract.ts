@@ -1,5 +1,6 @@
 /** Versioned S2 boundary. Fixtures replay domain outputs; clients never score. */
 import fixtures from '../data/s2RiskFixtures.v1.json';
+import { createApiClient, getApiBaseUrl } from './apiClient';
 
 export interface RiskRequest {
   questionnaire_id: string;
@@ -86,7 +87,7 @@ export const approvedRiskProfiles = fixtures.cases
 export function getRiskConfig(): RiskConfig {
   return {
     mode: process.env.REACT_APP_RISK_MODE === 'api' ? 'api' : 'fixture',
-    apiBaseUrl: process.env.REACT_APP_FINEX_API_BASE_URL || 'http://127.0.0.1:8000',
+    apiBaseUrl: getApiBaseUrl(),
   };
 }
 function copy<T>(value: T): T {
@@ -212,11 +213,12 @@ export function createRiskClient(
     url.pathname !== '/'
   )
     throw new Error('Risk pilot API URL must be a local origin.');
+  const client = createApiClient({ baseUrl: url.origin, fetchImpl: fetcher });
   async function call(path: string, request?: RiskRequest, correlationId?: string): Promise<any> {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 8000);
     try {
-      const response = await (fetcher || fetch)(`${url.origin}/api/v1/risk-contract/${path}`, {
+      const response = await client.request(`/api/v1/risk-contract/${path}`, {
         method: request ? 'POST' : 'GET',
         credentials: 'omit',
         signal: controller.signal,

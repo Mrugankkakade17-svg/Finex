@@ -43,6 +43,8 @@ On an 8 GB machine, run the API and only the client you are developing; run test
 
 `REACT_APP_FINEX_API_BASE_URL` is public build-time configuration, never a place for secrets. The persistent client accepts only an HTTP(S) loopback origin (`localhost`, `127.0.0.1`, `[::1]`) without credentials, query, fragment or a path. It rejects unsafe origins before login, omits cookies, forbids redirects and bounds both request and body-decoding time.
 
+All React HTTP calls use the shared `src/services/apiClient.ts` transport for the configured origin. Calls that have a session credential pass it to the transport for a Bearer header; cookies are omitted, redirects are rejected, and responses are not cached. Route-specific services continue to validate their own response contracts. Chat and release remain tokenless because their current backend routes have no documented authentication contract.
+
 ## Use the S1 journey
 
 1. Select an approved synthetic persona. The server, not a supplied owner ID or browser flag, chooses its identity.
