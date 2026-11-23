@@ -2,15 +2,15 @@
 
 from __future__ import annotations
 
-from datetime import date, datetime
+from datetime import date
 from decimal import Decimal
-from typing import Literal
 
 from fastapi import APIRouter, HTTPException, Query, Request
 from pydantic import BaseModel, ConfigDict, Field
 
 from app.config.database import execute_query
 from app.core.responses import APIResponse
+from app.schemas.envelope import DataStatus
 from app.services.market_calendar import market_session
 
 router = APIRouter(prefix="/api/v1/market", tags=["market"])
@@ -100,7 +100,12 @@ INSTRUMENTS = (
 _CURRENCY_BY_EXCHANGE = {"NSE": "INR", "BSE": "INR", "NYSE": "USD", "NASDAQ": "USD"}
 
 
-def _respond(request: Request, data: object, message: str, status: str = "CACHED"):
+def _respond(
+    request: Request,
+    data: object,
+    message: str,
+    status: DataStatus = "CACHED",
+):
     correlation = getattr(request.state, "correlation_id", "unknown")
     return APIResponse.success(
         message=message,
