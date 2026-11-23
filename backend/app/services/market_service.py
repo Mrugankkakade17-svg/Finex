@@ -2,6 +2,7 @@
 
 import asyncio
 import logging
+import math
 from datetime import datetime, timezone
 from typing import Dict, Optional
 
@@ -102,6 +103,8 @@ class MarketService(MarketDataProvider):
         return self._chain
 
     async def _record_last_good(self, symbol: str, quote: MarketQuote) -> None:
+        if not math.isfinite(quote.price) or quote.price <= 0 or quote.is_stale:
+            return
         async with self._cache_lock:
             self._last_good[symbol] = (quote, datetime.now(timezone.utc))
 
@@ -183,6 +186,11 @@ class MarketService(MarketDataProvider):
             # 3. Attempt quote retrieval
             try:
                 quote = await entry.provider.get_quote(normalized, fallback_price=fallback_price)
+                if not math.isfinite(quote.price) or quote.price <= 0:
+                    raise ProviderUnavailableException(
+                        entry.name,
+                        "Provider returned an invalid market price",
+                    )
                 await self._record_last_good(normalized, quote)
 
                 # Determine and enforce truthful freshness
@@ -281,7 +289,11 @@ class MarketService(MarketDataProvider):
         response = await self.get_quote_with_freshness(symbol, fallback_price=fallback_price)
 
         if response.freshness == DataFreshness.UNAVAILABLE:
-            if response.price is not None and response.price > 0:
+            if (
+                response.price is not None
+                and math.isfinite(response.price)
+                and response.price > 0
+            ):
                 return MarketQuote(
                     symbol=response.symbol,
                     price=response.price,
@@ -295,12 +307,27 @@ class MarketService(MarketDataProvider):
                 response.error or "All market providers in chain failed or unavailable",
             )
 
+        if (
+            response.price is None
+            or not math.isfinite(response.price)
+            or response.price <= 0
+        ):
+            raise ProviderUnavailableException(
+                "market_chain",
+                response.error or "Price unavailable",
+            )
+
+        as_of = (
+            datetime.fromisoformat(response.as_of)
+            if response.as_of is not None
+            else datetime.now(timezone.utc)
+        )
         return MarketQuote(
             symbol=response.symbol,
-            price=response.price if response.price is not None else 0.0,
+            price=response.price,
             change=response.change,
             change_pct=response.change_pct,
-            timestamp=datetime.now(timezone.utc),
+            timestamp=as_of,
             is_stale=response.is_stale,
         )
 

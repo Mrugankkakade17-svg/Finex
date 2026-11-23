@@ -170,7 +170,7 @@ async def test_secondary_provider_adapter_returns_cached_fixture_quote() -> None
 @pytest.mark.asyncio
 async def test_last_good_value_is_returned_cached_when_all_providers_fail() -> None:
     chain = [
-        ProviderChainEntry("yfinance", YFinanceMarketDataProvider()),
+        ProviderChainEntry("fixture", FixtureMarketDataProvider()),
     ]
     service = MarketService(
         chain=chain,
@@ -179,7 +179,7 @@ async def test_last_good_value_is_returned_cached_when_all_providers_fail() -> N
     )
 
     live = await service.get_quote_with_freshness("AAPL")
-    assert live.freshness == DataFreshness.DELAYED
+    assert live.freshness == DataFreshness.CACHED
 
     chain[0].provider.fail_mode = "timeout"
     cached = await service.get_quote_with_freshness("AAPL")
@@ -192,22 +192,22 @@ async def test_last_good_value_is_returned_cached_when_all_providers_fail() -> N
 
 @pytest.mark.asyncio
 async def test_last_good_value_becomes_stale_after_cache_ttl() -> None:
-    chain = [ProviderChainEntry("yfinance", YFinanceMarketDataProvider())]
+    chain = [ProviderChainEntry("fixture", FixtureMarketDataProvider())]
     service = MarketService(
         chain=chain,
         cache_ttl_seconds=60,
         stale_ttl_seconds=300,
     )
     quote = await service.get_quote_with_freshness("AAPL")
-    assert quote.freshness == DataFreshness.DELAYED
+    assert quote.freshness == DataFreshness.CACHED
     cached_quote, _ = service._last_good["AAPL"]
     service._last_good["AAPL"] = (
         cached_quote,
         datetime.now(timezone.utc) - timedelta(seconds=61),
     )
 
-    yfinance = service.chain[0]
-    yfinance.provider.fail_mode = "unavailable"
+    fixture = service.chain[0]
+    fixture.provider.fail_mode = "unavailable"
     stale = await service.get_quote_with_freshness("AAPL")
 
     assert stale.freshness == DataFreshness.STALE
