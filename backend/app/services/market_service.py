@@ -214,7 +214,7 @@ class MarketService(MarketDataProvider):
                     change=quote.change,
                     change_pct=quote.change_pct,
                     source=entry.name,
-                    as_of=now_iso,
+                    as_of=quote.timestamp.isoformat(),
                     fetched_at=now_iso,
                     freshness=freshness,
                     is_stale=quote.is_stale,
