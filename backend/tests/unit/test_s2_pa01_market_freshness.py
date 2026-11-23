@@ -4,7 +4,7 @@ circuit breaker, rate limiter, and yfinance strict non-LIVE invariant.
 """
 
 import asyncio
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 import pytest
 from pydantic import ValidationError
@@ -13,6 +13,7 @@ from app.adapters.yfinance_adapter import (
     CircuitBreaker,
     FixtureMarketDataProvider,
     RateLimiter,
+    SecondaryMarketDataProvider,
     YFinanceMarketDataProvider,
 )
 from app.core.exceptions import (
@@ -154,6 +155,65 @@ async def test_unknown_symbols_do_not_trip_provider_circuit_breakers() -> None:
 
     assert all(entry.circuit_breaker.failure_count == 0 for entry in chain)
     assert all(entry.circuit_breaker.state == CircuitState.CLOSED for entry in chain)
+
+
+@pytest.mark.asyncio
+async def test_secondary_provider_adapter_returns_cached_fixture_quote() -> None:
+    secondary = SecondaryMarketDataProvider()
+    quote = await secondary.get_quote("AAPL")
+
+    assert quote.symbol == "AAPL"
+    assert quote.price == 227.16
+    assert quote.is_stale is False
+
+
+@pytest.mark.asyncio
+async def test_last_good_value_is_returned_cached_when_all_providers_fail() -> None:
+    chain = [
+        ProviderChainEntry("yfinance", YFinanceMarketDataProvider()),
+    ]
+    service = MarketService(
+        chain=chain,
+        cache_ttl_seconds=60,
+        stale_ttl_seconds=300,
+    )
+
+    live = await service.get_quote_with_freshness("AAPL")
+    assert live.freshness == DataFreshness.DELAYED
+
+    chain[0].provider.fail_mode = "timeout"
+    cached = await service.get_quote_with_freshness("AAPL")
+
+    assert cached.freshness == DataFreshness.CACHED
+    assert cached.source == "cache"
+    assert cached.price == 227.16
+    assert cached.is_stale is False
+
+
+@pytest.mark.asyncio
+async def test_last_good_value_becomes_stale_after_cache_ttl() -> None:
+    chain = [ProviderChainEntry("yfinance", YFinanceMarketDataProvider())]
+    service = MarketService(
+        chain=chain,
+        cache_ttl_seconds=60,
+        stale_ttl_seconds=300,
+    )
+    quote = await service.get_quote_with_freshness("AAPL")
+    assert quote.freshness == DataFreshness.DELAYED
+    cached_quote, _ = service._last_good["AAPL"]
+    service._last_good["AAPL"] = (
+        cached_quote,
+        datetime.now(timezone.utc) - timedelta(seconds=61),
+    )
+
+    yfinance = service.chain[0]
+    yfinance.provider.fail_mode = "unavailable"
+    stale = await service.get_quote_with_freshness("AAPL")
+
+    assert stale.freshness == DataFreshness.STALE
+    assert stale.source == "cache"
+    assert stale.is_stale is True
+    assert stale.price == 227.16
 
 
 # ===========================================================================

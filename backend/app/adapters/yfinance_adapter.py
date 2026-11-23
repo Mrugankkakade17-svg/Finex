@@ -399,3 +399,9 @@ class FixtureMarketDataProvider(MarketDataProvider):
             for sec in catalog
             if query_upper in sec["symbol"] or query_upper in sec["name"].upper()
         ][:limit]
+
+
+class SecondaryMarketDataProvider(FixtureMarketDataProvider):
+    """Named second-provider adapter for the resilient market-data chain."""
+
+    provider_name = "secondary"

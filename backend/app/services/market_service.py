@@ -1,14 +1,15 @@
 """Market service implementing provider chain, circuit breaker, rate limiting, and DataFreshness."""
 
+import asyncio
 import logging
 from datetime import datetime, timezone
-from typing import Optional
+from typing import Dict, Optional
 
 from app.adapters.yfinance_adapter import (
     CircuitBreaker,
     CircuitBreakerOpenException,
-    FixtureMarketDataProvider,
     RateLimiter,
+    SecondaryMarketDataProvider,
     YFinanceMarketDataProvider,
 )
 from app.core.exceptions import (
@@ -65,8 +66,14 @@ class MarketService(MarketDataProvider):
         self,
         chain: Optional[list[ProviderChainEntry]] = None,
         default_currency: str = "USD",
+        cache_ttl_seconds: float = 60.0,
+        stale_ttl_seconds: float = 300.0,
     ):
         self.default_currency = default_currency
+        self.cache_ttl_seconds = cache_ttl_seconds
+        self.stale_ttl_seconds = stale_ttl_seconds
+        self._last_good: Dict[str, tuple[MarketQuote, datetime]] = {}
+        self._cache_lock = asyncio.Lock()
 
         if chain is not None:
             self._chain = chain
@@ -79,20 +86,66 @@ class MarketService(MarketDataProvider):
                 circuit_breaker=yf_cb,
             )
 
-            fix_cb = CircuitBreaker(name="fixture", failure_threshold=5, recovery_timeout=15.0)
-            fix_provider = FixtureMarketDataProvider(
+            fix_cb = CircuitBreaker(name="secondary", failure_threshold=5, recovery_timeout=15.0)
+            fix_provider = SecondaryMarketDataProvider(
                 timeout_seconds=2.0,
                 circuit_breaker=fix_cb,
             )
 
             self._chain = [
                 ProviderChainEntry("yfinance", yf_provider, yf_cb, yf_rl),
-                ProviderChainEntry("fixture", fix_provider, fix_cb),
+                ProviderChainEntry("secondary", fix_provider, fix_cb),
             ]
 
     @property
     def chain(self) -> list[ProviderChainEntry]:
         return self._chain
+
+    async def _record_last_good(self, symbol: str, quote: MarketQuote) -> None:
+        async with self._cache_lock:
+            self._last_good[symbol] = (quote, datetime.now(timezone.utc))
+
+    async def _get_last_good_response(
+        self,
+        symbol: str,
+        now: datetime,
+    ) -> MarketQuoteResponse | None:
+        async with self._cache_lock:
+            cached = self._last_good.get(symbol)
+
+        if cached is None:
+            return None
+
+        quote, fetched_at = cached
+        age = (now - fetched_at).total_seconds()
+        if age < 0:
+            return None
+        if age <= self.cache_ttl_seconds:
+            freshness = DataFreshness.CACHED
+            is_stale = False
+            error = None
+        elif age <= self.stale_ttl_seconds:
+            freshness = DataFreshness.STALE
+            is_stale = True
+            error = "Last-good market quote is stale."
+        else:
+            async with self._cache_lock:
+                self._last_good.pop(symbol, None)
+            return None
+
+        return MarketQuoteResponse(
+            symbol=symbol,
+            price=quote.price,
+            currency=self.default_currency,
+            change=quote.change,
+            change_pct=quote.change_pct,
+            source="cache",
+            as_of=quote.timestamp.isoformat(),
+            fetched_at=fetched_at.isoformat(),
+            freshness=freshness,
+            is_stale=is_stale,
+            error=error,
+        )
 
     async def get_quote_with_freshness(
         self,
@@ -130,12 +183,13 @@ class MarketService(MarketDataProvider):
             # 3. Attempt quote retrieval
             try:
                 quote = await entry.provider.get_quote(normalized, fallback_price=fallback_price)
+                await self._record_last_good(normalized, quote)
 
                 # Determine and enforce truthful freshness
                 if entry.name == "yfinance":
                     # LOCKED INVARIANT: No path can emit LIVE for yfinance
                     freshness = DataFreshness.DELAYED
-                elif entry.name == "fixture":
+                elif entry.name in {"fixture", "secondary"}:
                     freshness = DataFreshness.CACHED
                 elif quote.is_stale:
                     freshness = DataFreshness.DELAYED
@@ -193,7 +247,12 @@ class MarketService(MarketDataProvider):
                 errors.append(f"{entry.name}: {unhandled}")
                 continue
 
-        # 4. Entire chain exhausted -> return truthful UNAVAILABLE response
+        # 4. Return last-good data before declaring the provider chain unavailable.
+        cached_response = await self._get_last_good_response(normalized, datetime.now(timezone.utc))
+        if cached_response is not None:
+            return cached_response
+
+        # 5. Entire chain and cache are exhausted -> return truthful UNAVAILABLE response
         logger.error(
             "All providers in chain failed for symbol '%s'. Errors: %s",
             normalized,
