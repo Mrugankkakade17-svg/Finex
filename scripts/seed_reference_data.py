@@ -131,12 +131,11 @@ async def seed_reference_data(connection: AsyncConnection) -> None:
                 (asset_class, benchmark_symbol, benchmark_name, currency, source_type, version)
             VALUES
                 (:asset_class, :benchmark_symbol, :benchmark_name, 'USD', 'SYNTHETIC', :version)
-            ON CONFLICT (asset_class) DO UPDATE SET
+            ON CONFLICT (asset_class, version) DO UPDATE SET
                 benchmark_symbol = EXCLUDED.benchmark_symbol,
                 benchmark_name = EXCLUDED.benchmark_name,
                 currency = EXCLUDED.currency,
-                source_type = EXCLUDED.source_type,
-                version = EXCLUDED.version
+                source_type = EXCLUDED.source_type
             """
         ),
         BENCHMARKS,
@@ -162,4 +161,3 @@ async def main() -> None:
 
 if __name__ == "__main__":
     asyncio.run(main())
-
