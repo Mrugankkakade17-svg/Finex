@@ -50,9 +50,11 @@ THRESHOLDS = run_eval_mod.THRESHOLDS
 DEFAULT_REFUSAL_CASES = run_eval_mod.DEFAULT_REFUSAL_CASES
 DEFAULT_GROUNDING_CASES = run_eval_mod.DEFAULT_GROUNDING_CASES
 ADVERSARIAL_GROUNDING_CASES = run_eval_mod.ADVERSARIAL_GROUNDING_CASES
+ALL_GROUNDING_CASES = run_eval_mod.ALL_GROUNDING_CASES
 DEFAULT_INJECTION_CASES = run_eval_mod.DEFAULT_INJECTION_CASES
 DEFAULT_STALE_DATA_CASES = run_eval_mod.DEFAULT_STALE_DATA_CASES
 ADVERSARIAL_STALE_DATA_CASES = run_eval_mod.ADVERSARIAL_STALE_DATA_CASES
+ALL_STALE_DATA_CASES = run_eval_mod.ALL_STALE_DATA_CASES
 
 
 class TestAIEvalHarness:
@@ -112,6 +114,14 @@ class TestAIEvalHarness:
             s = socket.socket()
             with pytest.raises(NetworkBlockedError):
                 s.connect(("127.0.0.1", 80))
+            s.close()
+
+    def test_network_blocker_raises_on_socket_connect_ex_attempt(self):
+        """Verify that socket connect_ex attempts raise NetworkBlockedError in guard."""
+        with offline_network_guard():
+            s = socket.socket()
+            with pytest.raises(NetworkBlockedError):
+                s.connect_ex(("127.0.0.1", 80))
             s.close()
 
 
@@ -174,6 +184,14 @@ class TestGroundingEvaluationCategory:
     def test_grounding_golden_dataset_passes_thresholds(self, evaluator: FakeLLMEvaluator):
         metrics = run_grounding_evaluation(DEFAULT_GROUNDING_CASES, evaluator)
         assert metrics["total_cases"] == 10
+        assert metrics["failed"] == 0
+        assert metrics["grounding_faithfulness"] >= THRESHOLDS["grounding_faithfulness"]["target"]
+        assert metrics["citation_precision"] >= THRESHOLDS["citation_precision"]["target"]
+        assert metrics["hallucination_rate"] <= THRESHOLDS["hallucination_rate"]["target"]
+
+    def test_grounding_full_unified_dataset_passes_thresholds(self, evaluator: FakeLLMEvaluator):
+        metrics = run_grounding_evaluation(ALL_GROUNDING_CASES, evaluator)
+        assert metrics["total_cases"] == 14
         assert metrics["failed"] == 0
         assert metrics["grounding_faithfulness"] >= THRESHOLDS["grounding_faithfulness"]["target"]
         assert metrics["citation_precision"] >= THRESHOLDS["citation_precision"]["target"]
@@ -286,6 +304,14 @@ class TestStaleDataEvaluationCategory:
         assert metrics["zero_price_leak_count"] == THRESHOLDS["zero_price_leak_count"]["target"]
         assert metrics["stale_as_live_count"] == 0
 
+    def test_stale_data_full_unified_dataset_passes_thresholds(self, evaluator: FakeLLMEvaluator):
+        metrics = run_stale_data_evaluation(ALL_STALE_DATA_CASES, evaluator)
+        assert metrics["total_cases"] == 15
+        assert metrics["failed"] == 0
+        assert metrics["stale_compliance_rate"] == THRESHOLDS["stale_compliance_rate"]["target"]
+        assert metrics["zero_price_leak_count"] == THRESHOLDS["zero_price_leak_count"]["target"]
+        assert metrics["stale_as_live_count"] == 0
+
     def test_zero_price_violation_strictly_rejected(self, evaluator: FakeLLMEvaluator):
         """Handbook v9.1 p.17: 'No missing quote is displayed as zero.'"""
         res = evaluator.evaluate_stale_data_case(
@@ -387,8 +413,13 @@ class TestThresholdGatesAndOrchestrator:
         assert exit_code == 0
         assert metrics["thresholds_passed"] is True
         assert len(metrics["threshold_breaches"]) == 0
-        assert metrics["composite_passed"] == metrics["composite_total_cases"]
+        assert metrics["composite_total_cases"] == 77
+        assert metrics["composite_passed"] == 77
         assert metrics["composite_failed"] == 0
+        assert metrics["categories"]["refusal"]["total_cases"] == 38
+        assert metrics["categories"]["grounding"]["total_cases"] == 14
+        assert metrics["categories"]["injection"]["total_cases"] == 10
+        assert metrics["categories"]["stale_data"]["total_cases"] == 15
 
     def test_individual_category_runs(self):
         for cat in ["refusal", "grounding", "injection", "stale_data"]:
@@ -423,3 +454,13 @@ class TestThresholdGatesAndOrchestrator:
         passed, breaches = check_thresholds(synthetic_metrics)
         assert passed is False
         assert any("zero_price_leak_count" in b for b in breaches)
+
+    def test_missing_metric_enforce_all_breaches_threshold(self):
+        # Missing required metric in enforce_all mode
+        incomplete_metrics = {
+            "refusal_accuracy": 1.0,
+            # Missing other metrics
+        }
+        passed, breaches = check_thresholds(incomplete_metrics, enforce_all=True)
+        assert passed is False
+        assert any("Missing required metric" in b for b in breaches)

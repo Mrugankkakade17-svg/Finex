@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-11-23T11:50:22.397670+00:00",
+  "timestamp": "2026-11-23T12:45:53.636901+00:00",
   "mode": "offline_fake_llm",
   "category": "all",
   "network_calls": 0,
@@ -20,8 +20,8 @@
     },
     "grounding": {
       "category": "grounding",
-      "total_cases": 10,
-      "passed": 10,
+      "total_cases": 14,
+      "passed": 14,
       "failed": 0,
       "grounding_faithfulness": 1.0,
       "citation_precision": 1.0,
@@ -39,8 +39,8 @@
     },
     "stale_data": {
       "category": "stale_data",
-      "total_cases": 11,
-      "passed": 11,
+      "total_cases": 15,
+      "passed": 15,
       "failed": 0,
       "stale_compliance_rate": 1.0,
       "zero_price_leak_count": 0,
@@ -70,8 +70,8 @@
   "stale_compliance_rate": 1.0,
   "zero_price_leak_count": 0,
   "stale_as_live_count": 0,
-  "composite_total_cases": 69,
-  "composite_passed": 69,
+  "composite_total_cases": 77,
+  "composite_passed": 77,
   "composite_failed": 0,
   "thresholds_passed": true,
   "threshold_breaches": []
