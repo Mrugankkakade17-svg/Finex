@@ -1,3 +1,4 @@
+import { createApiClient, DEFAULT_API_BASE_URL } from './apiClient';
 import { LocalApplicationError, validateLocalBaseOrigin } from './localApplicationBoundary';
 import type { LocalClientConfiguration, LocalRequestOptions } from './localApplicationClient';
 import { Catalog, Holding, HoldingDeletion, HoldingInput, HoldingList, HoldingUpdate, LocalQuestionnaire, LocalRiskDraft, LocalS2Metadata, LocalS2Response, Portfolio, PortfolioDeletion, PortfolioInput, PortfolioList, PortfolioMetrics, RiskHistory, RiskInput, RiskSubmission, SavedRisk, cursorS2, decodeCatalog, decodeHolding, decodeHoldingDeletion, decodeHoldingList, decodeMetrics, decodePortfolio, decodePortfolioDeletion, decodePortfolioList, decodeQuestionnaire, decodeRiskDraft, decodeRiskHistory, decodeSavedRisk, exactS2, FIXTURE_AS_OF, invalidS2, objectS2, riskInput, sameDecimal, sameRiskInput, textS2, utcInstant, utcS2, utf8Length, uuidS2 } from './localS2Models';
@@ -68,7 +69,8 @@ export function confirmedHolding(value: unknown, input: HoldingUpdate, id: strin
   return d;
 }
 export function createLocalS2Client(config: LocalClientConfiguration = {}): LocalS2Api {
-  const origin = validateLocalBaseOrigin(config.baseOrigin || process.env.REACT_APP_FINEX_API_BASE_URL || 'http://127.0.0.1:8000');
+  const origin = validateLocalBaseOrigin(config.baseOrigin || process.env.REACT_APP_FINEX_API_BASE_URL || DEFAULT_API_BASE_URL);
+  const api = createApiClient({ baseUrl: origin, fetchImpl: config.fetchImpl });
   const timeout = config.timeoutMs ?? 8000;
   if (!Number.isInteger(timeout) || timeout < 50 || timeout > 30000)
     throw new LocalApplicationError('LOCAL_ORIGIN_INVALID');
@@ -142,13 +144,10 @@ export function createLocalS2Client(config: LocalClientConfiguration = {}): Loca
       }, timeout);
     });
     async function perform() {
-      const sender = config.fetchImpl ?? (typeof globalThis.fetch === 'function' ? globalThis.fetch.bind(globalThis) : undefined);
-      if (typeof sender !== 'function')
-        throw new LocalApplicationError('API_UNAVAILABLE');
-      const headers: Record<string, string> = { Accept: 'application/json', Authorization: 'Bearer ' + token };
+      const headers: Record<string, string> = { Accept: 'application/json' };
       if (payload !== undefined)
         headers['Content-Type'] = 'application/json';
-      const response = await sender(origin + path, { method, headers, body: payload === undefined ? undefined : JSON.stringify(payload), signal: controller.signal,
+      const response = await api.request(path, { method, headers, accessToken: token, body: payload === undefined ? undefined : JSON.stringify(payload), signal: controller.signal,
         credentials: 'omit', cache: 'no-store', redirect: 'error' });
       if (response.status === 401)
         throw new LocalApplicationError('SESSION_INVALID');

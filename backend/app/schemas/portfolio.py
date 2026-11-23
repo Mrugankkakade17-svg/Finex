@@ -70,6 +70,7 @@ class HoldingResponse(BaseModel):
     symbol: str
     asset_class: AssetClass
     sector: Optional[str] = "General"
+    notes: Optional[str] = None
     quantity: float
     avg_buy_price: float
     current_price: float

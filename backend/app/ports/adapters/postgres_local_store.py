@@ -99,18 +99,28 @@ SCHEMA_STATEMENTS = (
     """CREATE TABLE IF NOT EXISTS finex.local_manual_portfolios (
         portfolio_id TEXT PRIMARY KEY, user_id TEXT NOT NULL,
         FOREIGN KEY(user_id) REFERENCES finex.local_users(user_id) ON DELETE CASCADE,
-        name TEXT NOT NULL, description TEXT, currency TEXT NOT NULL,
+        name TEXT NOT NULL, description TEXT, portfolio_type TEXT NOT NULL DEFAULT 'INDIVIDUAL',
+        currency TEXT NOT NULL,
         created_at TIMESTAMPTZ NOT NULL, updated_at TIMESTAMPTZ NOT NULL,
         UNIQUE(user_id,portfolio_id)
     )""",
+    """ALTER TABLE finex.local_manual_portfolios
+        ADD COLUMN IF NOT EXISTS portfolio_type TEXT NOT NULL DEFAULT 'INDIVIDUAL'""",
     """CREATE TABLE IF NOT EXISTS finex.local_manual_holdings (
         holding_id TEXT PRIMARY KEY, user_id TEXT NOT NULL, portfolio_id TEXT NOT NULL,
         instrument_id TEXT NOT NULL, quantity_micro_units BIGINT NOT NULL,
         average_cost_units BIGINT NOT NULL, currency TEXT NOT NULL,
+        asset_class TEXT, sector TEXT, notes TEXT CHECK(notes IS NULL OR length(notes)<=500),
         created_at TIMESTAMPTZ NOT NULL, updated_at TIMESTAMPTZ NOT NULL,
         FOREIGN KEY(user_id,portfolio_id)
             REFERENCES finex.local_manual_portfolios(user_id,portfolio_id) ON DELETE CASCADE
     )""",
+    """ALTER TABLE finex.local_manual_holdings
+        ADD COLUMN IF NOT EXISTS asset_class TEXT""",
+    """ALTER TABLE finex.local_manual_holdings
+        ADD COLUMN IF NOT EXISTS sector TEXT""",
+    """ALTER TABLE finex.local_manual_holdings
+        ADD COLUMN IF NOT EXISTS notes TEXT""",
     """CREATE TABLE IF NOT EXISTS finex.local_watchlists (
         watchlist_id TEXT PRIMARY KEY, user_id TEXT NOT NULL,
         FOREIGN KEY(user_id) REFERENCES finex.local_users(user_id) ON DELETE CASCADE,

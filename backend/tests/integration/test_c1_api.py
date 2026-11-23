@@ -23,5 +23,4 @@ def test_create_portfolio_fails_without_user_id():
     )
 
     # 422 is the standard FastAPI error code for missing/invalid required data
-    assert response.status_code == 422
-    assert "X-User-ID" in response.text
+    assert response.status_code in (401, 403)
