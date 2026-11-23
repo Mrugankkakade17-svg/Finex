@@ -23,16 +23,23 @@ python -m ruff check .
 python -m pytest -q
 ```
 
-Results on the feature branch:
+Verification on the corrected PR head:
 
 ```text
-python -m ruff check .
-All checks passed!
+Backend Quality Gates:
+Ruff lint — passed
+Ruff format check — passed
+Mypy — passed
+PostgreSQL migration round-trip — passed
+Full backend pytest — 2,848 passed, 9 deselected, 5 xfailed, 2 xpassed
+Coverage — 84.54% (required: 70%)
 
-python -m pytest -q
-2779 passed, 11 skipped, 13 xfailed, 2 xpassed
-Coverage: 83.38% (required: 70%)
+Backend Postgres Tests:
+Postgres-marked tests — passed
+Full backend pytest — 2,857 passed, 5 xfailed, 2 xpassed
+Coverage — 85.95% (required: 70%)
 ```
 
-The dedicated CSV import tests also passed: `9 passed` (including the authenticated
-endpoint, user-scoped persistence, limits, malformed rows, masking, and formula escaping).
+The CSV import tests are included in both full backend runs. They cover the authenticated
+endpoint, user-scoped persistence, upload/row/field limits, malformed rows, masking,
+and formula escaping.
