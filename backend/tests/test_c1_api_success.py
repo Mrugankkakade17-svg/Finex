@@ -45,9 +45,9 @@ async def test_create_portfolio_success():
         ):
             result = await c1.create_portfolio(
                 payload=payload,
-                x_user_id="user-123",
                 x_correlation_id="correlation-123",
                 db=mock_db,
+                user={"user_id": "user-123"},
             )
 
     mock_service.create_user_portfolio.assert_awaited_once_with(
