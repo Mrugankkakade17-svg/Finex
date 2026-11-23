@@ -116,7 +116,9 @@ def get_spending_trends(
         data=res.model_dump(mode="json"),
         correlation_id=correlation_id,
     )
-\n\n@router.post("/imports", summary="Safely import spending transactions from CSV")
+
+
+@router.post("/imports", summary="Safely import spending transactions from CSV")
 async def import_transactions(
     request: Request,
     file: UploadFile = File(...),
