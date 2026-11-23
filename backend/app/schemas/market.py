@@ -21,6 +21,7 @@ class DataFreshness(str, Enum):
     DELAYED = "DELAYED"
     END_OF_DAY = "END_OF_DAY"
     CACHED = "CACHED"
+    STALE = "STALE"
     UNAVAILABLE = "UNAVAILABLE"
 
 

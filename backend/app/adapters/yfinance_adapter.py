@@ -324,11 +324,14 @@ class FixtureMarketDataProvider(MarketDataProvider):
 
         try:
             if self.fail_mode == "timeout":
-                raise ProviderTimeoutException("fixture", self.timeout_seconds)
+                raise ProviderTimeoutException(self.provider_name, self.timeout_seconds)
             if self.fail_mode == "unavailable":
-                raise ProviderUnavailableException("fixture", "fixture provider is unavailable")
+                raise ProviderUnavailableException(
+                    self.provider_name,
+                    f"{self.provider_name} provider is unavailable",
+                )
             if self.fail_mode == "rate_limit":
-                raise RateLimitExceededException("fixture", retry_after_seconds=30)
+                raise RateLimitExceededException(self.provider_name, retry_after_seconds=30)
 
             now = datetime.now(timezone.utc)
 
@@ -399,3 +402,22 @@ class FixtureMarketDataProvider(MarketDataProvider):
             for sec in catalog
             if query_upper in sec["symbol"] or query_upper in sec["name"].upper()
         ][:limit]
+
+
+class SecondaryMarketDataProvider(FixtureMarketDataProvider):
+    """Named second-provider adapter for the resilient market-data chain."""
+
+    def __init__(
+        self,
+        custom_quotes: Optional[dict[str, dict[str, float]]] = None,
+        timeout_seconds: float = 2.0,
+        fail_mode: Optional[str] = None,
+        circuit_breaker: Optional[CircuitBreaker] = None,
+    ):
+        super().__init__(
+            custom_quotes=custom_quotes,
+            timeout_seconds=timeout_seconds,
+            fail_mode=fail_mode,
+            circuit_breaker=circuit_breaker,
+        )
+        self.provider_name = "secondary"
