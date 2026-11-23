@@ -57,12 +57,12 @@ def test_hosted_adapter_satisfies_protocol():
 
 
 def test_groq_adapter_satisfies_protocol():
-    adapter = GroqLLMAdapter(api_key="gsk_test_mock_key_12345")
+    adapter = GroqLLMAdapter(api_key="mock-groq-auth-token")
     assert isinstance(adapter, LLMProvider)
 
 
 def test_cloudflare_adapter_satisfies_protocol():
-    adapter = CloudflareLLMAdapter(account_id="cf_acc_123", api_token="cf_tok_12345")
+    adapter = CloudflareLLMAdapter(account_id="mock-cf-account", api_token="mock-cf-auth-token")
     assert isinstance(adapter, LLMProvider)
 
 
@@ -1452,7 +1452,7 @@ def test_schema_validator_mixed_case_and_whitespace_variations():
 
 
 def test_groq_defaults():
-    adapter = GroqLLMAdapter(api_key="gsk_test_key_12345678")
+    adapter = GroqLLMAdapter(api_key="mock-groq-sample-token")
     assert adapter.provider_type == "groq"
     assert adapter.model_name == DEFAULT_GROQ_MODEL
     assert adapter.base_url == "https://api.groq.com/openai/v1"
@@ -1496,7 +1496,7 @@ async def test_groq_successful_chat_completion():
         return httpx.Response(200, json=data)
 
     client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
-    adapter = GroqLLMAdapter(api_key="gsk_secret_12345678", http_client=client)
+    adapter = GroqLLMAdapter(api_key="mock-groq-auth-token", http_client=client)
 
     req = LLMRequest(
         prompt_id="sip_explanation",
@@ -1514,7 +1514,7 @@ async def test_groq_successful_chat_completion():
     assert len(captured_requests) == 1
     req_sent = captured_requests[0]
     assert req_sent.url == "https://api.groq.com/openai/v1/chat/completions"
-    assert req_sent.headers["Authorization"] == "Bearer gsk_secret_12345678"
+    assert req_sent.headers["Authorization"] == "Bearer mock-groq-auth-token"
     assert req_sent.headers["Content-Type"] == "application/json"
     body = json.loads(req_sent.content.decode())
     assert body["model"] == DEFAULT_GROQ_MODEL
@@ -1538,7 +1538,7 @@ async def test_groq_http_errors_mapped_correctly():
             return httpx.Response(status_code, text=f"Error {status_code}")
 
         client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
-        adapter = GroqLLMAdapter(api_key="gsk_key_12345678", http_client=client)
+        adapter = GroqLLMAdapter(api_key="mock-groq-auth-token", http_client=client)
         req = LLMRequest(
             prompt_id="test",
             prompt_version="v1",
@@ -1556,7 +1556,7 @@ async def test_groq_timeout_and_connect_errors():
         raise httpx.TimeoutException("Groq timeout")
 
     client = httpx.AsyncClient(transport=httpx.MockTransport(timeout_handler))
-    adapter = GroqLLMAdapter(api_key="gsk_key_12345678", http_client=client)
+    adapter = GroqLLMAdapter(api_key="mock-groq-auth-token", http_client=client)
     req = LLMRequest(
         prompt_id="test", prompt_version="v1", context={}, output_schema_ref="sprint6_ai_chat"
     )
@@ -1567,7 +1567,7 @@ async def test_groq_timeout_and_connect_errors():
         raise httpx.ConnectError("Groq host unreachable")
 
     client2 = httpx.AsyncClient(transport=httpx.MockTransport(connect_handler))
-    adapter2 = GroqLLMAdapter(api_key="gsk_key_12345678", http_client=client2)
+    adapter2 = GroqLLMAdapter(api_key="mock-groq-auth-token", http_client=client2)
     with pytest.raises(ProviderConnectionError):
         await adapter2.generate(req)
 
@@ -1598,7 +1598,7 @@ async def test_groq_privacy_scrubbing_and_personal_suitability_refusal():
         )
 
     client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
-    adapter = GroqLLMAdapter(api_key="gsk_key_12345678", http_client=client)
+    adapter = GroqLLMAdapter(api_key="mock-groq-auth-token", http_client=client)
 
     # 1. PII scrubbing
     req = LLMRequest(
@@ -1633,7 +1633,7 @@ async def test_groq_privacy_scrubbing_and_personal_suitability_refusal():
 
 @pytest.mark.asyncio
 async def test_groq_quota_availability_and_key_redaction():
-    adapter_valid = GroqLLMAdapter(api_key="gsk_real_secret_token_12345")
+    adapter_valid = GroqLLMAdapter(api_key="mock-groq-sample-key")
     assert await adapter_valid.is_quota_available() is True
 
     adapter_invalid = GroqLLMAdapter(api_key="")
@@ -1641,9 +1641,9 @@ async def test_groq_quota_availability_and_key_redaction():
 
     # Key redaction
     sanitized = adapter_valid._sanitize_error_message(
-        "Failed connection to gsk_real_secret_token_12345 at endpoint"
+        "Failed connection to mock-groq-sample-key at endpoint"
     )
-    assert "gsk_real_secret_token_12345" not in sanitized
+    assert "mock-groq-sample-key" not in sanitized
     assert "[REDACTED_GROQ_KEY]" in sanitized
 
 
@@ -1654,8 +1654,8 @@ async def test_groq_quota_availability_and_key_redaction():
 
 def test_cloudflare_defaults():
     adapter = CloudflareLLMAdapter(
-        account_id="cf_acc_12345",
-        api_token="cf_tok_abcdef123456",
+        account_id="mock-cf-account",
+        api_token="mock-cf-auth-token",
     )
     assert adapter.provider_type == "cloudflare"
     assert adapter.model_name == DEFAULT_CLOUDFLARE_MODEL
@@ -1664,7 +1664,7 @@ def test_cloudflare_defaults():
 
 @pytest.mark.asyncio
 async def test_cloudflare_missing_credentials_raises_auth_error():
-    adapter_no_tok = CloudflareLLMAdapter(account_id="cf_acc_12345", api_token="")
+    adapter_no_tok = CloudflareLLMAdapter(account_id="mock-cf-account", api_token="")
     req = LLMRequest(
         prompt_id="test", prompt_version="v1", context={}, output_schema_ref="sprint6_ai_chat"
     )
@@ -1673,7 +1673,7 @@ async def test_cloudflare_missing_credentials_raises_auth_error():
     assert "Cloudflare API credentials not configured" in str(exc_info.value)
     assert exc_info.value.provider == "cloudflare"
 
-    adapter_no_acc = CloudflareLLMAdapter(account_id="", api_token="cf_tok_12345678")
+    adapter_no_acc = CloudflareLLMAdapter(account_id="", api_token="mock-cf-auth-token")
     with pytest.raises(ProviderAuthenticationError):
         await adapter_no_acc.generate(req)
 
@@ -1703,8 +1703,8 @@ async def test_cloudflare_successful_generation():
 
     client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
     adapter = CloudflareLLMAdapter(
-        account_id="cf_account_abc123",
-        api_token="cf_token_xyz987654",
+        account_id="mock-cf-account",
+        api_token="mock-cf-auth-token",
         http_client=client,
     )
 
@@ -1724,11 +1724,11 @@ async def test_cloudflare_successful_generation():
     assert len(captured_requests) == 1
     req_sent = captured_requests[0]
     expected_url = (
-        f"https://api.cloudflare.com/client/v4/accounts/cf_account_abc123/ai/run/"
+        f"https://api.cloudflare.com/client/v4/accounts/mock-cf-account/ai/run/"
         f"{DEFAULT_CLOUDFLARE_MODEL}"
     )
     assert str(req_sent.url) == expected_url
-    assert req_sent.headers["Authorization"] == "Bearer cf_token_xyz987654"
+    assert req_sent.headers["Authorization"] == "Bearer mock-cf-auth-token"
     assert req_sent.headers["Content-Type"] == "application/json"
 
 
@@ -1749,7 +1749,7 @@ async def test_cloudflare_http_and_body_errors_mapped_correctly():
 
         client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
         adapter = CloudflareLLMAdapter(
-            account_id="acc_123", api_token="tok_12345678", http_client=client
+            account_id="mock-cf-account", api_token="mock-cf-auth-token", http_client=client
         )
         req = LLMRequest(
             prompt_id="test",
@@ -1773,7 +1773,7 @@ async def test_cloudflare_http_and_body_errors_mapped_correctly():
 
     client_neuron = httpx.AsyncClient(transport=httpx.MockTransport(neuron_limit_handler))
     adapter_neuron = CloudflareLLMAdapter(
-        account_id="acc_123", api_token="tok_12345678", http_client=client_neuron
+        account_id="mock-cf-account", api_token="mock-cf-auth-token", http_client=client_neuron
     )
     with pytest.raises(ProviderQuotaExceededError) as exc_info:
         await adapter_neuron.generate(req)
@@ -1804,7 +1804,7 @@ async def test_cloudflare_privacy_scrubbing_and_suitability_refusal():
 
     client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
     adapter = CloudflareLLMAdapter(
-        account_id="acc_123", api_token="tok_12345678", http_client=client
+        account_id="mock-cf-account", api_token="mock-cf-auth-token", http_client=client
     )
 
     req = LLMRequest(
@@ -1837,14 +1837,14 @@ async def test_cloudflare_privacy_scrubbing_and_suitability_refusal():
 @pytest.mark.asyncio
 async def test_cloudflare_token_and_account_redaction():
     adapter = CloudflareLLMAdapter(
-        account_id="secret_cf_acc_999",
-        api_token="secret_cf_tok_888",
+        account_id="mock-cf-sample-account",
+        api_token="mock-cf-sample-token",
     )
     sanitized = adapter._sanitize_error_message(
-        "Request failed for secret_cf_acc_999 using secret_cf_tok_888"
+        "Request failed for mock-cf-sample-account using mock-cf-sample-token"
     )
-    assert "secret_cf_acc_999" not in sanitized
-    assert "secret_cf_tok_888" not in sanitized
+    assert "mock-cf-sample-account" not in sanitized
+    assert "mock-cf-sample-token" not in sanitized
     assert "[REDACTED_CLOUDFLARE_ACCOUNT]" in sanitized
     assert "[REDACTED_CLOUDFLARE_TOKEN]" in sanitized
 
@@ -2105,10 +2105,10 @@ def test_get_llm_provider_configures_all_hosted_tiers():
     settings = Settings(
         app_env="test",
         secret_key="01234567890123456789012345678901",
-        gemini_api_key="gemini_mock_key_12345",
-        groq_api_key="gsk_mock_groq_key_12345",
-        cloudflare_account_id="cf_mock_acc_12345",
-        cloudflare_api_token="cf_mock_tok_12345",
+        gemini_api_key="mock-gemini-sample",
+        groq_api_key="mock-groq-sample-key",
+        cloudflare_account_id="mock-cf-sample-account",
+        cloudflare_api_token="mock-cf-sample-token",
     )
     provider = get_llm_provider(settings)
     assert isinstance(provider, CompositeLLMProvider)
