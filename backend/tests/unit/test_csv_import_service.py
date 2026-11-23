@@ -10,19 +10,14 @@ from app.routers.spending import router as spending_router
 from app.services import csv_import_service as service
 
 
-def test_import_persists_only_to_authenticated_user_and_masks_description(
-    tmp_path, monkeypatch
-):
+def test_import_persists_only_to_authenticated_user_and_masks_description(tmp_path, monkeypatch):
     database = tmp_path / "spending.sqlite3"
     monkeypatch.setattr(
         service,
         "get_settings",
         lambda: SimpleNamespace(local_db_path=str(database), app_persistence="sqlite"),
     )
-    content = (
-        b"date,description,amount,category\n"
-        b"2026-11-01,STORE 12345678 #abc,12.50,Food\n"
-    )
+    content = b"date,description,amount,category\n2026-11-01,STORE 12345678 #abc,12.50,Food\n"
 
     summary = service.import_spending_csv(content, "spending.csv", "user-a")
 
@@ -54,9 +49,7 @@ def test_formula_prefixes_are_escaped_in_text_columns():
 
 def test_invalid_rows_are_quarantined_without_failing_valid_rows():
     rows, quarantined = service._parse_rows(
-        b"date,description,amount,category\n"
-        b"2026-11-01,Valid,1.25,Food\n"
-        b"not-a-date,Bad,=2+2,Food\n"
+        b"date,description,amount,category\n2026-11-01,Valid,1.25,Food\nnot-a-date,Bad,=2+2,Food\n"
     )
 
     assert len(rows) == 1
