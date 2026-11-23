@@ -41,6 +41,14 @@ class GoogleAuthService:
                     message="Mock Google identity must contain an email address",
                     error_code="INVALID_GOOGLE_IDENTITY",
                 )
+            # Enforce that unverified Google emails are strictly rejected
+            if payload.get("email_verified") is False or str(
+                payload.get("email_verified")
+            ).lower() in ("false", "0"):
+                raise UnauthorizedException(
+                    message="Google identity email is not verified",
+                    error_code="UNVERIFIED_GOOGLE_EMAIL",
+                )
             google_id = payload.get("google_id") or payload.get("sub") or f"google_{email}"
             name = payload.get("name") or email.split("@")[0].capitalize()
             return {
@@ -48,6 +56,7 @@ class GoogleAuthService:
                 "email": email,
                 "name": name,
                 "avatar_url": payload.get("picture") or payload.get("avatar_url"),
+                "email_verified": True,
             }
 
         # Case 3: JWT token (credential or id_token)
@@ -88,12 +97,34 @@ class GoogleAuthService:
                     error_code="INVALID_GOOGLE_TOKEN",
                 )
 
+            # Enforce that unverified Google emails are strictly rejected
+            if claims.get("email_verified") is False or str(
+                claims.get("email_verified")
+            ).lower() in ("false", "0"):
+                raise UnauthorizedException(
+                    message="Google identity email is not verified",
+                    error_code="UNVERIFIED_GOOGLE_EMAIL",
+                )
+
+            # Enforce expiration check if exp claim is present
+            if claims.get("exp") is not None:
+                import time
+
+                if int(claims["exp"]) < int(time.time()):
+                    raise UnauthorizedException(
+                        message="Google token has expired",
+                        error_code="EXPIRED_GOOGLE_TOKEN",
+                    )
+
             return {
                 "google_id": str(google_id) if google_id else f"google_{email}",
                 "email": email,
                 "name": name,
                 "avatar_url": picture,
+                "email_verified": True,
             }
+        except (BadRequestException, UnauthorizedException):
+            raise
         except Exception as exc:
             # If token is a plain string mock identifier like "mock-google-token-user@example.com"
             if "@" in token:

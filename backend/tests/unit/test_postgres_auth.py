@@ -494,6 +494,40 @@ class TestGoogleSignInCompatibility:
         assert by_gid.google_id == google_id
         assert by_gid.picture == avatar
 
+    def test_unverified_google_identity_cannot_link_to_existing_password_user(self):
+        from app.core.exceptions import UnauthorizedException
+
+        email = f"unverified_link_{uuid.uuid4().hex[:8]}@example.com"
+        google_id = f"g_unverified_{uuid.uuid4().hex[:12]}"
+
+        # 1. Register with email and password first
+        auth_service.register(name="Email User", email=email, password="InitialPassword@123")
+
+        # 2. Attempting to link with an unverified Google email must be rejected
+        with pytest.raises(UnauthorizedException) as exc_info:
+            auth_service.login_or_create_google_user(
+                google_id=google_id,
+                email=email,
+                name="Email User",
+                email_verified=False,
+            )
+        assert exc_info.value.error_code == "UNVERIFIED_GOOGLE_EMAIL"
+
+    def test_login_or_create_google_user_rejects_unverified_email(self):
+        from app.core.exceptions import UnauthorizedException
+
+        email = f"new_unverified_{uuid.uuid4().hex[:8]}@example.com"
+        google_id = f"g_new_unverified_{uuid.uuid4().hex[:12]}"
+
+        with pytest.raises(UnauthorizedException) as exc_info:
+            auth_service.login_or_create_google_user(
+                google_id=google_id,
+                email=email,
+                name="New Unverified User",
+                email_verified=False,
+            )
+        assert exc_info.value.error_code == "UNVERIFIED_GOOGLE_EMAIL"
+
 
 class TestUserRoutesUuidCompatibility:
     """Verifies that user routes support both UUID string IDs and integer IDs."""

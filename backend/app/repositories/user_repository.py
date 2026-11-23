@@ -81,12 +81,20 @@ class UserRepository:
         name: str,
         picture: Optional[str] = None,
         avatar_url: Optional[str] = None,
+        email_verified: bool = True,
     ) -> UserModel:
         """
         Find existing user by email and link google_id, or create a new OAuth user.
         Idempotent — calling twice with same google_id returns same user.
         Accepts both picture and avatar_url for flexibility.
         """
+        if not email_verified:
+            from app.core.exceptions import BadRequestException
+
+            raise BadRequestException(
+                message="Google identity email is not verified; cannot link to account",
+                error_code="UNVERIFIED_GOOGLE_EMAIL",
+            )
         pic = picture or avatar_url
         # Look for existing user by email
         for user in self._users.values():

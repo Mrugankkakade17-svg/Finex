@@ -465,20 +465,39 @@ def logout(refresh_token: str | None = None) -> dict:
 
 
 def login_or_create_google_user(
-    google_id: str, email: str, name: str, avatar_url: str | None = None
+    google_id: str,
+    email: str,
+    name: str,
+    avatar_url: str | None = None,
+    email_verified: bool = True,
 ) -> dict:
     """Find existing user by google_id or email, link metadata, or create new OAuth user."""
+    if not email_verified:
+        raise UnauthorizedException(
+            message="Google identity email is not verified; cannot link to account",
+            error_code="UNVERIFIED_GOOGLE_EMAIL",
+        )
     normalized_email = email.strip().lower()
     repo = get_user_repository()
 
     if hasattr(repo, "get_or_create_google_user"):
-        user = repo.get_or_create_google_user(
-            google_id=google_id,
-            email=normalized_email,
-            name=name,
-            picture=avatar_url,
-            avatar_url=avatar_url,
-        )
+        try:
+            user = repo.get_or_create_google_user(
+                google_id=google_id,
+                email=normalized_email,
+                name=name,
+                picture=avatar_url,
+                avatar_url=avatar_url,
+                email_verified=email_verified,
+            )
+        except TypeError:
+            user = repo.get_or_create_google_user(
+                google_id=google_id,
+                email=normalized_email,
+                name=name,
+                picture=avatar_url,
+                avatar_url=avatar_url,
+            )
     else:
         user = repo.get_user_by_email(normalized_email)
         if not user:
@@ -560,4 +579,5 @@ def google_callback(id_token: str, google_verifier=None) -> dict:
         email=str(identity.email),
         name=identity.name,
         avatar_url=identity.picture,
+        email_verified=getattr(identity, "email_verified", True),
     )

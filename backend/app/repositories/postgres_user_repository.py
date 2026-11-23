@@ -379,8 +379,14 @@ class PostgresUserRepository:
         name: str,
         picture: Optional[str] = None,
         avatar_url: Optional[str] = None,
+        email_verified: bool = True,
     ) -> UserModel:
         """Find existing user by google_id or email, link metadata, or create new OAuth user."""
+        if not email_verified:
+            raise BadRequestException(
+                message="Google identity email is not verified; cannot link to account",
+                error_code="UNVERIFIED_GOOGLE_EMAIL",
+            )
         pic = picture or avatar_url
         norm_email = email.strip().lower()
 

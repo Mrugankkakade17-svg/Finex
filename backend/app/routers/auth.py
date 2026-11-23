@@ -309,6 +309,7 @@ def google_callback(request: GoogleAuthRequest, http_request: Request):
             email=identity["email"],
             name=identity["name"],
             avatar_url=identity.get("avatar_url"),
+            email_verified=identity.get("email_verified", True),
         )
     return APIResponse.success(
         message="Google login successful",

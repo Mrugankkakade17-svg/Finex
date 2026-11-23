@@ -118,3 +118,49 @@ class TestGoogleAuthService:
         req = GoogleAuthRequest(id_token="invalid_no_at_sign")
         with pytest.raises(UnauthorizedException):
             service.verify_google_identity(req)
+
+    def test_verify_google_identity_unverified_email_in_mock_payload_rejected(self):
+        service = GoogleAuthService()
+        req = GoogleAuthRequest(
+            mock_payload={
+                "email": "unverified@finex.com",
+                "email_verified": False,
+                "name": "Unverified User",
+            }
+        )
+        with pytest.raises(UnauthorizedException) as exc_info:
+            service.verify_google_identity(req)
+        assert exc_info.value.error_code == "UNVERIFIED_GOOGLE_EMAIL"
+
+    def test_verify_google_identity_unverified_email_in_jwt_claims_rejected(self):
+        from jose import jwt
+
+        service = GoogleAuthService()
+        unverified_token = jwt.encode(
+            {"sub": "gid-999", "email": "unverified@finex.com", "email_verified": False},
+            "secret",
+            algorithm="HS256",
+        )
+        req = GoogleAuthRequest(id_token=unverified_token)
+        with pytest.raises(UnauthorizedException) as exc_info:
+            service.verify_google_identity(req)
+        assert exc_info.value.error_code == "UNVERIFIED_GOOGLE_EMAIL"
+
+    def test_verify_google_identity_expired_jwt_rejected(self):
+        from jose import jwt
+
+        service = GoogleAuthService()
+        expired_token = jwt.encode(
+            {
+                "sub": "gid-999",
+                "email": "expired@finex.com",
+                "email_verified": True,
+                "exp": 1000000000,  # September 2001
+            },
+            "secret",
+            algorithm="HS256",
+        )
+        req = GoogleAuthRequest(id_token=expired_token)
+        with pytest.raises(UnauthorizedException) as exc_info:
+            service.verify_google_identity(req)
+        assert exc_info.value.error_code == "EXPIRED_GOOGLE_TOKEN"
