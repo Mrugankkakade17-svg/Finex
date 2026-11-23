@@ -14,9 +14,86 @@ from typing import Any
 from uuid import uuid4
 
 from app.config.settings import get_settings
+from app.core.responses import APIResponse
 from app.schemas.sprint5_privacy_spending import SpendingUploadSummary
 
 MAX_UPLOAD_BYTES = 5 * 1024 * 1024
+
+MAX_MULTIPART_OVERHEAD_BYTES = 64 * 1024
+MAX_IMPORT_REQUEST_BYTES = MAX_UPLOAD_BYTES + MAX_MULTIPART_OVERHEAD_BYTES
+
+
+class _CSVRequestTooLarge(Exception):
+    """Raised as soon as a CSV multipart request exceeds its bounded body size."""
+
+
+class CSVUploadRequestLimitMiddleware:
+    """Bound CSV request bytes before Starlette parses and spools multipart files."""
+
+    def __init__(self, app: Any) -> None:
+        self.app = app
+
+    async def __call__(self, scope: Any, receive: Any, send: Any) -> None:
+        is_csv_import = (
+            scope.get("type") == "http"
+            and scope.get("method") == "POST"
+            and scope.get("path", "").rstrip("/") == "/api/v1/spending/imports"
+            and any(
+                key.lower() == b"content-type" and value.lower().startswith(b"multipart/form-data")
+                for key, value in scope.get("headers", [])
+            )
+        )
+        if not is_csv_import:
+            await self.app(scope, receive, send)
+            return
+
+        headers = scope.get("headers", [])
+        content_length = next(
+            (value for key, value in headers if key.lower() == b"content-length"),
+            None,
+        )
+        correlation_id = next(
+            (
+                value.decode("latin-1")
+                for key, value in headers
+                if key.lower() == b"x-correlation-id"
+            ),
+            "unknown",
+        )
+        if content_length is not None:
+            try:
+                if int(content_length) > MAX_IMPORT_REQUEST_BYTES:
+                    await self._reject(scope, receive, send, correlation_id)
+                    return
+            except ValueError:
+                pass
+
+        received_bytes = 0
+
+        async def limited_receive() -> Any:
+            nonlocal received_bytes
+            message = await receive()
+            if message.get("type") == "http.request":
+                received_bytes += len(message.get("body", b""))
+                if received_bytes > MAX_IMPORT_REQUEST_BYTES:
+                    raise _CSVRequestTooLarge
+            return message
+
+        try:
+            await self.app(scope, limited_receive, send)
+        except _CSVRequestTooLarge:
+            await self._reject(scope, receive, send, correlation_id)
+
+    @staticmethod
+    async def _reject(scope: Any, receive: Any, send: Any, correlation_id: str) -> None:
+        response = APIResponse.error(
+            message="CSV request exceeds the 5 MiB upload limit.",
+            error_code="UPLOAD_TOO_LARGE",
+            status_code=413,
+            correlation_id=correlation_id,
+        )
+        await response(scope, receive, send)
+
 MAX_ROWS = 10_000
 MAX_FIELD_CHARS = 4_096
 REQUIRED_COLUMNS = ("date", "description", "amount", "category")
