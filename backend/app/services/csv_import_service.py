@@ -52,7 +52,7 @@ class CSVUploadRequestLimitMiddleware:
             (value for key, value in headers if key.lower() == b"content-length"),
             None,
         )
-        correlation_id = next(
+        correlation_id = scope.get("state", {}).get("correlation_id") or next(
             (
                 value.decode("latin-1")
                 for key, value in headers
