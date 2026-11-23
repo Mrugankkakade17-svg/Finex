@@ -95,7 +95,7 @@ class Settings(BaseSettings):
     ollama_model: str = "llama3.2:1b"
     hosted_llm_provider: str = "gemini"
     gemini_api_key: str = ""
-    hosted_llm_model: str = "gemini-3.5-flash-lite"
+    hosted_llm_model: str = "gemini-3.8-flash"
     llm_timeout_seconds: float = Field(default=10.0, ge=1.0, le=120.0)
     llm_cascade_enabled: bool = True
 

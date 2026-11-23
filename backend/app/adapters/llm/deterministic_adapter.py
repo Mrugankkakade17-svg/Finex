@@ -19,14 +19,19 @@ from app.ports.llm_provider import LLMProvider, LLMRequest, LLMResponse
 FALLBACK_MODEL_NAME = "deterministic-fallback-v1"
 
 PROHIBITED_ADVICE_KEYWORDS: list[str] = [
-    r"\bshould I buy\b",
-    r"\bshould I sell\b",
-    r"\bwhich stock to buy\b",
-    r"\bpredict tomorrow\b",
-    r"\bguaranteed return\b",
-    r"\bhot stock\b",
-    r"\bguaranteed profit\b",
-    r"\brisk-free\b",
+    r"\bshould\s+I\s+buy\b",
+    r"\bshould\s+I\s+sell\b",
+    r"\bwhich\s+stock\s+to\s+buy\b",
+    r"\bpredict\s+tomorrow\b",
+    r"\bguaranteed\s+returns?\b",
+    r"\bhot\s+stocks?\b",
+    r"\bguaranteed\s+profits?\b",
+    r"\brisk[\s\-]free\b",
+    r"\binvest\s+in\s+crypto\b",
+    r"\bbuy\s+this\s+stock\b",
+    r"\bsell\s+this\s+stock\b",
+    r"\bignore\s+(?:all\s+)?previous\s+instructions\b",
+    r"\bsystem\s+override\b",
 ]
 
 COMPILED_REFUSAL_PATTERNS = [re.compile(p, re.IGNORECASE) for p in PROHIBITED_ADVICE_KEYWORDS]

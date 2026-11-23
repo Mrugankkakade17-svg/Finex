@@ -17,9 +17,16 @@ from app.adapters.llm.exceptions import ProhibitedContentError, SchemaValidation
 
 PROHIBITED_PHRASES: tuple[str, ...] = (
     "guaranteed return",
+    "guaranteed returns",
     "guaranteed profit",
+    "guaranteed profits",
     "risk-free profit",
+    "risk-free profits",
     "risk free profit",
+    "risk free profits",
+    "risk-free return",
+    "risk-free returns",
+    "risk free return",
     "will definitely earn",
     "promise you",
     "sure shot",
@@ -28,8 +35,22 @@ PROHIBITED_PHRASES: tuple[str, ...] = (
     "invest in crypto",
 )
 
+
+def _compile_phrase(phrase: str) -> re.Pattern[str]:
+    # Normalize hyphens so 'risk-free', 'risk - free', and 'risk free' match
+    phrase = phrase.replace("-", " - ")
+    parts = phrase.split()
+    pattern_parts = []
+    for p in parts:
+        if p == "-":
+            pattern_parts.append(r"[\s\-]+")
+        else:
+            pattern_parts.append(re.escape(p))
+    return re.compile(r"\b" + r"\s*".join(pattern_parts) + r"\b", re.IGNORECASE)
+
+
 COMPILED_PROHIBITED_PATTERNS: list[re.Pattern[str]] = [
-    re.compile(rf"\b{re.escape(phrase)}\b", re.IGNORECASE) for phrase in PROHIBITED_PHRASES
+    _compile_phrase(phrase) for phrase in PROHIBITED_PHRASES
 ]
 
 

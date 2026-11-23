@@ -152,6 +152,12 @@ class OllamaLLMAdapter(LLMProvider):
                     provider="ollama",
                 )
 
+            if not content or not str(content).strip():
+                raise SchemaValidationError(
+                    "Ollama returned empty text content",
+                    provider="ollama",
+                )
+
             validated_output = SchemaValidator.parse_and_validate(
                 content,
                 schema_ref=request.output_schema_ref,

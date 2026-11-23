@@ -1,7 +1,7 @@
 """
 hosted_adapter.py
 
-Free-tier hosted LLM provider adapter using Google Gemini API (`gemini-3.5-flash-lite`).
+Free-tier hosted LLM provider adapter using Google Gemini API (`gemini-3.8-flash`).
 Used as secondary fallback when local Ollama is offline or times out.
 Enforces strict client-side data minimization, PII/financial scrubbing,
 and header-based API key authentication (x-goog-api-key).
@@ -32,8 +32,8 @@ from app.ports.llm_provider import LLMProvider, LLMRequest, LLMResponse
 
 logger = logging.getLogger(__name__)
 
-# Currently supported and active Google Gemini model with verified free-tier (July 2026 update)
-DEFAULT_GEMINI_MODEL = "gemini-3.5-flash-lite"
+# Currently supported and active Google Gemini model with verified free-tier (September 2026 update)
+DEFAULT_GEMINI_MODEL = "gemini-3.8-flash"
 DEFAULT_TIMEOUT_SECONDS = 10.0
 DEFAULT_CONNECT_TIMEOUT_SECONDS = 3.0
 
@@ -45,18 +45,15 @@ SAFE_CONTEXT_KEYS: frozenset[str] = frozenset(
         "message",
         "topic",
         "concept",
-        "goal_name",
-        "risk_category",
-        "willingness_score",
-        "capacity_score",
-        "composite_score",
+        "curriculum_topic",
         "chunks",
         "citations",
         "retriever_version",
     }
 )
 
-# Explicit sensitive financial and personal identifiers prohibited from transmission
+# Explicit sensitive financial, personal identifiers, and user suitability data
+# prohibited from external transmission
 SENSITIVE_CONTEXT_KEYS: frozenset[str] = frozenset(
     {
         "user_id",
@@ -81,14 +78,24 @@ SENSITIVE_CONTEXT_KEYS: frozenset[str] = frozenset(
         "token",
         "secret",
         "credentials",
+        "willingness_score",
+        "capacity_score",
+        "composite_score",
+        "risk_category",
+        "goal_name",
     }
 )
 
 # Regex patterns for masking sensitive PII / financial numbers in freeform text queries
 EMAIL_REGEX = re.compile(r"[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+")
 PAN_REGEX = re.compile(r"\b[A-Z]{5}[0-9]{4}[A-Z]\b")
-IDENTIFIER_REGEX = re.compile(r"\b\d{10,16}\b")
-AMOUNT_REGEX = re.compile(r"(?:Rs\.?|INR|₹|\$)\s*[\d,]+(?:\.\d+)?", re.IGNORECASE)
+AADHAAR_REGEX = re.compile(r"\b\d{4}[ -]?\d{4}[ -]?\d{4}\b")
+PHONE_REGEX = re.compile(r"(?:\+91[\-\s]?)?[6-9]\d{9}\b")
+IDENTIFIER_REGEX = re.compile(r"\b\d{10,18}\b")
+AMOUNT_REGEX = re.compile(
+    r"(?:Rs\.?|INR|₹|\$|USD|EUR|GBP)\s*[\d,]+(?:\.\d+)?|\b[\d,]+(?:\.\d+)?\s*(?:lakhs?|crores?|k|million|billion)\b",
+    re.IGNORECASE,
+)
 
 
 class HostedLLMAdapter(LLMProvider):
@@ -129,11 +136,13 @@ class HostedLLMAdapter(LLMProvider):
 
     @classmethod
     def mask_pii_text(cls, text: str) -> str:
-        """Mask sensitive email, PAN, account numbers, and currency amounts in text strings."""
+        """Mask sensitive email, PAN, Aadhaar, phone, account numbers, and currency."""
         if not text:
             return text
         sanitized = EMAIL_REGEX.sub("[REDACTED_EMAIL]", text)
         sanitized = PAN_REGEX.sub("[REDACTED_PAN]", sanitized)
+        sanitized = AADHAAR_REGEX.sub("[REDACTED_AADHAAR]", sanitized)
+        sanitized = PHONE_REGEX.sub("[REDACTED_PHONE]", sanitized)
         sanitized = IDENTIFIER_REGEX.sub("[REDACTED_IDENTIFIER]", sanitized)
         sanitized = AMOUNT_REGEX.sub("[REDACTED_AMOUNT]", sanitized)
         return sanitized
@@ -307,6 +316,12 @@ class HostedLLMAdapter(LLMProvider):
         }
 
         resp = await client.post(url, headers=headers, json=payload)
+        if resp.status_code == 400:
+            cleaned_text = self._sanitize_error_message(resp.text[:200])
+            raise ProviderResponseError(
+                f"Gemini malformed request (HTTP 400): {cleaned_text}",
+                provider="gemini",
+            )
         if resp.status_code == 404:
             raise ProviderResponseError(
                 f"Gemini model '{self.model_name}' not found (HTTP 404)",
@@ -320,6 +335,11 @@ class HostedLLMAdapter(LLMProvider):
         if resp.status_code in (401, 403):
             raise ProviderAuthenticationError(
                 f"Gemini API key rejected (HTTP {resp.status_code})",
+                provider="gemini",
+            )
+        if resp.status_code in (500, 502, 503, 504):
+            raise ProviderResponseError(
+                f"Gemini server error (HTTP {resp.status_code})",
                 provider="gemini",
             )
         if resp.status_code != 200:
@@ -337,9 +357,9 @@ class HostedLLMAdapter(LLMProvider):
                     "Gemini response contained no candidates", provider="gemini"
                 )
             parts = candidates[0].get("content", {}).get("parts", [])
-            if not parts or "text" not in parts[0]:
+            if not parts or "text" not in parts[0] or not str(parts[0]["text"]).strip():
                 raise SchemaValidationError(
-                    "Gemini candidate missing text parts", provider="gemini"
+                    "Gemini candidate missing text parts or empty response", provider="gemini"
                 )
             return parts[0]["text"]
         except (KeyError, IndexError) as exc:
@@ -350,6 +370,11 @@ class HostedLLMAdapter(LLMProvider):
 
     def _handle_http_status_error(self, exc: httpx.HTTPStatusError) -> None:
         code = exc.response.status_code
+        if code == 400:
+            raise ProviderResponseError(
+                "Hosted provider malformed request (HTTP 400)",
+                provider=self.provider_type,
+            ) from exc
         if code == 404:
             raise ProviderResponseError(
                 "Hosted provider endpoint not found (HTTP 404)",
@@ -363,6 +388,11 @@ class HostedLLMAdapter(LLMProvider):
         if code in (401, 403):
             raise ProviderAuthenticationError(
                 f"Hosted provider authentication failed (HTTP {code})",
+                provider=self.provider_type,
+            ) from exc
+        if code in (500, 502, 503, 504):
+            raise ProviderResponseError(
+                f"Hosted provider server failure (HTTP {code})",
                 provider=self.provider_type,
             ) from exc
         cleaned_text = self._sanitize_error_message(exc.response.text[:200])
