@@ -32,13 +32,13 @@ Ruff lint — passed
 Ruff format check — passed
 Mypy — passed
 PostgreSQL migration round-trip — passed
-Full backend pytest — 2,848 passed, 9 deselected, 5 xfailed, 2 xpassed
-Coverage — 84.54% (required: 70%)
+Full backend pytest — 2,850 passed, 9 deselected, 5 xfailed, 2 xpassed
+Coverage — 84.59% (required: 70%)
 
 Backend Postgres Tests:
 Postgres-marked tests — passed
-Full backend pytest — 2,857 passed, 5 xfailed, 2 xpassed
-Coverage — 85.95% (required: 70%)
+Full backend pytest — 2,859 passed, 5 xfailed, 2 xpassed
+Coverage — 86.00% (required: 70%)
 ```
 
-The CSV import tests cover the authenticated endpoint, user-scoped persistence, upload/row/field limits, malformed rows, masking, and formula escaping. Two additional ASGI middleware tests verify that oversized requests with a declared Content-Length are rejected without reading the body and chunked requests stop at the byte ceiling. These latest incremental tests are running in CI.
+The CSV import tests cover the authenticated endpoint, user-scoped persistence, upload/row/field limits, malformed rows, masking, and formula escaping. Two additional ASGI middleware tests verify that oversized requests with a declared Content-Length are rejected without reading the body and chunked requests stop at the byte ceiling. All 11 CSV import tests passed in both full backend runs; the dedicated Postgres-marked tests also passed.
