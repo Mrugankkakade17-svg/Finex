@@ -49,6 +49,7 @@ from app.routers.risk import router as risk_router
 from app.routers.risk_contract import router as risk_contract_router
 from app.routers.spending import router as spending_router
 from app.routers.users import router as users_router
+from app.services.csv_import_service import CSVUploadRequestLimitMiddleware
 
 
 def create_app(
@@ -102,6 +103,7 @@ def create_app(
         application.state.local_portfolio_store = local_portfolio_store
         application.state.local_foundation_store = local_foundation_store
 
+    application.add_middleware(CSVUploadRequestLimitMiddleware)
     application.add_middleware(LocalApplicationBoundaryMiddleware)
     application.add_middleware(CorrelationIdMiddleware)
     application.add_middleware(CORSMiddleware, **get_cors_middleware_kwargs(active_settings))
