@@ -13,15 +13,15 @@ from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile
 from app.auth.principal import Principal, get_current_principal
 from app.core.responses import APIResponse
 from app.repositories.spending_repository import spending_repository
-from app.services.csv_import_service import (
-    MAX_UPLOAD_BYTES,
-    CSVImportError,
-    import_spending_csv,
-)
 from app.schemas.sprint5_privacy_spending import (
     CategoryCorrectionRequest,
     MonthlyCategoryTrend,
     SpendingTrendResponse,
+)
+from app.services.csv_import_service import (
+    MAX_UPLOAD_BYTES,
+    CSVImportError,
+    import_spending_csv,
 )
 
 router = APIRouter(
