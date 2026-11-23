@@ -1,3 +1,4 @@
+import asyncio
 from contextlib import closing
 from types import SimpleNamespace
 
@@ -120,3 +121,88 @@ def test_import_endpoint_returns_finex_envelope_and_requires_identity(tmp_path, 
     assert body["message"] == "Spending CSV imported"
     assert body["data"]["total_rows_imported"] == 1
     assert body["meta"]["correlationId"]
+
+
+def test_oversized_content_length_is_rejected_before_reading_request_body():
+    async def scenario():
+        app_called = False
+        receive_calls = 0
+        sent = []
+
+        async def app(scope, receive, send):
+            nonlocal app_called
+            app_called = True
+
+        async def receive():
+            nonlocal receive_calls
+            receive_calls += 1
+            return {"type": "http.request", "body": b"", "more_body": False}
+
+        async def send(message):
+            sent.append(message)
+
+        scope = {
+            "type": "http",
+            "method": "POST",
+            "path": "/api/v1/spending/imports",
+            "headers": [
+                (b"content-type", b"multipart/form-data; boundary=test"),
+                (
+                    b"content-length",
+                    str(service.MAX_IMPORT_REQUEST_BYTES + 1).encode("ascii"),
+                ),
+            ],
+        }
+        middleware = service.CSVUploadRequestLimitMiddleware(app)
+
+        await middleware(scope, receive, send)
+
+        assert not app_called
+        assert receive_calls == 0
+        assert sent[0]["status"] == 413
+
+    asyncio.run(scenario())
+
+
+def test_chunked_oversized_request_is_stopped_during_receive():
+    async def scenario():
+        chunks = [
+            {
+                "type": "http.request",
+                "body": b"x" * service.MAX_IMPORT_REQUEST_BYTES,
+                "more_body": True,
+            },
+            {"type": "http.request", "body": b"x", "more_body": True},
+        ]
+        receive_calls = 0
+        sent = []
+
+        async def app(scope, receive, send):
+            while True:
+                message = await receive()
+                if not message.get("more_body"):
+                    return
+
+        async def receive():
+            nonlocal receive_calls
+            chunk = chunks[receive_calls]
+            receive_calls += 1
+            return chunk
+
+        async def send(message):
+            sent.append(message)
+
+        scope = {
+            "type": "http",
+            "method": "POST",
+            "path": "/api/v1/spending/imports",
+            "headers": [(b"content-type", b"multipart/form-data; boundary=test")],
+        }
+        middleware = service.CSVUploadRequestLimitMiddleware(app)
+
+        await middleware(scope, receive, send)
+
+        assert receive_calls == 2
+        assert sent[0]["status"] == 413
+
+    asyncio.run(scenario())
