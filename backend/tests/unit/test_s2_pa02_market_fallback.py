@@ -47,9 +47,7 @@ async def test_cache_is_cached_at_exact_sixty_second_boundary() -> None:
     fetched_at = datetime(2026, 1, 1, tzinfo=timezone.utc)
     service._last_good["AAPL"] = (make_quote(timestamp=fetched_at), fetched_at)
 
-    response = await service._get_last_good_response(
-        "AAPL", fetched_at + timedelta(seconds=60.0)
-    )
+    response = await service._get_last_good_response("AAPL", fetched_at + timedelta(seconds=60.0))
 
     assert response is not None
     assert response.freshness == DataFreshness.CACHED

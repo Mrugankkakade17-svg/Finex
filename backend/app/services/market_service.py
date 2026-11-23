@@ -289,11 +289,7 @@ class MarketService(MarketDataProvider):
         response = await self.get_quote_with_freshness(symbol, fallback_price=fallback_price)
 
         if response.freshness == DataFreshness.UNAVAILABLE:
-            if (
-                response.price is not None
-                and math.isfinite(response.price)
-                and response.price > 0
-            ):
+            if response.price is not None and math.isfinite(response.price) and response.price > 0:
                 return MarketQuote(
                     symbol=response.symbol,
                     price=response.price,
@@ -307,11 +303,7 @@ class MarketService(MarketDataProvider):
                 response.error or "All market providers in chain failed or unavailable",
             )
 
-        if (
-            response.price is None
-            or not math.isfinite(response.price)
-            or response.price <= 0
-        ):
+        if response.price is None or not math.isfinite(response.price) or response.price <= 0:
             raise ProviderUnavailableException(
                 "market_chain",
                 response.error or "Price unavailable",
