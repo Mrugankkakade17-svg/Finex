@@ -11,6 +11,7 @@
 - Maximum upload: 5 MiB.
 - Maximum records: 10,000.
 - Maximum field length: 4,096 characters.
+- The endpoint middleware caps multipart request bodies at 5 MiB plus 64 KiB for multipart framing. It rejects oversized Content-Length values before parsing, and counts streamed chunks when length is absent or untrusted. This bounds temporary upload spooling before FastAPI parses the file.
 - Formula-like description and category values receive a leading apostrophe before persistence/export.
 - Imported records are persisted under the authenticated principal's user ID.
 
@@ -40,6 +41,4 @@ Full backend pytest — 2,857 passed, 5 xfailed, 2 xpassed
 Coverage — 85.95% (required: 70%)
 ```
 
-The CSV import tests are included in both full backend runs. They cover the authenticated
-endpoint, user-scoped persistence, upload/row/field limits, malformed rows, masking,
-and formula escaping.
+The CSV import tests cover the authenticated endpoint, user-scoped persistence, upload/row/field limits, malformed rows, masking, and formula escaping. Two additional ASGI middleware tests verify that oversized requests with a declared Content-Length are rejected without reading the body and chunked requests stop at the byte ceiling. These latest incremental tests are running in CI.
