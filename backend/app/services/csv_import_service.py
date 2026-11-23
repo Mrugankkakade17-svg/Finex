@@ -94,6 +94,7 @@ class CSVUploadRequestLimitMiddleware:
         )
         await response(scope, receive, send)
 
+
 MAX_ROWS = 10_000
 MAX_FIELD_CHARS = 4_096
 REQUIRED_COLUMNS = ("date", "description", "amount", "category")
