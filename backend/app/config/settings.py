@@ -96,6 +96,13 @@ class Settings(BaseSettings):
     hosted_llm_provider: str = "gemini"
     gemini_api_key: str = ""
     hosted_llm_model: str = "gemini-3.8-flash"
+    groq_api_key: str = ""
+    groq_model: str = "openai/gpt-oss-120b"
+    groq_base_url: str = "https://api.groq.com/openai/v1"
+    cloudflare_account_id: str = ""
+    cloudflare_api_token: str = ""
+    cloudflare_model: str = "@cf/google/gemma-3-12b-it"
+    cloudflare_base_url: str = "https://api.cloudflare.com/client/v4"
     llm_timeout_seconds: float = Field(default=10.0, ge=1.0, le=120.0)
     llm_cascade_enabled: bool = True
 
@@ -109,6 +116,8 @@ class Settings(BaseSettings):
         "databricks_token",
         "openai_api_key",
         "gemini_api_key",
+        "groq_api_key",
+        "cloudflare_api_token",
         "market_data_api_key",
         "password",
         "token",

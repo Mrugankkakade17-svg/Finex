@@ -19,8 +19,12 @@ import httpx
 import pytest
 
 from app.adapters.llm import (
+    DEFAULT_CLOUDFLARE_MODEL,
+    DEFAULT_GROQ_MODEL,
+    CloudflareLLMAdapter,
     CompositeLLMProvider,
     DeterministicFallbackAdapter,
+    GroqLLMAdapter,
     HostedLLMAdapter,
     LLMProvider,
     OllamaLLMAdapter,
@@ -49,6 +53,16 @@ def test_ollama_adapter_satisfies_protocol():
 
 def test_hosted_adapter_satisfies_protocol():
     adapter = HostedLLMAdapter(api_key="mock_key")
+    assert isinstance(adapter, LLMProvider)
+
+
+def test_groq_adapter_satisfies_protocol():
+    adapter = GroqLLMAdapter(api_key="gsk_test_mock_key_12345")
+    assert isinstance(adapter, LLMProvider)
+
+
+def test_cloudflare_adapter_satisfies_protocol():
+    adapter = CloudflareLLMAdapter(account_id="cf_acc_123", api_token="cf_tok_12345")
     assert isinstance(adapter, LLMProvider)
 
 
@@ -1430,3 +1444,677 @@ def test_schema_validator_mixed_case_and_whitespace_variations():
     for v in variations:
         with pytest.raises(ProhibitedContentError):
             SchemaValidator.parse_and_validate(v, schema_ref="sprint6_ai_chat")
+
+
+# ==============================================================================
+# 8. Groq Provider Adapter Tests (Free-tier openai/gpt-oss-120b)
+# ==============================================================================
+
+
+def test_groq_defaults():
+    adapter = GroqLLMAdapter(api_key="gsk_test_key_12345678")
+    assert adapter.provider_type == "groq"
+    assert adapter.model_name == DEFAULT_GROQ_MODEL
+    assert adapter.base_url == "https://api.groq.com/openai/v1"
+
+
+@pytest.mark.asyncio
+async def test_groq_missing_api_key_raises_auth_error():
+    adapter = GroqLLMAdapter(api_key="")
+    req = LLMRequest(
+        prompt_id="test", prompt_version="v1", context={}, output_schema_ref="sprint6_ai_chat"
+    )
+    with pytest.raises(ProviderAuthenticationError) as exc_info:
+        await adapter.generate(req)
+    assert "GROQ_API_KEY is empty" in str(exc_info.value)
+    assert exc_info.value.provider == "groq"
+
+
+@pytest.mark.asyncio
+async def test_groq_successful_chat_completion():
+    captured_requests = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        captured_requests.append(request)
+        data = {
+            "choices": [
+                {
+                    "message": {
+                        "content": json.dumps(
+                            {
+                                "intent": "EDUCATION",
+                                "answer_text": "A Systematic Investment Plan (SIP) allows "
+                                "investing a fixed sum at regular intervals.",
+                                "limitations_disclaimer": "Educational information only; "
+                                "not personalized investment advice.",
+                            }
+                        )
+                    }
+                }
+            ]
+        }
+        return httpx.Response(200, json=data)
+
+    client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
+    adapter = GroqLLMAdapter(api_key="gsk_secret_12345678", http_client=client)
+
+    req = LLMRequest(
+        prompt_id="sip_explanation",
+        prompt_version="v1",
+        context={"query": "Explain SIP"},
+        output_schema_ref="sprint6_ai_chat",
+    )
+    resp = await adapter.generate(req)
+
+    assert resp.model == DEFAULT_GROQ_MODEL
+    assert resp.fallback_used is True
+    assert resp.output["intent"] == "EDUCATION"
+    assert "SIP" in resp.output["answer_text"]
+
+    assert len(captured_requests) == 1
+    req_sent = captured_requests[0]
+    assert req_sent.url == "https://api.groq.com/openai/v1/chat/completions"
+    assert req_sent.headers["Authorization"] == "Bearer gsk_secret_12345678"
+    assert req_sent.headers["Content-Type"] == "application/json"
+    body = json.loads(req_sent.content.decode())
+    assert body["model"] == DEFAULT_GROQ_MODEL
+    assert body["response_format"] == {"type": "json_object"}
+
+
+@pytest.mark.asyncio
+async def test_groq_http_errors_mapped_correctly():
+    error_cases = [
+        (400, ProviderResponseError),
+        (401, ProviderAuthenticationError),
+        (403, ProviderAuthenticationError),
+        (404, ProviderResponseError),
+        (429, ProviderQuotaExceededError),
+        (500, ProviderResponseError),
+        (503, ProviderResponseError),
+    ]
+    for status_code, expected_exc in error_cases:
+
+        def handler(request: httpx.Request) -> httpx.Response:
+            return httpx.Response(status_code, text=f"Error {status_code}")
+
+        client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
+        adapter = GroqLLMAdapter(api_key="gsk_key_12345678", http_client=client)
+        req = LLMRequest(
+            prompt_id="test",
+            prompt_version="v1",
+            context={},
+            output_schema_ref="sprint6_ai_chat",
+        )
+        with pytest.raises(expected_exc) as exc_info:
+            await adapter.generate(req)
+        assert exc_info.value.provider == "groq"
+
+
+@pytest.mark.asyncio
+async def test_groq_timeout_and_connect_errors():
+    def timeout_handler(request: httpx.Request):
+        raise httpx.TimeoutException("Groq timeout")
+
+    client = httpx.AsyncClient(transport=httpx.MockTransport(timeout_handler))
+    adapter = GroqLLMAdapter(api_key="gsk_key_12345678", http_client=client)
+    req = LLMRequest(
+        prompt_id="test", prompt_version="v1", context={}, output_schema_ref="sprint6_ai_chat"
+    )
+    with pytest.raises(ProviderTimeoutError):
+        await adapter.generate(req)
+
+    def connect_handler(request: httpx.Request):
+        raise httpx.ConnectError("Groq host unreachable")
+
+    client2 = httpx.AsyncClient(transport=httpx.MockTransport(connect_handler))
+    adapter2 = GroqLLMAdapter(api_key="gsk_key_12345678", http_client=client2)
+    with pytest.raises(ProviderConnectionError):
+        await adapter2.generate(req)
+
+
+@pytest.mark.asyncio
+async def test_groq_privacy_scrubbing_and_personal_suitability_refusal():
+    captured = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        captured.append(request)
+        return httpx.Response(
+            200,
+            json={
+                "choices": [
+                    {
+                        "message": {
+                            "content": json.dumps(
+                                {
+                                    "intent": "EDUCATION",
+                                    "answer_text": "Scrubbed.",
+                                    "limitations_disclaimer": "None",
+                                }
+                            )
+                        }
+                    }
+                ]
+            },
+        )
+
+    client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
+    adapter = GroqLLMAdapter(api_key="gsk_key_12345678", http_client=client)
+
+    # 1. PII scrubbing
+    req = LLMRequest(
+        prompt_id="user_query",
+        prompt_version="v1",
+        context={
+            "email": "alice@fintech.com",
+            "phone": "+91-9876543210",
+            "query": "Contact alice@fintech.com or +91-9876543210 about stocks",
+        },
+        output_schema_ref="sprint6_ai_chat",
+    )
+    await adapter.generate(req)
+    body = json.loads(captured[0].content.decode())
+    user_prompt = body["messages"][1]["content"]
+    assert "alice@fintech.com" not in user_prompt
+    assert "+91-9876543210" not in user_prompt
+    assert "[REDACTED_EMAIL]" in user_prompt
+    assert "[REDACTED_PHONE]" in user_prompt
+
+    # 2. Personal suitability refusal
+    req_suitability = LLMRequest(
+        prompt_id="risk_profiling",
+        prompt_version="v1",
+        context={"willingness_score": 75, "capacity_score": 60},
+        output_schema_ref="sprint6_ai_chat",
+    )
+    with pytest.raises(ProviderResponseError) as exc_info:
+        await adapter.generate(req_suitability)
+    assert "Personal suitability and risk profile data cannot be transmitted" in str(exc_info.value)
+
+
+@pytest.mark.asyncio
+async def test_groq_quota_availability_and_key_redaction():
+    adapter_valid = GroqLLMAdapter(api_key="gsk_real_secret_token_12345")
+    assert await adapter_valid.is_quota_available() is True
+
+    adapter_invalid = GroqLLMAdapter(api_key="")
+    assert await adapter_invalid.is_quota_available() is False
+
+    # Key redaction
+    sanitized = adapter_valid._sanitize_error_message(
+        "Failed connection to gsk_real_secret_token_12345 at endpoint"
+    )
+    assert "gsk_real_secret_token_12345" not in sanitized
+    assert "[REDACTED_GROQ_KEY]" in sanitized
+
+
+# ==============================================================================
+# 9. Cloudflare Workers AI Provider Adapter Tests (@cf/google/gemma-3-12b-it)
+# ==============================================================================
+
+
+def test_cloudflare_defaults():
+    adapter = CloudflareLLMAdapter(
+        account_id="cf_acc_12345",
+        api_token="cf_tok_abcdef123456",
+    )
+    assert adapter.provider_type == "cloudflare"
+    assert adapter.model_name == DEFAULT_CLOUDFLARE_MODEL
+    assert adapter.base_url == "https://api.cloudflare.com/client/v4"
+
+
+@pytest.mark.asyncio
+async def test_cloudflare_missing_credentials_raises_auth_error():
+    adapter_no_tok = CloudflareLLMAdapter(account_id="cf_acc_12345", api_token="")
+    req = LLMRequest(
+        prompt_id="test", prompt_version="v1", context={}, output_schema_ref="sprint6_ai_chat"
+    )
+    with pytest.raises(ProviderAuthenticationError) as exc_info:
+        await adapter_no_tok.generate(req)
+    assert "Cloudflare API credentials not configured" in str(exc_info.value)
+    assert exc_info.value.provider == "cloudflare"
+
+    adapter_no_acc = CloudflareLLMAdapter(account_id="", api_token="cf_tok_12345678")
+    with pytest.raises(ProviderAuthenticationError):
+        await adapter_no_acc.generate(req)
+
+
+@pytest.mark.asyncio
+async def test_cloudflare_successful_generation():
+    captured_requests = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        captured_requests.append(request)
+        data = {
+            "result": {
+                "response": json.dumps(
+                    {
+                        "intent": "EDUCATION",
+                        "answer_text": "Asset allocation balances risk and reward by apportioning "
+                        "a portfolio's assets according to an individual's goals.",
+                        "limitations_disclaimer": "Educational only; not advice.",
+                    }
+                )
+            },
+            "success": True,
+            "errors": [],
+            "messages": [],
+        }
+        return httpx.Response(200, json=data)
+
+    client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
+    adapter = CloudflareLLMAdapter(
+        account_id="cf_account_abc123",
+        api_token="cf_token_xyz987654",
+        http_client=client,
+    )
+
+    req = LLMRequest(
+        prompt_id="allocation_intro",
+        prompt_version="v1",
+        context={"query": "What is asset allocation?"},
+        output_schema_ref="sprint6_ai_chat",
+    )
+    resp = await adapter.generate(req)
+
+    assert resp.model == DEFAULT_CLOUDFLARE_MODEL
+    assert resp.fallback_used is True
+    assert resp.output["intent"] == "EDUCATION"
+    assert "Asset allocation" in resp.output["answer_text"]
+
+    assert len(captured_requests) == 1
+    req_sent = captured_requests[0]
+    expected_url = (
+        f"https://api.cloudflare.com/client/v4/accounts/cf_account_abc123/ai/run/"
+        f"{DEFAULT_CLOUDFLARE_MODEL}"
+    )
+    assert str(req_sent.url) == expected_url
+    assert req_sent.headers["Authorization"] == "Bearer cf_token_xyz987654"
+    assert req_sent.headers["Content-Type"] == "application/json"
+
+
+@pytest.mark.asyncio
+async def test_cloudflare_http_and_body_errors_mapped_correctly():
+    error_cases = [
+        (400, ProviderResponseError),
+        (401, ProviderAuthenticationError),
+        (403, ProviderAuthenticationError),
+        (404, ProviderResponseError),
+        (429, ProviderQuotaExceededError),
+        (500, ProviderResponseError),
+    ]
+    for status_code, expected_exc in error_cases:
+
+        def handler(request: httpx.Request) -> httpx.Response:
+            return httpx.Response(status_code, text=f"Error {status_code}")
+
+        client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
+        adapter = CloudflareLLMAdapter(
+            account_id="acc_123", api_token="tok_12345678", http_client=client
+        )
+        req = LLMRequest(
+            prompt_id="test",
+            prompt_version="v1",
+            context={},
+            output_schema_ref="sprint6_ai_chat",
+        )
+        with pytest.raises(expected_exc) as exc_info:
+            await adapter.generate(req)
+        assert exc_info.value.provider == "cloudflare"
+
+    # Cloudflare body success: false with neuron quota error
+    def neuron_limit_handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(
+            200,
+            json={
+                "success": False,
+                "errors": [{"code": 1000, "message": "Daily neuron limit exceeded on free plan"}],
+            },
+        )
+
+    client_neuron = httpx.AsyncClient(transport=httpx.MockTransport(neuron_limit_handler))
+    adapter_neuron = CloudflareLLMAdapter(
+        account_id="acc_123", api_token="tok_12345678", http_client=client_neuron
+    )
+    with pytest.raises(ProviderQuotaExceededError) as exc_info:
+        await adapter_neuron.generate(req)
+    assert "quota exceeded" in str(exc_info.value).lower()
+
+
+@pytest.mark.asyncio
+async def test_cloudflare_privacy_scrubbing_and_suitability_refusal():
+    captured = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        captured.append(request)
+        return httpx.Response(
+            200,
+            json={
+                "result": {
+                    "response": json.dumps(
+                        {
+                            "intent": "EDUCATION",
+                            "answer_text": "Scrubbed.",
+                            "limitations_disclaimer": "None",
+                        }
+                    )
+                },
+                "success": True,
+            },
+        )
+
+    client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
+    adapter = CloudflareLLMAdapter(
+        account_id="acc_123", api_token="tok_12345678", http_client=client
+    )
+
+    req = LLMRequest(
+        prompt_id="user_query",
+        prompt_version="v1",
+        context={
+            "email": "bob@fintech.com",
+            "phone": "+91-9876543210",
+            "query": "Contact bob@fintech.com or +91-9876543210 about mutual funds",
+        },
+        output_schema_ref="sprint6_ai_chat",
+    )
+    await adapter.generate(req)
+    body = json.loads(captured[0].content.decode())
+    user_prompt = body["messages"][1]["content"]
+    assert "bob@fintech.com" not in user_prompt
+    assert "[REDACTED_EMAIL]" in user_prompt
+
+    # Suitability refusal
+    req_suitability = LLMRequest(
+        prompt_id="risk_assessment",
+        prompt_version="v1",
+        context={"composite_score": 82},
+        output_schema_ref="sprint6_ai_chat",
+    )
+    with pytest.raises(ProviderResponseError):
+        await adapter.generate(req_suitability)
+
+
+@pytest.mark.asyncio
+async def test_cloudflare_token_and_account_redaction():
+    adapter = CloudflareLLMAdapter(
+        account_id="secret_cf_acc_999",
+        api_token="secret_cf_tok_888",
+    )
+    sanitized = adapter._sanitize_error_message(
+        "Request failed for secret_cf_acc_999 using secret_cf_tok_888"
+    )
+    assert "secret_cf_acc_999" not in sanitized
+    assert "secret_cf_tok_888" not in sanitized
+    assert "[REDACTED_CLOUDFLARE_ACCOUNT]" in sanitized
+    assert "[REDACTED_CLOUDFLARE_TOKEN]" in sanitized
+
+
+# ==============================================================================
+# 10. Multi-Hosted 5-Tier Resilient Cascade Tests
+# ==============================================================================
+
+
+@pytest.mark.asyncio
+async def test_multihosted_cascade_stage1_primary_ollama_succeeds():
+    mock_ollama = AsyncMock(spec=LLMProvider)
+    mock_ollama.generate.return_value = LLMResponse(
+        output={"intent": "EDUCATION", "answer_text": "Ollama primary response"},
+        model="llama3.2:1b",
+        prompt_id="test",
+        prompt_version="v1",
+        retriever_version=None,
+        citations=[],
+        fallback_used=False,
+    )
+    mock_gemini = AsyncMock(spec=LLMProvider)
+    mock_groq = AsyncMock(spec=LLMProvider)
+    mock_cloudflare = AsyncMock(spec=LLMProvider)
+    mock_fallback = AsyncMock(spec=LLMProvider)
+
+    composite = CompositeLLMProvider(
+        primary_provider=mock_ollama,
+        gemini_provider=mock_gemini,
+        groq_provider=mock_groq,
+        cloudflare_provider=mock_cloudflare,
+        deterministic_fallback=mock_fallback,
+    )
+
+    req = LLMRequest(
+        prompt_id="test", prompt_version="v1", context={}, output_schema_ref="sprint6_ai_chat"
+    )
+    resp = await composite.generate(req)
+
+    assert resp.model == "llama3.2:1b"
+    assert resp.fallback_used is False
+    assert composite.last_provider_used == "primary_ollama"
+    mock_ollama.generate.assert_awaited_once_with(req)
+    mock_gemini.generate.assert_not_awaited()
+    mock_groq.generate.assert_not_awaited()
+    mock_cloudflare.generate.assert_not_awaited()
+    mock_fallback.generate.assert_not_awaited()
+
+
+@pytest.mark.asyncio
+async def test_multihosted_cascade_stage2_gemini_succeeds():
+    mock_ollama = AsyncMock(spec=LLMProvider)
+    mock_ollama.generate.side_effect = ProviderConnectionError("Ollama offline")
+
+    mock_gemini = AsyncMock(spec=LLMProvider)
+    mock_gemini.generate.return_value = LLMResponse(
+        output={"intent": "EDUCATION", "answer_text": "Gemini hosted response"},
+        model="gemini-3.8-flash",
+        prompt_id="test",
+        prompt_version="v1",
+        retriever_version=None,
+        citations=[],
+        fallback_used=True,
+    )
+    mock_groq = AsyncMock(spec=LLMProvider)
+    mock_cloudflare = AsyncMock(spec=LLMProvider)
+    mock_fallback = AsyncMock(spec=LLMProvider)
+
+    composite = CompositeLLMProvider(
+        primary_provider=mock_ollama,
+        gemini_provider=mock_gemini,
+        groq_provider=mock_groq,
+        cloudflare_provider=mock_cloudflare,
+        deterministic_fallback=mock_fallback,
+    )
+
+    req = LLMRequest(
+        prompt_id="test", prompt_version="v1", context={}, output_schema_ref="sprint6_ai_chat"
+    )
+    resp = await composite.generate(req)
+
+    assert resp.model == "gemini-3.8-flash"
+    assert composite.last_provider_used == "hosted_fallback"
+    assert composite.last_provider_name == "gemini"
+    mock_ollama.generate.assert_awaited_once()
+    mock_gemini.generate.assert_awaited_once()
+    mock_groq.generate.assert_not_awaited()
+    mock_cloudflare.generate.assert_not_awaited()
+    mock_fallback.generate.assert_not_awaited()
+
+
+@pytest.mark.asyncio
+async def test_multihosted_cascade_stage3_groq_succeeds():
+    mock_ollama = AsyncMock(spec=LLMProvider)
+    mock_ollama.generate.side_effect = ProviderConnectionError("Ollama offline")
+
+    mock_gemini = AsyncMock(spec=LLMProvider)
+    mock_gemini.generate.side_effect = ProviderQuotaExceededError("Gemini 429 quota")
+
+    mock_groq = AsyncMock(spec=LLMProvider)
+    mock_groq.generate.return_value = LLMResponse(
+        output={"intent": "EDUCATION", "answer_text": "Groq response on gpt-oss-120b"},
+        model=DEFAULT_GROQ_MODEL,
+        prompt_id="test",
+        prompt_version="v1",
+        retriever_version=None,
+        citations=[],
+        fallback_used=True,
+    )
+    mock_cloudflare = AsyncMock(spec=LLMProvider)
+    mock_fallback = AsyncMock(spec=LLMProvider)
+
+    composite = CompositeLLMProvider(
+        primary_provider=mock_ollama,
+        gemini_provider=mock_gemini,
+        groq_provider=mock_groq,
+        cloudflare_provider=mock_cloudflare,
+        deterministic_fallback=mock_fallback,
+    )
+
+    req = LLMRequest(
+        prompt_id="test", prompt_version="v1", context={}, output_schema_ref="sprint6_ai_chat"
+    )
+    resp = await composite.generate(req)
+
+    assert resp.model == DEFAULT_GROQ_MODEL
+    assert composite.last_provider_used == "groq_hosted"
+    assert composite.last_provider_name == "groq"
+    mock_ollama.generate.assert_awaited_once()
+    mock_gemini.generate.assert_awaited_once()
+    mock_groq.generate.assert_awaited_once()
+    mock_cloudflare.generate.assert_not_awaited()
+    mock_fallback.generate.assert_not_awaited()
+
+
+@pytest.mark.asyncio
+async def test_multihosted_cascade_stage4_cloudflare_succeeds():
+    mock_ollama = AsyncMock(spec=LLMProvider)
+    mock_ollama.generate.side_effect = ProviderConnectionError("Ollama offline")
+
+    mock_gemini = AsyncMock(spec=LLMProvider)
+    mock_gemini.generate.side_effect = ProviderQuotaExceededError("Gemini 429 rate limit")
+
+    mock_groq = AsyncMock(spec=LLMProvider)
+    mock_groq.generate.side_effect = ProviderQuotaExceededError("Groq 429 rate limit")
+
+    mock_cloudflare = AsyncMock(spec=LLMProvider)
+    mock_cloudflare.generate.return_value = LLMResponse(
+        output={"intent": "EDUCATION", "answer_text": "Cloudflare Gemma 3 12B response"},
+        model=DEFAULT_CLOUDFLARE_MODEL,
+        prompt_id="test",
+        prompt_version="v1",
+        retriever_version=None,
+        citations=[],
+        fallback_used=True,
+    )
+    mock_fallback = AsyncMock(spec=LLMProvider)
+
+    composite = CompositeLLMProvider(
+        primary_provider=mock_ollama,
+        gemini_provider=mock_gemini,
+        groq_provider=mock_groq,
+        cloudflare_provider=mock_cloudflare,
+        deterministic_fallback=mock_fallback,
+    )
+
+    req = LLMRequest(
+        prompt_id="test", prompt_version="v1", context={}, output_schema_ref="sprint6_ai_chat"
+    )
+    resp = await composite.generate(req)
+
+    assert resp.model == DEFAULT_CLOUDFLARE_MODEL
+    assert composite.last_provider_used == "cloudflare_hosted"
+    assert composite.last_provider_name == "cloudflare"
+    mock_ollama.generate.assert_awaited_once()
+    mock_gemini.generate.assert_awaited_once()
+    mock_groq.generate.assert_awaited_once()
+    mock_cloudflare.generate.assert_awaited_once()
+    mock_fallback.generate.assert_not_awaited()
+
+
+@pytest.mark.asyncio
+async def test_multihosted_cascade_stage5_all_hosted_fail_deterministic_succeeds():
+    mock_ollama = AsyncMock(spec=LLMProvider)
+    mock_ollama.generate.side_effect = ProviderConnectionError("Ollama down")
+
+    mock_gemini = AsyncMock(spec=LLMProvider)
+    mock_gemini.generate.side_effect = ProviderQuotaExceededError("Gemini 429")
+
+    mock_groq = AsyncMock(spec=LLMProvider)
+    mock_groq.generate.side_effect = ProviderQuotaExceededError("Groq 429")
+
+    mock_cloudflare = AsyncMock(spec=LLMProvider)
+    mock_cloudflare.generate.side_effect = ProviderQuotaExceededError("Cloudflare 429 neurons")
+
+    fallback_adapter = DeterministicFallbackAdapter()
+
+    composite = CompositeLLMProvider(
+        primary_provider=mock_ollama,
+        gemini_provider=mock_gemini,
+        groq_provider=mock_groq,
+        cloudflare_provider=mock_cloudflare,
+        deterministic_fallback=fallback_adapter,
+    )
+
+    req = LLMRequest(
+        prompt_id="test",
+        prompt_version="v1",
+        context={"query": "Explain asset allocation"},
+        output_schema_ref="sprint6_ai_chat",
+    )
+    resp = await composite.generate(req)
+
+    assert resp.fallback_used is True
+    assert resp.model == "deterministic-fallback-v1"
+    assert composite.last_provider_used == "deterministic_fallback"
+    assert composite.last_provider_name == "deterministic"
+    assert "safe deterministic fallback" in resp.output["limitations_disclaimer"].lower()
+    mock_ollama.generate.assert_awaited_once()
+    mock_gemini.generate.assert_awaited_once()
+    mock_groq.generate.assert_awaited_once()
+    mock_cloudflare.generate.assert_awaited_once()
+
+
+@pytest.mark.asyncio
+async def test_multihosted_cascade_health_status_and_is_quota_available():
+    mock_ollama = AsyncMock(spec=LLMProvider)
+    mock_ollama.is_quota_available.return_value = False
+
+    mock_gemini = AsyncMock(spec=LLMProvider)
+    mock_gemini.is_quota_available.return_value = False
+
+    mock_groq = AsyncMock(spec=LLMProvider)
+    mock_groq.is_quota_available.return_value = True
+
+    mock_cloudflare = AsyncMock(spec=LLMProvider)
+    mock_cloudflare.is_quota_available.return_value = False
+
+    composite = CompositeLLMProvider(
+        primary_provider=mock_ollama,
+        gemini_provider=mock_gemini,
+        groq_provider=mock_groq,
+        cloudflare_provider=mock_cloudflare,
+    )
+
+    status = await composite.health_status()
+    assert status["primary_ollama_available"] is False
+    assert status["gemini_available"] is False
+    assert status["groq_available"] is True
+    assert status["cloudflare_available"] is False
+    assert status["deterministic_fallback_available"] is True
+
+    # Quota check returns True because Groq is available
+    assert await composite.is_quota_available() is True
+
+
+def test_get_llm_provider_configures_all_hosted_tiers():
+    settings = Settings(
+        app_env="test",
+        secret_key="01234567890123456789012345678901",
+        gemini_api_key="gemini_mock_key_12345",
+        groq_api_key="gsk_mock_groq_key_12345",
+        cloudflare_account_id="cf_mock_acc_12345",
+        cloudflare_api_token="cf_mock_tok_12345",
+    )
+    provider = get_llm_provider(settings)
+    assert isinstance(provider, CompositeLLMProvider)
+    assert provider.gemini_provider is not None
+    assert provider.groq_provider is not None
+    assert provider.cloudflare_provider is not None
+    assert provider.gemini_provider.model_name == "gemini-3.8-flash"
+    assert provider.groq_provider.model_name == "openai/gpt-oss-120b"
+    assert provider.cloudflare_provider.model_name == "@cf/google/gemma-3-12b-it"

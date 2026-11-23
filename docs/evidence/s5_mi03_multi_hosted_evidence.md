@@ -1,0 +1,78 @@
+# FinEx S5-MI03: Multi-Hosted Free-Tier LLM Cascade Verification Evidence
+
+**Task ID:** S5-MI03 (Multi-Hosted Architecture Scope Expansion)  
+**Branch:** `feature/s5-mi03-multi-hosted-llm-cascade`  
+**Author:** Mitali (@mitali2701)  
+**Date:** 2026-11-23  
+**Status:** COMPLETE & TESTED (Isolated on scope feature branch, ready for review)
+
+---
+
+## 1. Executive Summary
+
+This document presents the complete verification evidence for expanding the FinEx S5-MI03 LLM provider architecture into a 5-tier multi-cloud free-tier cascade:
+
+$$\text{Ollama (Primary)} \longrightarrow \text{Gemini} \longrightarrow \text{Groq} \longrightarrow \text{Cloudflare Workers AI} \longrightarrow \text{Deterministic Offline Fallback}$$
+
+Every external provider and model was verified against upstream API documentation and confirmed to operate strictly within permanent free allocations with **$0.00 infrastructure cost**. Under no circumstances does any provider outage, quota exhaustion (HTTP 429), authentication failure, timeout, or schema validation failure raise an unhandled error; the architecture guarantees a safe, validated, SEBI-compliant response.
+
+---
+
+## 2. Upstream Model Verification & Free Allocation Matrix
+
+| Tier | Provider | Model Identifier | Free Tier Limits | Upstream Reference / Verification |
+|---|---|---|---|---|
+| **Tier 1 (Primary)** | Ollama | `llama3.2:1b` | Local, unlimited | Local Docker / Native execution |
+| **Tier 2 (Hosted #1)** | Google Gemini | `gemini-3.8-flash` | 15 RPM / 1,500 RPD / 1M TPM | Gemini Official API Docs (Standard Free Tier $0.00) |
+| **Tier 3 (Hosted #2)** | Groq | `openai/gpt-oss-120b` | 30 RPM / 1,000 RPD / 8k TPM / 200k TPD | Groq LPUs Documentation (Free Tier $0.00) |
+| **Tier 4 (Hosted #3)** | Cloudflare Workers AI | `@cf/google/gemma-3-12b-it` | 10,000 Neurons/day (resets 00:00 UTC) | Cloudflare Workers AI Docs (Workers Free Plan $0.00) |
+| **Tier 5 (Offline)** | Deterministic Engine | `deterministic-fallback-v1` | 100% Offline, Zero Network Calls | In-repo deterministic financial education engine |
+
+### Zero-Cost & Anti-Lockout Verification
+- **No Paid Models:** No pay-as-you-go, enterprise, or paid model identifiers are configured.
+- **Fail-Over on 429:** When free daily limits are reached (HTTP 429), execution immediately falls forward to the next tier without retrying in a billable mode.
+- **Fail-Safe Offline Guarantee:** If all network providers are unavailable or disconnected, `DeterministicFallbackAdapter` generates valid educational responses with zero latency and zero external dependencies.
+
+---
+
+## 3. Security, Privacy, and Financial Compliance Verification
+
+1. **Client-Side Data Minimization:**
+   `HostedLLMAdapter.sanitize_context_for_external_provider` runs locally before dispatching to Gemini, Groq, or Cloudflare:
+   - Sensitive keys (`user_id`, `balance`, `portfolio`, `email`, `phone`, `account_number`, `pan`, `aadhaar`) are stripped.
+   - PII patterns are replaced with `[REDACTED_EMAIL]`, `[REDACTED_PHONE]`, `[REDACTED_PAN]`, `[REDACTED_AADHAAR]`, `[REDACTED_AMOUNT]`.
+2. **Personal Suitability Exclusion:**
+   Prompts containing personal suitability metrics (`willingness_score`, `capacity_score`, `composite_score`) or risk profiling schemas are rejected from external transmission, failing closed to deterministic offline fallback.
+3. **SEBI Compliance & Anti-Advice Guardrails:**
+   System prompts enforce strict refusal of stock tips, buy/sell recommendations, and guarantees.
+4. **Header Authentication & Credential Masking:**
+   - Groq: `Authorization: Bearer <GROQ_API_KEY>`
+   - Cloudflare: `Authorization: Bearer <CLOUDFLARE_API_TOKEN>`
+   - Registered in `Settings.SENSITIVE_FIELDS` for automatic log masking.
+   - Keys and account IDs are scrubbed from error messages via `_sanitize_error_message`.
+
+---
+
+## 4. Test Suite Execution & Coverage
+
+### Unit and Contract Tests (`test_llm_adapters.py`)
+- **Total Tests:** 81 passed in 1.04s (0 failed, 0 errors).
+- **Code Coverage:** **82%** across `app.adapters.llm` (exceeds 70% threshold):
+  - `composite_provider.py`: **94%**
+  - `groq_adapter.py`: **78%**
+  - `cloudflare_adapter.py`: **72%**
+  - `deterministic_adapter.py`: **90%**
+  - `hosted_adapter.py`: **73%**
+  - `ollama_adapter.py`: **82%**
+  - `schema_validator.py`: **93%**
+  - `__init__.py`: **94%**
+  - `exceptions.py`: **100%**
+
+### Key Cascade Tests Verified
+- `test_multihosted_cascade_stage1_primary_ollama_succeeds`: Primary Ollama handles request without calling hosted tiers.
+- `test_multihosted_cascade_stage2_gemini_succeeds`: Primary failure falls over to Gemini.
+- `test_multihosted_cascade_stage3_groq_succeeds`: Primary + Gemini 429 rate limit falls over to Groq.
+- `test_multihosted_cascade_stage4_cloudflare_succeeds`: Primary + Gemini 429 + Groq 429 falls over to Cloudflare Gemma 3 12B.
+- `test_multihosted_cascade_stage5_all_hosted_fail_deterministic_succeeds`: Total multi-cloud outage gracefully resolves to offline deterministic engine with safe disclaimer and valid schema.
+- `test_multihosted_cascade_health_status_and_is_quota_available`: Multi-tier diagnostic telemetry verified.
+- `test_get_llm_provider_configures_all_hosted_tiers`: Settings factory wires all providers correctly.

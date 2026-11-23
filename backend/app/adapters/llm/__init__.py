@@ -3,7 +3,7 @@ backend/app/adapters/llm/__init__.py
 
 Package initialization for FinEx LLM provider adapters, fallback cascades,
 and deterministic educational fallback.
-Task: S5-MI03
+Task: S5-MI03 (Multi-Hosted Free-Tier Cascade)
 Owner: Mitali (@mitali2701)
 """
 
@@ -11,6 +11,10 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Optional
 
+from app.adapters.llm.cloudflare_adapter import (
+    DEFAULT_CLOUDFLARE_MODEL,
+    CloudflareLLMAdapter,
+)
 from app.adapters.llm.composite_provider import CompositeLLMProvider
 from app.adapters.llm.deterministic_adapter import (
     FALLBACK_MODEL_NAME,
@@ -25,6 +29,10 @@ from app.adapters.llm.exceptions import (
     ProviderResponseError,
     ProviderTimeoutError,
     SchemaValidationError,
+)
+from app.adapters.llm.groq_adapter import (
+    DEFAULT_GROQ_MODEL,
+    GroqLLMAdapter,
 )
 from app.adapters.llm.hosted_adapter import HostedLLMAdapter
 from app.adapters.llm.ollama_adapter import (
@@ -54,13 +62,20 @@ def get_llm_provider(settings: Optional[Settings] = None) -> LLMProvider:
     gemini_key = getattr(settings, "gemini_api_key", None)
     hosted_model = getattr(settings, "hosted_llm_model", None)
 
+    groq_key = getattr(settings, "groq_api_key", None)
+    groq_model = getattr(settings, "groq_model", DEFAULT_GROQ_MODEL)
+
+    cf_account_id = getattr(settings, "cloudflare_account_id", None)
+    cf_api_token = getattr(settings, "cloudflare_api_token", None)
+    cf_model = getattr(settings, "cloudflare_model", DEFAULT_CLOUDFLARE_MODEL)
+
     primary = OllamaLLMAdapter(
         base_url=ollama_url,
         model_name=ollama_model,
         timeout_seconds=timeout,
     )
 
-    hosted = (
+    gemini = (
         HostedLLMAdapter(
             provider_type="gemini",
             api_key=gemini_key or None,
@@ -71,11 +86,26 @@ def get_llm_provider(settings: Optional[Settings] = None) -> LLMProvider:
         else None
     )
 
+    groq = GroqLLMAdapter(
+        api_key=groq_key or None,
+        model_name=groq_model,
+        timeout_seconds=timeout,
+    )
+
+    cloudflare = CloudflareLLMAdapter(
+        account_id=cf_account_id or None,
+        api_token=cf_api_token or None,
+        model_name=cf_model,
+        timeout_seconds=timeout,
+    )
+
     deterministic = DeterministicFallbackAdapter()
 
     return CompositeLLMProvider(
         primary_provider=primary,
-        hosted_provider=hosted,
+        gemini_provider=gemini,
+        groq_provider=groq,
+        cloudflare_provider=cloudflare,
         deterministic_fallback=deterministic,
     )
 
@@ -84,12 +114,16 @@ __all__ = [
     "LLMProvider",
     "OllamaLLMAdapter",
     "HostedLLMAdapter",
+    "GroqLLMAdapter",
+    "CloudflareLLMAdapter",
     "DeterministicFallbackAdapter",
     "CompositeLLMProvider",
     "SchemaValidator",
     "get_llm_provider",
     "DEFAULT_OLLAMA_URL",
     "DEFAULT_OLLAMA_MODEL",
+    "DEFAULT_GROQ_MODEL",
+    "DEFAULT_CLOUDFLARE_MODEL",
     "FALLBACK_MODEL_NAME",
     "LLMProviderError",
     "ProviderConnectionError",
