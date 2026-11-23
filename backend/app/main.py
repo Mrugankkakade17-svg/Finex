@@ -39,6 +39,7 @@ from app.routers.local_application import router as local_application_router
 from app.routers.local_foundation import router as local_foundation_router
 from app.routers.local_portfolio import router as local_portfolio_router
 from app.routers.local_risk import router as local_risk_router
+from app.routers.market import router as market_router
 from app.routers.onboarding import router as onboarding_router
 from app.routers.ops_hardening import router as ops_hardening_router
 from app.routers.privacy import router as privacy_router
@@ -118,6 +119,7 @@ def create_app(
     application.include_router(consent_profile_router)
     application.include_router(local_application_router)
     application.include_router(local_portfolio_router)
+    application.include_router(market_router)
     application.include_router(local_risk_router)
     application.include_router(local_foundation_router)
     application.include_router(goals_router)
