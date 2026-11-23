@@ -31,6 +31,29 @@ async def test_fx006_seed_is_idempotent_and_database_constraints_hold(postgres_d
             ).all()
             assert second_targets == first_targets
 
+            # A new benchmark version must coexist with, not overwrite, v1.
+            await connection.execute(
+                text(
+                    """
+                    INSERT INTO finex.benchmark_map
+                        (asset_class, version, benchmark_symbol, benchmark_name)
+                    VALUES ('EQUITY', 'v2', 'VTI', 'Synthetic total market proxy')
+                    ON CONFLICT (asset_class, version) DO UPDATE SET
+                        benchmark_symbol = EXCLUDED.benchmark_symbol,
+                        benchmark_name = EXCLUDED.benchmark_name
+                    """
+                )
+            )
+            equity_versions = (
+                await connection.execute(
+                    text(
+                        "SELECT version, benchmark_symbol FROM finex.benchmark_map "
+                        "WHERE asset_class = 'EQUITY' ORDER BY version"
+                    )
+                )
+            ).all()
+            assert equity_versions == [("v1", "SPY"), ("v2", "VTI")]
+
             with pytest.raises(IntegrityError):
                 async with connection.begin_nested():
                     await connection.execute(
