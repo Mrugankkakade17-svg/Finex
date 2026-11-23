@@ -147,4 +147,3 @@ async def import_transactions(
         data=summary.model_dump(mode="json"),
         correlation_id=correlation_id,
     )
-
