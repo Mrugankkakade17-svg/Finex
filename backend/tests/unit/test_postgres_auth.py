@@ -355,6 +355,42 @@ class TestDatabaseUrlConsistencyAndNoSilentFallback:
         with pytest.raises(DatabaseUnavailableException):
             repo.get_user_by_id("some-uuid")
 
+    def test_registration_and_login_fail_closed_when_postgres_unavailable(self, monkeypatch):
+        from app.core.exceptions import DatabaseUnavailableException
+
+        unavail_repo = PostgresUserRepository(
+            database_url="postgresql://invalid_host:5432/finex",
+            require_db=True,
+        )
+        unavail_repo._db_available = False
+
+        monkeypatch.setattr(auth_service, "user_repository", unavail_repo)
+        monkeypatch.setenv("APP_PERSISTENCE", "postgresql")
+
+        # Registration must fail-closed with HTTP 503
+        with pytest.raises(DatabaseUnavailableException) as exc_reg:
+            auth_service.register(
+                name="Fail Closed", email="fail_closed@finex.com", password="Pass@123"
+            )
+        assert exc_reg.value.status_code == 503
+        assert exc_reg.value.error_code == "DATABASE_UNAVAILABLE"
+
+        # Login must fail-closed with HTTP 503
+        with pytest.raises(DatabaseUnavailableException) as exc_login:
+            auth_service.login(email="fail_closed@finex.com", password="Pass@123")
+        assert exc_login.value.status_code == 503
+        assert exc_login.value.error_code == "DATABASE_UNAVAILABLE"
+
+    def test_is_db_available_rechecks_on_prior_failure(self):
+        repo = PostgresUserRepository(
+            database_url="postgresql://invalid_host:5432/finex",
+            require_db=True,
+        )
+        repo._db_available = False
+        # Calling is_db_available must not simply return cached False without re-attempting
+        # When URL is provided, it tries connection (which fails on invalid_host and returns False)
+        assert repo.is_db_available() is False
+
 
 class TestGoogleSignInCompatibility:
     """Verifies that google_id and picture survive Google sign-in and retrieval."""

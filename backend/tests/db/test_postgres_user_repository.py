@@ -373,3 +373,64 @@ async def test_multi_worker_failed_login_throttling_postgres(postgres_db, monkey
                     {"email": email.lower()},
                 )
                 await session.commit()
+
+
+@pytest.mark.asyncio
+async def test_postgres_key_lock_mutual_exclusion_and_cleanup_real_postgres(postgres_db):
+    """Verify PostgresKeyLock mutual exclusion across separate physical DB sessions."""
+    raw_url = os.getenv("DATABASE_URL") or postgres_db.url.render_as_string(hide_password=False)
+    url = raw_url.replace("+asyncpg", "").replace("localhost", "127.0.0.1")
+
+    import threading
+
+    from app.services.auth_service import PostgresKeyLock
+
+    repo = PostgresUserRepository(database_url=url, require_db=True)
+    test_key = f"lock_test_{uuid.uuid4().hex[:8]}@example.com"
+    local_lock = threading.Lock()
+
+    # 1. Normal execution: lock is held inside context, verified from separate connection conn2
+    with PostgresKeyLock(test_key, repo, local_lock):
+        # Open a completely distinct second physical connection
+        with repo._get_sync_conn(autocommit=True) as conn2:
+            with conn2.cursor() as cur2:
+                # pg_try_advisory_lock returns false because connection 1 holds it
+                cur2.execute(
+                    "SELECT pg_try_advisory_lock(hashtext(%(k)s)) AS acquired",
+                    {"k": test_key},
+                )
+                row = cur2.fetchone()
+                assert row is not None
+                assert row["acquired"] is False
+
+    # 2. Outside context: lock has been released, conn2 can now acquire it
+    with repo._get_sync_conn(autocommit=True) as conn2:
+        with conn2.cursor() as cur2:
+            cur2.execute(
+                "SELECT pg_try_advisory_lock(hashtext(%(k)s)) AS acquired",
+                {"k": test_key},
+            )
+            row = cur2.fetchone()
+            assert row is not None
+            assert row["acquired"] is True
+            # Release it on conn2
+            cur2.execute("SELECT pg_advisory_unlock(hashtext(%(k)s))", {"k": test_key})
+
+    # 3. Exception path: ensure lock is released even if an exception occurs inside context
+    try:
+        with PostgresKeyLock(test_key, repo, local_lock):
+            raise RuntimeError("Simulated crash inside lock context")
+    except RuntimeError:
+        pass
+
+    # Verify conn2 can immediately acquire lock following the exception
+    with repo._get_sync_conn(autocommit=True) as conn2:
+        with conn2.cursor() as cur2:
+            cur2.execute(
+                "SELECT pg_try_advisory_lock(hashtext(%(k)s)) AS acquired",
+                {"k": test_key},
+            )
+            row = cur2.fetchone()
+            assert row is not None
+            assert row["acquired"] is True
+            cur2.execute("SELECT pg_advisory_unlock(hashtext(%(k)s))", {"k": test_key})
