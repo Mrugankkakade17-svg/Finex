@@ -5,8 +5,9 @@
 - Added reversible Alembic revision `s3mr01_fx006` after S2-MR01's `s2mr01_fx005`.
 - Added normalized allocation model headers and target-weight rows, plus a versioned benchmark map for EQUITY, FIXED_INCOME and CASH.
 - Added deterministic educational reference records for Conservative (20/70/10), Moderate (50/40/10) and Aggressive (80/10/10) profiles. These illustrative examples are not investment advice.
+- Addressed reviewer feedback by keying benchmark mappings on both asset class and version. Multiple benchmark versions can now coexist, and reseeding an existing `(asset_class, version)` updates only that version.
 - Added an idempotent PostgreSQL seed command at `scripts/seed_reference_data.py`. It uses `DATABASE_URL` and `ON CONFLICT` upserts; rerunning converges to the same versioned data.
-- Added unit coverage for full allocation sums, monotonic equity weights and benchmark coverage; added PostgreSQL coverage for repeated seeding and database constraints.
+- Added unit coverage for full allocation sums, monotonic equity weights and benchmark coverage; added PostgreSQL coverage for repeated seeding, coexistence of benchmark versions and database constraints.
 
 ## Verification
 
@@ -20,4 +21,3 @@
 ## Easy-language summary
 
 This change creates shared database tables for the three educational allocation examples and a map from each supported asset group to its benchmark symbol. The seed command fills those tables safely and can be run more than once without creating duplicates. Existing user portfolios and routes are not changed.
-
