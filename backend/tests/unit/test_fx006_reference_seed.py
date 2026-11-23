@@ -34,5 +34,5 @@ def test_allocation_reference_models_have_complete_deterministic_weights():
 
 def test_benchmark_map_is_complete_for_seeded_allocation_asset_classes():
     assert {row["asset_class"] for row in BENCHMARKS} == {"EQUITY", "FIXED_INCOME", "CASH"}
-    assert len({row["benchmark_symbol"] for row in BENCHMARKS}) == len(BENCHMARKS)
+    assert len({(row["asset_class"], row["version"]) for row in BENCHMARKS}) == len(BENCHMARKS)
     assert all(row["version"] == "v1" for row in BENCHMARKS)
