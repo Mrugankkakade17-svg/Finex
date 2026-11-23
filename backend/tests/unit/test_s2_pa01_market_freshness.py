@@ -126,6 +126,36 @@ async def test_rate_limiter_permits_within_limit_and_blocks_when_exceeded() -> N
     assert exc_info.value.status_code == 429
 
 
+@pytest.mark.asyncio
+async def test_market_service_acquires_provider_rate_limit_once_per_quote() -> None:
+    service = MarketService()
+    limiter = service.chain[0].rate_limiter
+
+    assert limiter is not None
+    assert limiter.remaining_requests == 30
+
+    response = await service.get_quote_with_freshness("AAPL")
+
+    assert response.source == "yfinance"
+    assert limiter.remaining_requests == 29
+
+
+@pytest.mark.asyncio
+async def test_unknown_symbols_do_not_trip_provider_circuit_breakers() -> None:
+    chain = [
+        ProviderChainEntry("yfinance", YFinanceMarketDataProvider()),
+        ProviderChainEntry("fixture", FixtureMarketDataProvider()),
+    ]
+    service = MarketService(chain=chain)
+
+    for _ in range(3):
+        response = await service.get_quote_with_freshness("UNSUPPORTED")
+        assert response.freshness == DataFreshness.UNAVAILABLE
+
+    assert all(entry.circuit_breaker.failure_count == 0 for entry in chain)
+    assert all(entry.circuit_breaker.state == CircuitState.CLOSED for entry in chain)
+
+
 # ===========================================================================
 # 3. Acceptance Criteria: Strict Invariant — No Path Can Emit LIVE for yfinance
 # ===========================================================================

@@ -6,7 +6,7 @@
 - **Target Branch:** `dev`
 - **Assignee:** Payal (`payalmude14-star`)
 - **Secondary Reviewer:** Mrugnak (`@Mrugankkakade17-svg`)
-- **Status:** Verified. All schemas, adapters, provider chain, circuit breaker, rate limiter, and test contracts pass.
+- **Status:** Verified. Schemas, adapters, provider chain, circuit breaker, rate limiter, and test contracts pass.
 
 ---
 
@@ -19,7 +19,7 @@
    - `MarketQuoteResponse` schema with Pydantic `@field_validator("freshness")` strictly enforcing the invariant: **no path can emit LIVE for yfinance**.
    - `BatchQuotesResponse`, `ProviderHealth`, and `SecuritySearchResult` models.
 2. `backend/app/adapters/yfinance_adapter.py` (Extended):
-   - Integrated `CircuitBreaker` (three-state fault tolerance) and `RateLimiter` (sliding-window throttling).
+   - Integrated `CircuitBreaker` (three-state fault tolerance); provider rate limits are acquired once in `MarketService`.
    - Added `FixtureMarketDataProvider` implementing the canonical `MarketDataProvider` port for reliable fallback.
    - Hardened `YFinanceMarketDataProvider` ensuring quotes are always tagged stale/delayed and never LIVE.
 3. `backend/app/services/market_service.py` (New):
@@ -28,7 +28,7 @@
    - Truthful degraded `UNAVAILABLE` state response when the entire chain fails.
    - Diagnostic health and circuit breaker status inspection via `get_health()`.
 4. `backend/tests/unit/test_s2_pa01_market_freshness.py` (New):
-   - 12 comprehensive unit and contract tests verifying circuit breaker transitions, rate limits, provider failovers, timeout fallbacks, UNAVAILABLE responses, and strict non-LIVE invariants.
+   - 14 comprehensive unit and contract tests verifying circuit breaker transitions, rate limits, provider failovers, timeout fallbacks, UNAVAILABLE responses, unsupported-symbol handling, and strict non-LIVE invariants.
 
 ---
 
@@ -142,9 +142,9 @@ python -m ruff check .
 ### Targeted Unit & Contract Tests
 ```powershell
 cd backend
-python -m pytest tests/test_yfinance_adapter.py tests/unit/test_s2_pa01_market_freshness.py --no-cov -v
+python -m pytest tests/test_yfinance_adapter.py tests/unit/test_s2_pa01_market_freshness.py --no-cov -q
 ```
-**Result:** **PASS** — 15 passed in 1.80s:
+**Result:** **PASS** — 17 passed:
 - `test_known_quote_is_deterministic_and_stale` PASSED
 - `test_unknown_quote_uses_explicit_fallback_or_fails` PASSED
 - `test_configured_failure_modes_have_typed_errors` PASSED
@@ -160,6 +160,20 @@ python -m pytest tests/test_yfinance_adapter.py tests/unit/test_s2_pa01_market_f
 - `test_acceptance_all_providers_fail_returns_unavailable_recorded_response` PASSED
 - `test_market_service_port_contract_raises_on_unavailable_without_fallback` PASSED
 - `test_market_service_batch_quotes_and_health` PASSED
+- `test_market_service_acquires_provider_rate_limit_once_per_quote` PASSED
+- `test_unknown_symbols_do_not_trip_provider_circuit_breakers` PASSED
+
+The review regression tests verify that unsupported symbols do not increase provider
+circuit-breaker failure counts and that a quote consumes exactly one configured rate-limit
+request.
+
+Follow-up verification after review:
+
+```powershell
+python -m ruff check app/adapters/yfinance_adapter.py app/services/market_service.py tests/unit/test_s2_pa01_market_freshness.py
+python -m ruff format --check app/adapters/yfinance_adapter.py app/services/market_service.py tests/unit/test_s2_pa01_market_freshness.py
+```
+**Result:** **PASS** — All checks passed; all 3 files already formatted.
 
 ### Full Test Suite
 - `pytest -q -m "not postgres"`: 2,792 passed (45 failures isolated to Windows host PowerShell script execution policy on `.ps1` files, matching baseline).

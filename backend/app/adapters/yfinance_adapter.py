@@ -174,12 +174,10 @@ class YFinanceMarketDataProvider(MarketDataProvider):
         timeout_seconds: float = 3.0,
         fail_mode: Optional[str] = None,
         circuit_breaker: Optional[CircuitBreaker] = None,
-        rate_limiter: Optional[RateLimiter] = None,
     ):
         self.timeout_seconds = timeout_seconds
         self.fail_mode = fail_mode
         self.circuit_breaker = circuit_breaker
-        self.rate_limiter = rate_limiter
         self.provider_name = "yfinance"
 
     async def get_quote(
@@ -188,9 +186,6 @@ class YFinanceMarketDataProvider(MarketDataProvider):
         fallback_price: Optional[float] = None,
     ) -> MarketQuote:
         normalized = symbol.strip().upper()
-
-        if self.rate_limiter:
-            await self.rate_limiter.acquire()
 
         if self.circuit_breaker and not await self.circuit_breaker.allow_request():
             raise CircuitBreakerOpenException(
@@ -244,6 +239,8 @@ class YFinanceMarketDataProvider(MarketDataProvider):
 
             raise SymbolNotFoundException(symbol=normalized)
 
+        except SymbolNotFoundException:
+            raise
         except Exception as exc:
             if self.circuit_breaker:
                 await self.circuit_breaker.record_failure(exc)
@@ -303,7 +300,6 @@ class FixtureMarketDataProvider(MarketDataProvider):
         timeout_seconds: float = 2.0,
         fail_mode: Optional[str] = None,
         circuit_breaker: Optional[CircuitBreaker] = None,
-        rate_limiter: Optional[RateLimiter] = None,
     ):
         self._quotes = DEFAULT_FIXTURE_QUOTES.copy()
         if custom_quotes:
@@ -311,7 +307,6 @@ class FixtureMarketDataProvider(MarketDataProvider):
         self.timeout_seconds = timeout_seconds
         self.fail_mode = fail_mode
         self.circuit_breaker = circuit_breaker
-        self.rate_limiter = rate_limiter
         self.provider_name = "fixture"
 
     async def get_quote(
@@ -320,9 +315,6 @@ class FixtureMarketDataProvider(MarketDataProvider):
         fallback_price: Optional[float] = None,
     ) -> MarketQuote:
         normalized = symbol.strip().upper()
-
-        if self.rate_limiter:
-            await self.rate_limiter.acquire()
 
         if self.circuit_breaker and not await self.circuit_breaker.allow_request():
             raise CircuitBreakerOpenException(
@@ -367,6 +359,8 @@ class FixtureMarketDataProvider(MarketDataProvider):
 
             raise SymbolNotFoundException(symbol=normalized)
 
+        except SymbolNotFoundException:
+            raise
         except Exception as exc:
             if self.circuit_breaker:
                 await self.circuit_breaker.record_failure(exc)

@@ -44,11 +44,9 @@ class ProviderChainEntry:
         self.circuit_breaker = circuit_breaker or CircuitBreaker(name=name)
         self.rate_limiter = rate_limiter
 
-        # Wire up circuit breaker and rate limiter if provider supports them
+        # Wire up the circuit breaker if the provider supports it.
         if hasattr(self.provider, "circuit_breaker"):
             self.provider.circuit_breaker = self.circuit_breaker
-        if hasattr(self.provider, "rate_limiter") and self.rate_limiter:
-            self.provider.rate_limiter = self.rate_limiter
 
 
 class MarketService(MarketDataProvider):
@@ -79,7 +77,6 @@ class MarketService(MarketDataProvider):
             yf_provider = YFinanceMarketDataProvider(
                 timeout_seconds=3.0,
                 circuit_breaker=yf_cb,
-                rate_limiter=yf_rl,
             )
 
             fix_cb = CircuitBreaker(name="fixture", failure_threshold=5, recovery_timeout=15.0)
@@ -169,7 +166,11 @@ class MarketService(MarketDataProvider):
                 CircuitBreakerOpenException,
                 SymbolNotFoundException,
             ) as exc:
-                if getattr(entry.provider, "circuit_breaker", None) is not entry.circuit_breaker:
+                provider_breaker = getattr(entry.provider, "circuit_breaker", None)
+                if (
+                    not isinstance(exc, SymbolNotFoundException)
+                    and provider_breaker is not entry.circuit_breaker
+                ):
                     await entry.circuit_breaker.record_failure(exc)
                 logger.warning(
                     "Provider '%s' failed for '%s' (%s). Advancing to next provider.",
