@@ -60,18 +60,18 @@ def upgrade() -> None:
     op.create_table(
         "benchmark_map",
         sa.Column("asset_class", sa.String(length=32), nullable=False),
+        sa.Column("version", sa.String(length=16), nullable=False),
         sa.Column("benchmark_symbol", sa.String(length=20), nullable=False),
         sa.Column("benchmark_name", sa.String(length=100), nullable=False),
         sa.Column("currency", sa.String(length=3), nullable=False, server_default="USD"),
         sa.Column("source_type", sa.String(length=16), nullable=False, server_default="SYNTHETIC"),
-        sa.Column("version", sa.String(length=16), nullable=False),
         sa.CheckConstraint(
             "asset_class IN ('EQUITY', 'FIXED_INCOME', 'CASH')",
             name="ck_benchmark_map_asset_class",
         ),
         sa.CheckConstraint("currency = 'USD'", name="ck_benchmark_map_currency_usd"),
         sa.CheckConstraint("source_type = 'SYNTHETIC'", name="ck_benchmark_map_source_synthetic"),
-        sa.PrimaryKeyConstraint("asset_class", name="pk_benchmark_map"),
+        sa.PrimaryKeyConstraint("asset_class", "version", name="pk_benchmark_map"),
         sa.UniqueConstraint("benchmark_symbol", "version", name="uq_benchmark_map_symbol_version"),
         schema="finex",
     )
