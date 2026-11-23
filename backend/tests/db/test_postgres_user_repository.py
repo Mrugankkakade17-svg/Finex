@@ -161,6 +161,7 @@ async def test_google_sign_in_persists_to_real_postgres(postgres_db):
     name = "Persistent Google User"
 
     test_uid = None
+    link_uid = None
     try:
         user1 = repo1.get_or_create_google_user(
             google_id=google_id,
@@ -222,14 +223,58 @@ async def test_google_sign_in_persists_to_real_postgres(postgres_db):
         assert user2_relogin.google_id == google_id
         assert user2_relogin.picture == picture
 
+        # 7. Attempting to use same google_id with a different email raises GOOGLE_ACCOUNT_CONFLICT
+        other_email = f"conflict_{uuid.uuid4().hex[:8]}@example.com"
+        with pytest.raises(BadRequestException) as exc_info:
+            repo2.get_or_create_google_user(
+                google_id=google_id,
+                email=other_email,
+                name="Conflict User",
+            )
+        assert exc_info.value.error_code == "GOOGLE_ACCOUNT_CONFLICT"
+
+        # 8. User registered with email/password links google_id in PostgreSQL
+        link_email = f"link_pg_{uuid.uuid4().hex[:8]}@example.com"
+        link_pw_user = repo2.create_user(
+            name="Link User",
+            email=link_email,
+            hashed_password=hash_password("Pass@123"),
+        )
+        link_uid = str(link_pw_user.id)
+        new_gid = f"g_link_{uuid.uuid4().hex[:12]}"
+        new_pic = "https://lh3.googleusercontent.com/link_avatar.png"
+
+        linked_user = repo2.get_or_create_google_user(
+            google_id=new_gid,
+            email=link_email,
+            name="Link User",
+            picture=new_pic,
+        )
+        assert str(linked_user.id) == link_uid
+        assert linked_user.google_id == new_gid
+        assert linked_user.picture == new_pic
+
+        # Verify on a fresh repo3 instance (simulating restart)
+        repo3 = PostgresUserRepository(database_url=url, require_db=True)
+        reloaded = repo3.get_user_by_google_id(new_gid)
+        assert reloaded is not None
+        assert str(reloaded.id) == link_uid
+        assert reloaded.google_id == new_gid
+        assert reloaded.picture == new_pic
+
     finally:
-        if test_uid:
-            async with AsyncSession(postgres_db) as session:
+        async with AsyncSession(postgres_db) as session:
+            if test_uid:
                 await session.execute(
                     text("DELETE FROM finex.users WHERE user_id = :uid"),
                     {"uid": test_uid},
                 )
-                await session.commit()
+            if link_uid:
+                await session.execute(
+                    text("DELETE FROM finex.users WHERE user_id = :uid"),
+                    {"uid": link_uid},
+                )
+            await session.commit()
 
 
 @pytest.mark.asyncio

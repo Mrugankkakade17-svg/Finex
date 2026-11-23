@@ -67,17 +67,17 @@ class PostgresUserRepository:
             pass
         return bool(self._database_url)
 
-    def _get_sync_conn(self) -> PostgresConnection:
+    def _get_sync_conn(self, autocommit: bool = False) -> PostgresConnection:
         dsn = postgres_dsn(self._database_url)
-        return psycopg.connect(dsn, connect_timeout=5, row_factory=dict_row)
+        return psycopg.connect(dsn, connect_timeout=5, row_factory=dict_row, autocommit=autocommit)
 
-    def is_db_available(self) -> bool:
+    def is_db_available(self, force_refresh: bool = False) -> bool:
         """Check whether the configured PostgreSQL database is reachable."""
         if not self._database_url:
             self._db_available = False
             return False
-        if self._db_available is not None:
-            return self._db_available
+        if not force_refresh and self._db_available is True:
+            return True
         try:
             with self._get_sync_conn() as conn:
                 with conn.cursor() as cur:
@@ -388,6 +388,11 @@ class PostgresUserRepository:
         if google_id:
             user_by_google = self.get_user_by_google_id(google_id)
             if user_by_google:
+                if user_by_google.email.strip().lower() != norm_email:
+                    raise BadRequestException(
+                        message="Google ID is already linked to another email address",
+                        error_code="GOOGLE_ACCOUNT_CONFLICT",
+                    )
                 if pic and not user_by_google.picture:
                     if self.is_postgres_mode() and self.is_db_available():
                         try:
@@ -410,6 +415,13 @@ class PostgresUserRepository:
                                         return self._to_model(row)
                         except Exception as e:
                             logger.warning("Failed to update picture in PostgreSQL: %s", e)
+                    else:
+                        uid_str = str(user_by_google.id)
+                        self._user_metadata.setdefault(uid_str, {})["picture"] = pic
+                        for m_row in self._memory_users.values():
+                            if str(m_row.get("user_id")) == uid_str:
+                                m_row["picture"] = pic
+                                break
                 return user_by_google
 
         # 2. Check if user already exists with this email
@@ -459,6 +471,12 @@ class PostgresUserRepository:
                                 return self._to_model(row)
                 except Exception as exc:
                     logger.warning("Failed to update Google metadata in PostgreSQL: %s", exc)
+            elif needs_update and not self.is_postgres_mode():
+                if norm_email in self._memory_users:
+                    if new_google_id:
+                        self._memory_users[norm_email]["google_id"] = new_google_id
+                    if new_picture:
+                        self._memory_users[norm_email]["picture"] = new_picture
 
             return self.get_user_by_id(user.id) or user
 

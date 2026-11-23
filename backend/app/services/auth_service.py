@@ -74,7 +74,7 @@ class PostgresKeyLock:
             and self.repo.is_db_available()
         ):
             try:
-                self._conn = self.repo._get_sync_conn()
+                self._conn = self.repo._get_sync_conn(autocommit=True)
                 with self._conn.cursor() as cur:
                     cur.execute("SET lock_timeout = '10s'")
                     cur.execute(
@@ -467,20 +467,21 @@ def logout(refresh_token: str | None = None) -> dict:
 def login_or_create_google_user(
     google_id: str, email: str, name: str, avatar_url: str | None = None
 ) -> dict:
-    """Find existing user by email or create new OAuth user."""
+    """Find existing user by google_id or email, link metadata, or create new OAuth user."""
     normalized_email = email.strip().lower()
     repo = get_user_repository()
-    user = repo.get_user_by_email(normalized_email)
 
-    if not user:
-        if hasattr(repo, "get_or_create_google_user"):
-            user = repo.get_or_create_google_user(
-                google_id=google_id,
-                email=normalized_email,
-                name=name,
-                avatar_url=avatar_url,
-            )
-        else:
+    if hasattr(repo, "get_or_create_google_user"):
+        user = repo.get_or_create_google_user(
+            google_id=google_id,
+            email=normalized_email,
+            name=name,
+            picture=avatar_url,
+            avatar_url=avatar_url,
+        )
+    else:
+        user = repo.get_user_by_email(normalized_email)
+        if not user:
             try:
                 user = repo.create_user(
                     name=name,
@@ -495,15 +496,15 @@ def login_or_create_google_user(
                     email=normalized_email,
                     hashed_password="",
                 )
-    else:
-        if hasattr(repo, "_user_metadata") and user.id is not None:
-            user_uid_str = str(user.id)
-            meta = repo._user_metadata.setdefault(user_uid_str, {})
-            if google_id and not user.google_id:
-                meta["google_id"] = google_id
-            if avatar_url and not user.picture:
-                meta["picture"] = avatar_url
-            user = repo.get_user_by_id(user.id) or user
+        else:
+            if hasattr(repo, "_user_metadata") and user.id is not None:
+                user_uid_str = str(user.id)
+                meta = repo._user_metadata.setdefault(user_uid_str, {})
+                if google_id and not user.google_id:
+                    meta["google_id"] = google_id
+                if avatar_url and not user.picture:
+                    meta["picture"] = avatar_url
+                user = repo.get_user_by_id(user.id) or user
 
     if repo is not default_user_repo and hasattr(default_user_repo, "_users") and user:
         try:

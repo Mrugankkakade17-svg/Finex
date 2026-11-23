@@ -26,6 +26,12 @@ def reset_in_memory_repositories():
     if hasattr(postgres_user_repository, "_memory_users"):
         postgres_user_repository._memory_users.clear()
 
+    if hasattr(postgres_user_repository, "_user_metadata"):
+        postgres_user_repository._user_metadata.clear()
+
+    if hasattr(postgres_user_repository, "_db_available"):
+        postgres_user_repository._db_available = None
+
     if hasattr(postgres_user_repository, "_next_id"):
         postgres_user_repository._next_id = 1
 

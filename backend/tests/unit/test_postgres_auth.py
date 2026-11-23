@@ -409,6 +409,55 @@ class TestGoogleSignInCompatibility:
         assert second_res["user"]["id"] == res["user"]["id"]
         assert second_res["user"]["picture"] == picture_url
 
+    def test_google_id_conflict_with_different_email_rejected(self):
+        email_original = f"google_orig_{uuid.uuid4().hex[:8]}@example.com"
+        email_attacker = f"google_attack_{uuid.uuid4().hex[:8]}@example.com"
+        google_id = f"g_conflict_{uuid.uuid4().hex[:12]}"
+        repo = auth_service.get_user_repository()
+
+        # Create original user with this google_id
+        repo.get_or_create_google_user(
+            google_id=google_id,
+            email=email_original,
+            name="Original User",
+        )
+
+        # Attempt to link same google_id with a different email must raise GOOGLE_ACCOUNT_CONFLICT
+        with pytest.raises(BadRequestException) as exc_info:
+            repo.get_or_create_google_user(
+                google_id=google_id,
+                email=email_attacker,
+                name="Attacker",
+            )
+        assert exc_info.value.error_code == "GOOGLE_ACCOUNT_CONFLICT"
+
+    def test_google_linking_to_existing_email_password_user(self):
+        email = f"link_user_{uuid.uuid4().hex[:8]}@example.com"
+        google_id = f"g_link_{uuid.uuid4().hex[:12]}"
+        avatar = "https://example.com/avatar.png"
+
+        # 1. Register with email and password first
+        reg = auth_service.register(name="Email User", email=email, password="InitialPassword@123")
+        orig_id = reg["user"]["id"]
+
+        # 2. Later, user logs in via Google with the same email
+        google_res = auth_service.login_or_create_google_user(
+            google_id=google_id,
+            email=email,
+            name="Email User",
+            avatar_url=avatar,
+        )
+        assert google_res["user"]["id"] == orig_id
+        assert google_res["user"]["picture"] == avatar
+
+        # 3. User is now retrievable by google_id
+        repo = auth_service.get_user_repository()
+        by_gid = repo.get_user_by_google_id(google_id)
+        assert by_gid is not None
+        assert by_gid.id == orig_id
+        assert by_gid.google_id == google_id
+        assert by_gid.picture == avatar
+
 
 class TestUserRoutesUuidCompatibility:
     """Verifies that user routes support both UUID string IDs and integer IDs."""
