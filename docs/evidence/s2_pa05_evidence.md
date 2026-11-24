@@ -44,9 +44,10 @@ Required test coverage of 70% reached. Total coverage: 84.91%
 
 The new reconciliation tests passed in that full run. The failing tests were in
 acceptance/evidence harnesses, but this run is not a valid full-suite result for
-the current GitHub `dev` base and should not be used as one. The verified
-current-code result is the targeted reconciliation suite above; CI on the PR's
-current `dev` base remains the full integration check.
+the current GitHub `dev` base and should not be used as one. The current GitHub
+`dev` integration check subsequently passed on PR #147: the Postgres-marked
+tests and full backend pytest suite succeeded, and Backend Quality Gates passed
+including Ruff, mypy, and the PostgreSQL migration round-trip.
 
 ## Integration boundary
 
