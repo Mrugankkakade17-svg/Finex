@@ -26,11 +26,11 @@ Every hosted provider and model was verified against upstream provider documenta
 
 | Provider | Model ID | Free Tier Limits | Cost | Quota Reset |
 |---|---|---|---|---|
-| **Google Gemini** | `gemini-3.8-flash` | 15 RPM / 1,500 RPD / 1M TPM | **$0.00** | Rolling / Daily |
+| **Google Gemini** | `gemini-3.8-flash` | Dynamic per-account rate limits (AI Studio) | **$0.00** | Subject to account quota & capacity |
 | **Groq** | `openai/gpt-oss-120b` | 30 RPM / 1,000 RPD / 8k TPM / 200k TPD | **$0.00** | Daily (00:00 UTC) |
 | **Cloudflare Workers AI** | `@cf/google/gemma-3-12b-it` | 10,000 Neurons/day | **$0.00** | Daily (00:00 UTC) |
 
-- **Strict Zero-Cost Rule:** Only models with verified permanent free allocations are configured. Paid endpoints, billable model variants, or automatic billing upgrades are strictly prohibited.
+- **Strict Zero-Cost Rule:** Only models with verified permanent free allocations are configured. Paid endpoints, billable model variants, or automatic billing upgrades are strictly prohibited. Token pricing on Gemini Standard Free Tier is $0.00 for input/output tokens, with request volume governed dynamically by Google AI Studio.
 - **Fail-Over Behavior:** If any provider returns HTTP 429 (rate/quota limit), times out, suffers network failure, or returns malformed output, the cascade immediately advances to the next provider.
 - **Ultimate Fallback Guarantee:** If all four external providers are unavailable or offline, the request resolves to `DeterministicFallbackAdapter`, returning a SEBI-compliant educational response with zero network dependencies.
 
@@ -57,7 +57,7 @@ To prevent unexpected programming bugs (such as `TypeError` or `AttributeError`)
 - **Expected Provider Outages (`except LLMProviderError`):** Caught at each tier, logged at `WARNING` with provider context, and the cascade advances to the next provider.
 - **Unexpected Programming Exceptions (`except Exception`):** Caught separately, logged at `ERROR` with full traceback (`logger.exception`), preserving diagnostic visibility in production telemetry while upholding the resilience guarantee.
 - **BaseException Preservation:** Cancellation signals (`asyncio.CancelledError`, `KeyboardInterrupt`) are never intercepted.
-- **Zero Log Leakage:** Log messages never contain raw request payloads, prompt texts, PII, or API secrets.
+- **Zero Log Leakage & Fallback Reason Sanitization:** Log messages and `last_fallback_reason` telemetry are sanitized through `_sanitize_fallback_reason` to strip Bearer tokens, Authorization headers, Google AI Studio / Groq API keys, emails, phone numbers, and truncate long payload echoes.
 
 ### 5. Constructor Compatibility & Topology Transparency
 
@@ -80,6 +80,6 @@ To prevent unexpected programming bugs (such as `TypeError` or `AttributeError`)
 
 ## Verification
 
-- **91 unit and contract tests** in `backend/tests/unit/test_llm_adapters.py` passing with 100% success.
+- **92 unit and contract tests** in `backend/tests/unit/test_llm_adapters.py` passing with 100% success (82.67% coverage across `app.adapters.llm`).
 - Official Google Gemini model `gemini-3.8-flash` verified active, stable, and $0.00 free-tier eligible in Google Gemini Developer API documentation (`gemini-api-guides/pricing.md`, `gemini-api-guides/models/gemini-3.8-flash.md`, verified 24 November 2026).
 - Full cascade fail-over verified across all 5 tiers (Ollama $\to$ Gemini $\to$ Groq $\to$ Cloudflare $\to$ Deterministic).

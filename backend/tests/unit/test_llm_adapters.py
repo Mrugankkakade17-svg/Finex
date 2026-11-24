@@ -28,6 +28,7 @@ from app.adapters.llm import (
     GroqLLMAdapter,
     HostedLLMAdapter,
     LLMProvider,
+    LLMProviderError,
     OllamaLLMAdapter,
     ProhibitedContentError,
     ProviderAuthenticationError,
@@ -2673,3 +2674,104 @@ async def test_cloudflare_malformed_json_or_missing_result_raises_schema_validat
     with pytest.raises(SchemaValidationError) as exc_info:
         await adapter.generate(req)
     assert exc_info.value.provider == "cloudflare"
+
+
+@pytest.mark.asyncio
+async def test_composite_cascade_logging_and_fallback_reason_privacy_sanitization(
+    caplog: pytest.LogCaptureFixture,
+):
+    """
+    Verify Section 5 Logging and Privacy requirements:
+    1. Raw exception messages cannot leak API tokens, Authorization headers,
+       emails, phone numbers, or excessively long prompt/response payloads.
+    2. composite.last_fallback_reason contains sanitized placeholders.
+    3. Log records contain sanitized placeholders and no raw secret values.
+    4. Expected errors are logged at WARNING, unexpected bugs at ERROR with traceback.
+    5. Fallback cascade proceeds cleanly to deterministic engine.
+    """
+    raw_bearer = "Bearer mock-auth-secret-token-xyz123"
+    raw_gemini_key = "AIzaSyD_TEST_KEY_12345678901234567890"
+    raw_groq_key = "gsk_test_groq_api_token_1234567890abcdef"
+    raw_email = "customer.private@fintech-bank.example"
+    raw_phone = "+91-9876543210"
+    long_prompt_echo = "RAW_PAYLOAD_" * 30
+
+    mock_ollama = AsyncMock(spec=LLMProvider)
+    # Expected provider failure with sensitive details in message
+    mock_ollama.generate.side_effect = LLMProviderError(
+        f"Connection failed with Authorization: {raw_bearer} and key {raw_gemini_key} "
+        f"for {raw_email} and {raw_phone}. Echo: {long_prompt_echo}"
+    )
+
+    mock_gemini = AsyncMock(spec=LLMProvider)
+    # Unexpected exception with sensitive groq key
+    mock_gemini.generate.side_effect = RuntimeError(
+        f"Unexpected runtime failure with {raw_groq_key} in internal handler"
+    )
+
+    mock_groq = AsyncMock(spec=LLMProvider)
+    mock_groq.generate.return_value = LLMResponse(
+        output={
+            "intent": "EDUCATION",
+            "answer_text": "Risk management preserves capital.",
+            "limitations_disclaimer": "FinEx educational advice only.",
+        },
+        model="openai/gpt-oss-120b",
+        prompt_id="test_privacy",
+        prompt_version="v1",
+        retriever_version=None,
+        citations=[],
+        fallback_used=True,
+    )
+
+    composite = CompositeLLMProvider(
+        primary_provider=mock_ollama,
+        gemini_provider=mock_gemini,
+        groq_provider=mock_groq,
+    )
+
+    req = LLMRequest(
+        prompt_id="test_privacy",
+        prompt_version="v1",
+        context={"query": "Explain risk management"},
+        output_schema_ref="sprint6_ai_chat",
+    )
+
+    with caplog.at_level(logging.DEBUG):
+        resp = await composite.generate(req)
+
+    assert resp.model == "openai/gpt-oss-120b"
+    assert composite.last_provider_used == "groq_hosted"
+
+    # Verify that raw secrets and PII never leaked into composite.last_fallback_reason
+    reason = composite.last_fallback_reason or ""
+    assert "mock-auth-secret-token" not in reason
+    assert raw_gemini_key not in reason
+    assert raw_groq_key not in reason
+    assert raw_email not in reason
+    assert "9876543210" not in reason
+
+    # Verify that sanitized placeholders were applied
+    assert "[REDACTED_GROQ_KEY]" in reason
+
+    # Check log messages: neither raw secret nor PII appears in any logger message
+    log_messages = [r.message for r in caplog.records]
+    for msg in log_messages:
+        assert "mock-auth-secret-token" not in msg
+        assert raw_gemini_key not in msg
+        assert raw_groq_key not in msg
+        assert raw_email not in msg
+        assert "9876543210" not in msg
+
+    # Verify redaction placeholders appear in log messages
+    assert any("Authorization: [REDACTED]" in m for m in log_messages)
+    assert any("[REDACTED_GEMINI_KEY]" in m for m in log_messages)
+    assert any("[REDACTED_EMAIL]" in m for m in log_messages)
+    assert any("[REDACTED_PHONE]" in m for m in log_messages)
+    assert any("[REDACTED_GROQ_KEY]" in m for m in log_messages)
+
+    # Verify logging levels: WARNING for expected provider error, ERROR for unexpected exception
+    warnings = [r for r in caplog.records if r.levelno == logging.WARNING]
+    errors = [r for r in caplog.records if r.levelno == logging.ERROR]
+    assert any("Primary LLM provider failed" in r.message for r in warnings)
+    assert any("Unexpected error in Gemini hosted provider" in r.message for r in errors)

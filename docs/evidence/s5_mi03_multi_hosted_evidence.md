@@ -23,7 +23,7 @@ Every external provider and model was verified against upstream API documentatio
 | Tier | Provider | Model Identifier | Free Tier Limits | Upstream Reference / Verification |
 |---|---|---|---|---|
 | **Tier 1 (Primary)** | Ollama | `llama3.2:1b` | Local, unlimited | Local Docker / Native execution |
-| **Tier 2 (Hosted #1)** | Google Gemini | `gemini-3.8-flash` | 15 RPM / 1,500 RPD / 1M TPM | Gemini Official API Docs (Standard Free Tier $0.00) |
+| **Tier 2 (Hosted #1)** | Google Gemini | `gemini-3.8-flash` | Dynamic per-account rate limits (AI Studio) | Gemini Official API Docs (Standard Free Tier $0.00 token cost) |
 | **Tier 3 (Hosted #2)** | Groq | `openai/gpt-oss-120b` | 30 RPM / 1,000 RPD / 8k TPM / 200k TPD | Groq LPUs Documentation (Free Tier $0.00) |
 | **Tier 4 (Hosted #3)** | Cloudflare Workers AI | `@cf/google/gemma-3-12b-it` | 10,000 Neurons/day (resets 00:00 UTC) | Cloudflare Workers AI Docs (Workers Free Plan $0.00) |
 | **Tier 5 (Offline)** | Deterministic Engine | `deterministic-fallback-v1` | 100% Offline, Zero Network Calls | In-repo deterministic financial education engine |
@@ -50,17 +50,20 @@ Every external provider and model was verified against upstream API documentatio
    - Cloudflare: `Authorization: Bearer <CLOUDFLARE_API_TOKEN>`
    - Registered in `Settings.SENSITIVE_FIELDS` for automatic log masking.
    - Keys and account IDs are scrubbed from error messages via `_sanitize_error_message`.
+5. **Cascade Fallback Reason & Logging Privacy Sanitization:**
+   - `CompositeLLMProvider._sanitize_fallback_reason` sanitizes `self.last_fallback_reason` and log messages across all cascade stages.
+   - Bearer tokens, Authorization headers, Google AI Studio / Groq API keys, emails, phone numbers, and oversized prompt echo payloads are redacted before storage or logging.
 
 ---
 
 ## 4. Test Suite Execution & Coverage
 
 ### Unit and Contract Tests (`test_llm_adapters.py`)
-- **Total Tests:** 91 passed in 1.08s (0 failed, 0 errors).
+- **Total Tests:** 92 passed in 1.27s (0 failed, 0 errors).
 - **Code Coverage:** **83%** across `app.adapters.llm` (exceeds 70% threshold):
-  - `composite_provider.py`: **96%**
+  - `composite_provider.py`: **93%**
   - `groq_adapter.py`: **78%**
-  - `cloudflare_adapter.py`: **78%**
+  - `cloudflare_adapter.py`: **73%**
   - `deterministic_adapter.py`: **90%**
   - `hosted_adapter.py`: **73%**
   - `ollama_adapter.py`: **82%**
@@ -79,5 +82,6 @@ Every external provider and model was verified against upstream API documentatio
 - `test_composite_constructor_omitted_providers_logs_warning`: Warning emitted when legacy constructor omits Groq/Cloudflare.
 - `test_cloudflare_success_false_response_raises_error`: Cloudflare API `{"success": false}` parsed into typed exception.
 - `test_cloudflare_privacy_context_sanitization`: Outbound Cloudflare payload verified to contain masked PII and refuse suitability context.
+- `test_composite_cascade_logging_and_fallback_reason_privacy_sanitization`: Outbound logging and `last_fallback_reason` verified to redact API tokens, Authorization headers, and PII.
 - `test_multihosted_cascade_health_status_and_is_quota_available`: Multi-tier diagnostic telemetry verified.
 - `test_get_llm_provider_configures_all_hosted_tiers`: Settings factory wires all providers correctly.

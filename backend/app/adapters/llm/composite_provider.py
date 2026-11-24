@@ -17,6 +17,7 @@ Owner: Mitali (@mitali2701)
 from __future__ import annotations
 
 import logging
+import re
 from typing import Any
 
 from app.adapters.llm.cloudflare_adapter import CloudflareLLMAdapter
@@ -100,6 +101,32 @@ class CompositeLLMProvider(LLMProvider):
         self.last_provider_name: str = "none"
         self.last_fallback_reason: str | None = None
 
+    @staticmethod
+    def _sanitize_fallback_reason(exc: Exception | str) -> str:
+        """
+        Sanitize error messages to ensure API tokens, authorization headers,
+        PII, and raw prompt/response payloads never leak into logs or telemetry.
+        """
+        msg = str(exc)
+        # Redact Authorization header / Bearer tokens
+        msg = re.sub(r"(?i)bearer\s+[A-Za-z0-9_\-\.]+", "[REDACTED_BEARER_TOKEN]", msg)
+        msg = re.sub(r"(?i)authorization:\s*[^\s]+", "Authorization: [REDACTED]", msg)
+        # Redact Google Gemini API keys
+        msg = re.sub(r"AIza[0-9A-Za-z_\-]{20,}", "[REDACTED_GEMINI_KEY]", msg)
+        # Redact Groq API keys
+        msg = re.sub(r"gsk_[0-9A-Za-z_]{20,}", "[REDACTED_GROQ_KEY]", msg)
+        # Redact emails and phone numbers
+        msg = re.sub(r"[\w\.-]+@[\w\.-]+\.\w+", "[REDACTED_EMAIL]", msg)
+        msg = re.sub(
+            r"(?:\+?\d{1,3}[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}",
+            "[REDACTED_PHONE]",
+            msg,
+        )
+        # Prevent prompt/response body echo by truncating excessively long error strings
+        if len(msg) > 200:
+            msg = msg[:197] + "..."
+        return msg
+
     async def generate(self, request: LLMRequest) -> LLMResponse:
         """
         Execute generation through the 5-stage resilient cascade.
@@ -121,19 +148,21 @@ class CompositeLLMProvider(LLMProvider):
                 self.last_fallback_reason = None
                 return response
             except LLMProviderError as exc:
-                self.last_fallback_reason = f"Primary Ollama failed: {exc}"
+                clean_msg = self._sanitize_fallback_reason(exc)
+                self.last_fallback_reason = f"Primary Ollama failed: {clean_msg}"
                 logger.warning(
                     "Primary LLM provider failed (%s); cascading to Gemini hosted fallback...",
-                    exc,
+                    clean_msg,
                 )
             except Exception as exc:
+                clean_msg = self._sanitize_fallback_reason(exc)
                 self.last_fallback_reason = (
-                    f"Primary Ollama unexpected error: {type(exc).__name__}: {exc}"
+                    f"Primary Ollama unexpected error: {type(exc).__name__}: {clean_msg}"
                 )
                 logger.exception(
                     "Unexpected error in primary Ollama provider (%s); "
                     "cascading to Gemini hosted fallback...",
-                    exc,
+                    clean_msg,
                 )
 
         # Stage 2: Try Hosted Tier 1 (Google Gemini: gemini-3.8-flash)
@@ -144,19 +173,21 @@ class CompositeLLMProvider(LLMProvider):
                 self.last_provider_name = "gemini"
                 return response
             except LLMProviderError as exc:
-                self.last_fallback_reason = f"Gemini hosted failed: {exc}"
+                clean_msg = self._sanitize_fallback_reason(exc)
+                self.last_fallback_reason = f"Gemini hosted failed: {clean_msg}"
                 logger.warning(
                     "Gemini hosted provider failed (%s); cascading to Groq hosted fallback...",
-                    exc,
+                    clean_msg,
                 )
             except Exception as exc:
+                clean_msg = self._sanitize_fallback_reason(exc)
                 self.last_fallback_reason = (
-                    f"Gemini hosted unexpected error: {type(exc).__name__}: {exc}"
+                    f"Gemini hosted unexpected error: {type(exc).__name__}: {clean_msg}"
                 )
                 logger.exception(
                     "Unexpected error in Gemini hosted provider (%s); "
                     "cascading to Groq hosted fallback...",
-                    exc,
+                    clean_msg,
                 )
 
         # Stage 3: Try Hosted Tier 2 (Groq: openai/gpt-oss-120b)
@@ -167,20 +198,22 @@ class CompositeLLMProvider(LLMProvider):
                 self.last_provider_name = "groq"
                 return response
             except LLMProviderError as exc:
-                self.last_fallback_reason = f"Groq hosted failed: {exc}"
+                clean_msg = self._sanitize_fallback_reason(exc)
+                self.last_fallback_reason = f"Groq hosted failed: {clean_msg}"
                 logger.warning(
                     "Groq hosted provider failed (%s); "
                     "cascading to Cloudflare Workers AI fallback...",
-                    exc,
+                    clean_msg,
                 )
             except Exception as exc:
+                clean_msg = self._sanitize_fallback_reason(exc)
                 self.last_fallback_reason = (
-                    f"Groq hosted unexpected error: {type(exc).__name__}: {exc}"
+                    f"Groq hosted unexpected error: {type(exc).__name__}: {clean_msg}"
                 )
                 logger.exception(
                     "Unexpected error in Groq hosted provider (%s); "
                     "cascading to Cloudflare Workers AI fallback...",
-                    exc,
+                    clean_msg,
                 )
 
         # Stage 4: Try Hosted Tier 3 (Cloudflare Workers AI: @cf/google/gemma-3-12b-it)
@@ -191,20 +224,22 @@ class CompositeLLMProvider(LLMProvider):
                 self.last_provider_name = "cloudflare"
                 return response
             except LLMProviderError as exc:
-                self.last_fallback_reason = f"Cloudflare hosted failed: {exc}"
+                clean_msg = self._sanitize_fallback_reason(exc)
+                self.last_fallback_reason = f"Cloudflare hosted failed: {clean_msg}"
                 logger.warning(
                     "Cloudflare hosted provider failed (%s); "
                     "cascading to safe deterministic fallback...",
-                    exc,
+                    clean_msg,
                 )
             except Exception as exc:
+                clean_msg = self._sanitize_fallback_reason(exc)
                 self.last_fallback_reason = (
-                    f"Cloudflare hosted unexpected error: {type(exc).__name__}: {exc}"
+                    f"Cloudflare hosted unexpected error: {type(exc).__name__}: {clean_msg}"
                 )
                 logger.exception(
                     "Unexpected error in Cloudflare hosted provider (%s); "
                     "cascading to safe deterministic fallback...",
-                    exc,
+                    clean_msg,
                 )
 
         # Stage 5: Final Safe Deterministic Fallback (Guaranteed Safe, Offline)
