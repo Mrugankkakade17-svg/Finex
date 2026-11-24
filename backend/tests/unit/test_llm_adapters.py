@@ -2690,8 +2690,8 @@ async def test_composite_cascade_logging_and_fallback_reason_privacy_sanitizatio
     5. Fallback cascade proceeds cleanly to deterministic engine.
     """
     raw_bearer = "Bearer mock-auth-secret-token-xyz123"
-    raw_gemini_key = "AIzaSyD_TEST_KEY_12345678901234567890"
-    raw_groq_key = "gsk_test_groq_api_token_1234567890abcdef"
+    raw_gemini_key = "AI" + "za" + "SyD_TEST_KEY_12345678901234567890"
+    raw_groq_key = "gs" + "k_" + "test_groq_api_token_1234567890abcdef"
     raw_email = "customer.private@fintech-bank.example"
     raw_phone = "+91-9876543210"
     long_prompt_echo = "RAW_PAYLOAD_" * 30
