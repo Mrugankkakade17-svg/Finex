@@ -15,7 +15,7 @@ from app.core.exceptions import (
     LoginRateLimitExceededException,
     UnauthorizedException,
 )
-from app.ports.adapters.mock_google_verifier import mock_google_verifier
+from app.ports.adapters.google_oauth_verifier import google_oauth_verifier
 from app.repositories.postgres_user_repository import (
     postgres_user_repository,
 )
@@ -572,7 +572,7 @@ def login_or_create_google_user(
 
 def google_callback(id_token: str, google_verifier=None) -> dict:
     """Verify Google token and return session."""
-    verifier = google_verifier or mock_google_verifier
+    verifier = google_verifier or google_oauth_verifier
     identity = verifier.verify_google_token(id_token)
     return login_or_create_google_user(
         google_id=identity.google_id,

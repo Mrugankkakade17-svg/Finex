@@ -1,147 +1,51 @@
-from typing import Any, Dict
+"""
+Google Auth Service responsible for extracting and verifying Google user identity.
+Delegates token verification to the cryptographic GoogleOAuthVerifier and eliminates
+caller-supplied identity bypass.
+"""
 
-from jose import jwt
+from __future__ import annotations
 
-from app.core.exceptions import BadRequestException, UnauthorizedException
+from typing import Any, Dict, Optional
+
+from app.core.exceptions import BadRequestException
+from app.ports.adapters.google_oauth_verifier import google_oauth_verifier
+from app.ports.google_oauth_port import GoogleOAuthPort
 from app.schemas.auth import GoogleAuthRequest
 
 
 class GoogleAuthService:
     """
-    Service responsible for verifying Google identity tokens or mock payloads.
-    Provides pluggable verification supporting development mock identities,
-    local testing tokens, and production Google ID tokens.
+    Service responsible for verifying Google identity tokens.
+    Requires cryptographically verifiable Google ID tokens in production.
+    Caller-supplied unauthenticated email or mock payloads without a valid
+    token are strictly rejected to prevent identity bypass.
     """
+
+    def __init__(self, verifier: Optional[GoogleOAuthPort] = None):
+        self.verifier: GoogleOAuthPort = verifier or google_oauth_verifier
 
     def verify_google_identity(self, request: GoogleAuthRequest) -> Dict[str, Any]:
         """
         Extract and verify Google user identity from request.
-        Supports:
-        1. Explicit mock identity fields in request (email, name, google_id, picture).
-        2. Nested mock_payload dictionary.
-        3. JWT credential/id_token string (mock or Google-issued).
+        Requires a valid token in request.credential or request.id_token.
+        Caller-supplied unauthenticated fields are strictly rejected.
         """
-        # Case 1: Direct mock identity passed in fields
-        if request.email:
-            google_id = request.google_id or f"google_{request.email}"
-            name = request.name or request.email.split("@")[0].capitalize()
-            return {
-                "google_id": google_id,
-                "email": str(request.email),
-                "name": name,
-                "avatar_url": request.picture,
-            }
-
-        # Case 2: Nested mock_payload
-        if request.mock_payload:
-            payload = request.mock_payload
-            email = payload.get("email")
-            if not email:
-                raise BadRequestException(
-                    message="Mock Google identity must contain an email address",
-                    error_code="INVALID_GOOGLE_IDENTITY",
-                )
-            # Enforce that unverified Google emails are strictly rejected
-            if payload.get("email_verified") is False or str(
-                payload.get("email_verified")
-            ).lower() in ("false", "0"):
-                raise UnauthorizedException(
-                    message="Google identity email is not verified",
-                    error_code="UNVERIFIED_GOOGLE_EMAIL",
-                )
-            google_id = payload.get("google_id") or payload.get("sub") or f"google_{email}"
-            name = payload.get("name") or email.split("@")[0].capitalize()
-            return {
-                "google_id": google_id,
-                "email": email,
-                "name": name,
-                "avatar_url": payload.get("picture") or payload.get("avatar_url"),
-                "email_verified": True,
-            }
-
-        # Case 3: JWT token (credential or id_token)
         token_str = request.credential or request.id_token
-        if token_str:
-            return self._verify_token_string(token_str)
-
-        raise BadRequestException(
-            message="Google identity payload or credential is required",
-            error_code="MISSING_GOOGLE_CREDENTIAL",
-        )
-
-    def _verify_token_string(self, token: str) -> Dict[str, Any]:
-        """
-        Parse and verify Google ID token string.
-        In development/test mode, decodes claims with fallback for mock tokens.
-        """
-        token = token.strip()
-        if not token:
+        if not token_str or not token_str.strip():
             raise BadRequestException(
-                message="Google token cannot be empty",
-                error_code="INVALID_GOOGLE_TOKEN",
+                message="Google identity payload or credential is required",
+                error_code="MISSING_GOOGLE_CREDENTIAL",
             )
 
-        try:
-            # First attempt to decode claims (without verifying signature if in mock mode)
-            claims = jwt.get_unverified_claims(token)
-            email = claims.get("email")
-            google_id = claims.get("sub") or claims.get("google_id")
-            name = claims.get("name") or (
-                email.split("@")[0].capitalize() if email else "Google User"
-            )
-            picture = claims.get("picture") or claims.get("avatar_url")
-
-            if not email:
-                raise UnauthorizedException(
-                    message="Google token does not contain an email claim",
-                    error_code="INVALID_GOOGLE_TOKEN",
-                )
-
-            # Enforce that unverified Google emails are strictly rejected
-            if claims.get("email_verified") is False or str(
-                claims.get("email_verified")
-            ).lower() in ("false", "0"):
-                raise UnauthorizedException(
-                    message="Google identity email is not verified",
-                    error_code="UNVERIFIED_GOOGLE_EMAIL",
-                )
-
-            # Enforce expiration check if exp claim is present
-            if claims.get("exp") is not None:
-                import time
-
-                if int(claims["exp"]) < int(time.time()):
-                    raise UnauthorizedException(
-                        message="Google token has expired",
-                        error_code="EXPIRED_GOOGLE_TOKEN",
-                    )
-
-            return {
-                "google_id": str(google_id) if google_id else f"google_{email}",
-                "email": email,
-                "name": name,
-                "avatar_url": picture,
-                "email_verified": True,
-            }
-        except (BadRequestException, UnauthorizedException):
-            raise
-        except Exception as exc:
-            # If token is a plain string mock identifier like "mock-google-token-user@example.com"
-            if "@" in token:
-                parts = token.split("@")
-                username = parts[0].replace("mock-google-token-", "").replace("mock-", "")
-                email = f"{username}@{parts[1]}"
-                return {
-                    "google_id": f"google_{email}",
-                    "email": email,
-                    "name": username.capitalize(),
-                    "avatar_url": None,
-                }
-
-            raise UnauthorizedException(
-                message=f"Failed to verify Google token: {str(exc)}",
-                error_code="INVALID_GOOGLE_TOKEN",
-            )
+        identity = self.verifier.verify_google_token(token_str.strip())
+        return {
+            "google_id": identity.google_id,
+            "email": str(identity.email),
+            "name": identity.name,
+            "avatar_url": identity.picture,
+            "email_verified": getattr(identity, "email_verified", True),
+        }
 
 
 # Singleton instance

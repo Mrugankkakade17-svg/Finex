@@ -96,21 +96,43 @@ class UserRepository:
                 error_code="UNVERIFIED_GOOGLE_EMAIL",
             )
         pic = picture or avatar_url
-        # Look for existing user by email
+        norm_email = email.strip().lower()
+
+        from app.core.exceptions import BadRequestException
+
+        # 1. Check if another user already has this google_id linked
+        if google_id:
+            for user in self._users.values():
+                if user.get("google_id") == google_id:
+                    if user["email"].strip().lower() != norm_email:
+                        raise BadRequestException(
+                            message="Google ID is already linked to another email address",
+                            error_code="GOOGLE_ACCOUNT_CONFLICT",
+                        )
+                    if pic and not user.get("picture"):
+                        user["picture"] = pic
+                    return self._to_model(user)
+
+        # 2. Look for existing user by email
         for user in self._users.values():
-            if user["email"] == email:
+            if user["email"].strip().lower() == norm_email:
+                if google_id and user.get("google_id") and user["google_id"] != google_id:
+                    raise BadRequestException(
+                        message="Email is already linked to another Google account",
+                        error_code="GOOGLE_ACCOUNT_CONFLICT",
+                    )
                 # Link google_id and picture if not already set
-                if not user.get("google_id"):
+                if google_id and not user.get("google_id"):
                     user["google_id"] = google_id
                     user["updated_at"] = datetime.utcnow()
                 if pic and not user.get("picture"):
                     user["picture"] = pic
                 return self._to_model(user)
 
-        # No existing user — create a new OAuth user
+        # 3. No existing user — create a new OAuth user
         return self.create_user(
             name=name,
-            email=email,
+            email=norm_email,
             hashed_password="",
             google_id=google_id,
             picture=pic,

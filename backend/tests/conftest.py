@@ -48,7 +48,21 @@ def reset_in_memory_repositories():
     if hasattr(risk_repository, "_next_assessment_id"):
         risk_repository._next_assessment_id = 1
 
+    try:
+        from app.ports.adapters.google_oauth_verifier import google_jwks_client
+
+        google_jwks_client.clear_overrides()
+    except Exception:
+        pass
+
     yield
+
+    try:
+        from app.ports.adapters.google_oauth_verifier import google_jwks_client
+
+        google_jwks_client.clear_overrides()
+    except Exception:
+        pass
 
 
 @pytest_asyncio.fixture
