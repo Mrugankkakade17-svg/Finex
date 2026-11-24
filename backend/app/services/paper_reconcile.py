@@ -72,9 +72,13 @@ def reconcile_paper_account(
         expected[instrument] += quantity if side == "BUY" else -quantity
 
     actual: dict[str, int] = {}
-    rows = positions.items() if isinstance(positions, Mapping) else (
-        (_field(position, "instrument_id"), _field(position, "quantity"))
-        for position in positions
+    rows = (
+        positions.items()
+        if isinstance(positions, Mapping)
+        else (
+            (_field(position, "instrument_id"), _field(position, "quantity"))
+            for position in positions
+        )
     )
     for instrument, quantity_value in rows:
         if not isinstance(instrument, str) or not instrument or instrument != instrument.strip():
