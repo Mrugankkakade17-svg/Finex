@@ -183,7 +183,6 @@ market = APIRouter(
     dependencies=[Depends(require_local_application)],
 )
 watchlists = APIRouter(
-    prefix="/api/v1/local-watchlists",
     tags=["Owned local watchlists"],
     dependencies=[Depends(require_local_application), Depends(no_query)],
 )
@@ -386,5 +385,7 @@ def ledger(
 
 
 router.include_router(market)
-router.include_router(watchlists)
+router.include_router(watchlists, prefix="/api/v1/local-watchlists")
+router.include_router(watchlists, prefix="/api/v1/watchlists")
 router.include_router(paper)
+

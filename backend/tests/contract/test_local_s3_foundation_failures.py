@@ -301,9 +301,11 @@ def test_s3_does_not_mount_order_execution_or_historical_global_authority(tmp_pa
     for endpoint in (
         "/api/v1/local-paper/orders",
         "/api/v1/market/quotes/AAPL",
-        "/api/v1/watchlists",
         "/api/v1/paper-trading/account",
         "/api/v1/portfolios",
     ):
         response = client.get(endpoint, headers=headers)
         assert response.status_code == 404
+    assert client.get("/api/v1/watchlists", headers=headers).status_code == 200
+    assert client.get("/api/v1/watchlists").status_code == 401
+
