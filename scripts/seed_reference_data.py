@@ -87,8 +87,8 @@ BENCHMARKS: tuple[dict[str, str], ...] = (
     },
     {
         "asset_class": "CASH",
-        "benchmark_symbol": "CASH",
-        "benchmark_name": "Synthetic cash reference",
+        "benchmark_symbol": "CSHX",
+        "benchmark_name": "Synthetic short-term cash proxy",
         "version": "v1",
     },
 )
