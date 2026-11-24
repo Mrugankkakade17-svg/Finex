@@ -39,6 +39,13 @@ class CompositeLLMProvider(LLMProvider):
     3. Hosted Tier 2: Groq REST API (openai/gpt-oss-120b)
     4. Hosted Tier 3: Cloudflare Workers AI (@cf/google/gemma-3-12b-it)
     5. Final Fallback: 100% Offline Deterministic Educational Fallback
+
+    Concurrency note:
+    `last_provider_used`, `last_provider_name`, and `last_fallback_reason` represent
+    the operational outcome of the most recently finished `generate()` call. In
+    multi-threaded or high-concurrency async environments where a single provider
+    singleton is shared across concurrent tasks, these attributes reflect the latest
+    completed request execution.
     """
 
     def __init__(
@@ -101,6 +108,22 @@ class CompositeLLMProvider(LLMProvider):
         self.last_provider_name: str = "none"
         self.last_fallback_reason: str | None = None
 
+        def _get_model(provider: Any) -> str:
+            if provider is None:
+                return "disabled"
+            return str(getattr(provider, "model", getattr(provider, "model_name", "unknown")))
+
+        # Safe operational startup visibility: logs configured models without secrets
+        logger.info(
+            "CompositeLLMProvider initialized: primary_model=%s, gemini_model=%s, "
+            "groq_model=%s, cloudflare_model=%s, deterministic_model=%s",
+            _get_model(self.primary_provider),
+            _get_model(self.gemini_provider),
+            _get_model(self.groq_provider),
+            _get_model(self.cloudflare_provider),
+            _get_model(self.deterministic_fallback),
+        )
+
     @staticmethod
     def _sanitize_fallback_reason(exc: Exception | str) -> str:
         """
@@ -156,14 +179,20 @@ class CompositeLLMProvider(LLMProvider):
                     "__str__": lambda self: clean_msg,
                     "__repr__": lambda self: f"{orig_type.__name__}({clean_msg!r})",
                     "__module__": getattr(orig_type, "__module__", "builtins"),
-                    "__init__": lambda self, *args, **kwargs: None,
+                    "__init__": lambda self, *args, **kwargs: Exception.__init__(self, clean_msg),
                 },
             )
             sanitized_instance = SanitizedClass()
+            sanitized_instance.__suppress_context__ = True
+            sanitized_instance.__cause__ = None
+            sanitized_instance.__context__ = None
             sanitized_instance = sanitized_instance.with_traceback(tb)
             return (SanitizedClass, sanitized_instance, tb)
         except Exception:
             fallback_exc = RuntimeError(f"{orig_type.__name__}: {clean_msg}")
+            fallback_exc.__suppress_context__ = True
+            fallback_exc.__cause__ = None
+            fallback_exc.__context__ = None
             fallback_exc = fallback_exc.with_traceback(tb)
             return (RuntimeError, fallback_exc, tb)
 
@@ -213,6 +242,7 @@ class CompositeLLMProvider(LLMProvider):
                 response = await self.gemini_provider.generate(request)
                 self.last_provider_used = "hosted_fallback"
                 self.last_provider_name = "gemini"
+                self.last_fallback_reason = None
                 return response
             except LLMProviderError as exc:
                 clean_msg = self._sanitize_fallback_reason(exc)
@@ -240,6 +270,7 @@ class CompositeLLMProvider(LLMProvider):
                 response = await self.groq_provider.generate(request)
                 self.last_provider_used = "groq_hosted"
                 self.last_provider_name = "groq"
+                self.last_fallback_reason = None
                 return response
             except LLMProviderError as exc:
                 clean_msg = self._sanitize_fallback_reason(exc)
@@ -268,6 +299,7 @@ class CompositeLLMProvider(LLMProvider):
                 response = await self.cloudflare_provider.generate(request)
                 self.last_provider_used = "cloudflare_hosted"
                 self.last_provider_name = "cloudflare"
+                self.last_fallback_reason = None
                 return response
             except LLMProviderError as exc:
                 clean_msg = self._sanitize_fallback_reason(exc)

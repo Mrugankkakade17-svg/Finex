@@ -2333,9 +2333,9 @@ async def test_composite_cascade_logs_do_not_contain_secrets_or_pii(
 
     composite = CompositeLLMProvider(
         primary_provider=mock_ollama,
-        gemini_provider=None,
-        groq_provider=None,
-        cloudflare_provider=None,
+        enable_gemini=False,
+        enable_groq=False,
+        enable_cloudflare=False,
     )
 
     req = LLMRequest(
@@ -2743,16 +2743,8 @@ async def test_composite_cascade_logging_and_fallback_reason_privacy_sanitizatio
     assert resp.model == "openai/gpt-oss-120b"
     assert composite.last_provider_used == "groq_hosted"
 
-    # Verify that raw secrets and PII never leaked into composite.last_fallback_reason
-    reason = composite.last_fallback_reason or ""
-    assert "mock-auth-secret-token" not in reason
-    assert raw_gemini_key not in reason
-    assert raw_groq_key not in reason
-    assert raw_email not in reason
-    assert "9876543210" not in reason
-
-    # Verify that sanitized placeholders were applied
-    assert "[REDACTED_GROQ_KEY]" in reason
+    # Verify that successful generation clears any prior fallback reason
+    assert composite.last_fallback_reason is None
 
     # Check log messages: neither raw secret nor PII appears in any logger message
     log_messages = [r.message for r in caplog.records]
@@ -2887,3 +2879,301 @@ async def test_composite_cascade_traceback_sanitization_across_all_unexpected_ti
     warning_records = [r for r in caplog.records if r.levelno == logging.WARNING]
     assert len(error_records) == 3
     assert any("Cloudflare hosted provider failed" in r.message for r in warning_records)
+
+
+# ==============================================================================
+# S5-MI03: Payal Review Hardening Tests (Exception Init, Stale Fallback, Models)
+# ==============================================================================
+
+
+def test_create_sanitized_exc_info_args_str_repr_and_traceback():
+    """
+    Verify Step 2: _create_sanitized_exc_info initializes the sanitized exception
+    using Exception.__init__(self, clean_msg) so that:
+    1. exc.args == (clean_msg,)
+    2. str(exc) == clean_msg
+    3. repr(exc) == f"{orig_type.__name__}({clean_msg!r})"
+    4. None of the synthetic secrets leak into str, repr, or args.
+    5. Original traceback and class name are preserved.
+    6. Formatted traceback has zero sensitive values.
+    """
+    import traceback
+
+    raw_bearer = "Bearer " + "sec_token_9876543210abcdef"
+    raw_gemini = "AI" + "za" + "SyD_SECRET_KEY_98765432109876543210"
+    raw_groq = "gs" + "k_" + "groq_secret_key_9876543210fedcba"
+    clean_msg = "sanitized-safe-error-message"
+
+    for orig_exc in [
+        TypeError(f"TypeError with {raw_bearer}"),
+        RuntimeError(f"RuntimeError with {raw_gemini}"),
+        AttributeError(f"AttributeError with {raw_groq}"),
+        LLMProviderError(f"LLMProviderError with {raw_bearer} and {raw_gemini}"),
+    ]:
+        try:
+            raise orig_exc
+        except Exception as exc:
+            cls, inst, tb = CompositeLLMProvider._create_sanitized_exc_info(exc, clean_msg)
+
+        assert inst.args == (clean_msg,)
+        assert str(inst) == clean_msg
+        assert repr(inst) == f"{type(orig_exc).__name__}({clean_msg!r})"
+        assert isinstance(inst, type(orig_exc))
+        assert cls.__name__ == type(orig_exc).__name__
+
+        # Ensure raw secrets never leak into str, repr, or args
+        for raw in [raw_bearer, raw_gemini, raw_groq]:
+            assert raw not in str(inst)
+            assert raw not in repr(inst)
+            assert raw not in str(inst.args)
+
+        # Formatted traceback check
+        formatted_tb = "".join(traceback.format_exception(cls, inst, tb))
+        assert "Traceback (most recent call last):" in formatted_tb
+        assert type(orig_exc).__name__ in formatted_tb
+        assert clean_msg in formatted_tb
+        for raw in [raw_bearer, raw_gemini, raw_groq]:
+            assert raw not in formatted_tb
+
+
+def test_create_sanitized_exc_info_fallback_for_unsubclassable_types():
+    """
+    Verify Step 2: If an exception type cannot be subclassed, _create_sanitized_exc_info
+    safely falls back to RuntimeError with clean_msg and preserved traceback.
+    """
+    clean_msg = "unsubclassable-fallback-msg"
+
+    class UnsubclassableError(Exception):
+        def __init_subclass__(cls, **kwargs):
+            raise TypeError("Subclassing forbidden")
+
+    try:
+        raise UnsubclassableError("secret payload")
+    except Exception as exc:
+        cls, inst, tb = CompositeLLMProvider._create_sanitized_exc_info(exc, clean_msg)
+
+    assert cls is RuntimeError
+    assert isinstance(inst, RuntimeError)
+    assert inst.args == (f"UnsubclassableError: {clean_msg}",)
+    assert str(inst) == f"UnsubclassableError: {clean_msg}"
+    assert clean_msg in repr(inst)
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("failing_providers", "succeeding_provider_name", "expected_provider_used"),
+    [
+        # 1. Ollama fails, Gemini succeeds -> reason cleared
+        (["ollama"], "gemini", "hosted_fallback"),
+        # 2. Ollama and Gemini fail, Groq succeeds -> reason cleared
+        (["ollama", "gemini"], "groq", "groq_hosted"),
+        # 3. Earlier providers fail, Cloudflare succeeds -> reason cleared
+        (["ollama", "gemini", "groq"], "cloudflare", "cloudflare_hosted"),
+        # 5. Direct Ollama success -> no stale reason
+        ([], "ollama", "primary_ollama"),
+    ],
+)
+async def test_composite_clears_stale_fallback_reason_on_tier_success(
+    failing_providers: list[str],
+    succeeding_provider_name: str,
+    expected_provider_used: str,
+):
+    """
+    Verify Step 3: Whenever any provider tier successfully returns a validated
+    LLMResponse, self.last_fallback_reason is cleared (set to None), and
+    health_status() reflects this healthy state.
+    """
+    mock_ollama = AsyncMock(spec=LLMProvider)
+    mock_gemini = AsyncMock(spec=LLMProvider)
+    mock_groq = AsyncMock(spec=LLMProvider)
+    mock_cloudflare = AsyncMock(spec=LLMProvider)
+
+    all_mocks = {
+        "ollama": mock_ollama,
+        "gemini": mock_gemini,
+        "groq": mock_groq,
+        "cloudflare": mock_cloudflare,
+    }
+
+    # Configure failing providers
+    for name in failing_providers:
+        all_mocks[name].generate.side_effect = LLMProviderError(f"{name.capitalize()} outage 503")
+
+    # Configure succeeding provider
+    success_resp = LLMResponse(
+        output={
+            "intent": "CONCEPT_EDUCATION",
+            "answer_text": f"Response generated by {succeeding_provider_name}",
+            "limitations_disclaimer": "FinEx educational advice only.",
+        },
+        model=f"model-{succeeding_provider_name}",
+        prompt_id="test_stale_fallback",
+        prompt_version="v1",
+        retriever_version=None,
+        citations=[],
+        fallback_used=succeeding_provider_name != "ollama",
+    )
+    all_mocks[succeeding_provider_name].generate.return_value = success_resp
+
+    composite = CompositeLLMProvider(
+        primary_provider=mock_ollama,
+        gemini_provider=mock_gemini,
+        groq_provider=mock_groq,
+        cloudflare_provider=mock_cloudflare,
+    )
+
+    # Pre-populate last_fallback_reason with a stale error from a prior run
+    composite.last_fallback_reason = "Stale error from ancient previous run"
+
+    req = LLMRequest(
+        prompt_id="test_stale_fallback",
+        prompt_version="v1",
+        context={"query": "Test query"},
+        output_schema_ref="sprint6_ai_chat",
+    )
+
+    resp = await composite.generate(req)
+    assert resp.model == f"model-{succeeding_provider_name}"
+    assert composite.last_provider_used == expected_provider_used
+
+    # CRITICAL VERIFICATION: Fallback reason MUST be cleared to None
+    assert composite.last_fallback_reason is None
+
+    # Verify health_status reflects None for last_fallback_reason
+    status = await composite.health_status()
+    assert status["last_fallback_reason"] is None
+    assert status["last_provider_used"] == expected_provider_used
+
+
+@pytest.mark.asyncio
+async def test_composite_retains_meaningful_fallback_reason_when_all_external_fail():
+    """
+    Verify Step 3 (Case 4): When all external provider tiers fail and execution
+    cascades to deterministic fallback, last_fallback_reason retains meaningful,
+    sanitized failure information.
+    """
+    token_bearer = "Bearer " + "test_token_1234567890abcdef"
+    mock_ollama = AsyncMock(spec=LLMProvider)
+    mock_ollama.generate.side_effect = LLMProviderError("Ollama offline")
+    mock_gemini = AsyncMock(spec=LLMProvider)
+    mock_gemini.generate.side_effect = LLMProviderError(f"Gemini 401 with {token_bearer}")
+    mock_groq = AsyncMock(spec=LLMProvider)
+    mock_groq.generate.side_effect = LLMProviderError("Groq 429 rate limit exceeded")
+    mock_cloudflare = AsyncMock(spec=LLMProvider)
+    mock_cloudflare.generate.side_effect = LLMProviderError("Cloudflare 500 internal error")
+
+    composite = CompositeLLMProvider(
+        primary_provider=mock_ollama,
+        gemini_provider=mock_gemini,
+        groq_provider=mock_groq,
+        cloudflare_provider=mock_cloudflare,
+    )
+
+    req = LLMRequest(
+        prompt_id="test_all_fail",
+        prompt_version="v1",
+        context={"query": "Explain compound interest"},
+        output_schema_ref="sprint6_ai_chat",
+    )
+
+    resp = await composite.generate(req)
+    assert resp.model == "deterministic-fallback-v1"
+    assert composite.last_provider_used == "deterministic_fallback"
+
+    # Retains meaningful failure reason from the final failed hosted tier (Cloudflare)
+    assert composite.last_fallback_reason is not None
+    assert "Cloudflare hosted failed" in composite.last_fallback_reason
+    assert "Cloudflare 500 internal error" in composite.last_fallback_reason
+
+    # Verify health_status reflects the retained failure reason
+    status = await composite.health_status()
+    assert status["last_fallback_reason"] == composite.last_fallback_reason
+    assert status["last_provider_used"] == "deterministic_fallback"
+
+
+@pytest.mark.asyncio
+async def test_composite_sequential_recovery_clears_stale_fallback():
+    """
+    Verify Step 3: Sequential calls on a shared CompositeLLMProvider instance:
+    1. Request 1 fails all external providers -> deterministic fallback sets last_fallback_reason.
+    2. Request 2 succeeds on primary Ollama -> last_fallback_reason is cleared to None.
+    """
+    mock_ollama = AsyncMock(spec=LLMProvider)
+    mock_ollama.generate.side_effect = LLMProviderError("Ollama unavailable")
+
+    composite = CompositeLLMProvider(
+        primary_provider=mock_ollama,
+        enable_gemini=False,
+        enable_groq=False,
+        enable_cloudflare=False,
+    )
+
+    req = LLMRequest(
+        prompt_id="seq_test",
+        prompt_version="v1",
+        context={},
+        output_schema_ref="sprint6_ai_chat",
+    )
+
+    # Call 1: Ollama fails, cascade to deterministic
+    res1 = await composite.generate(req)
+    assert res1.model == "deterministic-fallback-v1"
+    assert composite.last_fallback_reason is not None
+    assert "Primary Ollama failed" in composite.last_fallback_reason
+
+    # Now Ollama recovers
+    mock_ollama.generate.side_effect = None
+    mock_ollama.generate.return_value = LLMResponse(
+        output={"intent": "EDUCATION", "answer_text": "Recovered"},
+        model="llama3.2:1b",
+        prompt_id="seq_test",
+        prompt_version="v1",
+        retriever_version=None,
+        citations=[],
+        fallback_used=False,
+    )
+
+    # Call 2: Ollama succeeds
+    res2 = await composite.generate(req)
+    assert res2.model == "llama3.2:1b"
+    assert composite.last_provider_used == "primary_ollama"
+    assert composite.last_fallback_reason is None
+
+    status = await composite.health_status()
+    assert status["last_fallback_reason"] is None
+
+
+def test_composite_startup_model_logging_operational_visibility(
+    caplog: pytest.LogCaptureFixture,
+):
+    """
+    Verify Step 5: Startup model ID logging provides operational visibility
+    at INFO level, recording configured models for all tiers without secrets.
+    """
+    with caplog.at_level(logging.INFO):
+        CompositeLLMProvider(
+            primary_provider=OllamaLLMAdapter(model_name="custom-llama:3b"),
+            gemini_provider=HostedLLMAdapter(
+                model_name="gemini-3.8-flash", api_key="test-key-mock"
+            ),
+            groq_provider=GroqLLMAdapter(model_name="openai/gpt-oss-120b", api_key="test-key-mock"),
+            cloudflare_provider=CloudflareLLMAdapter(
+                model_name="@cf/google/gemma-3-12b-it",
+                account_id="test-acc",
+                api_token="test-tok",
+            ),
+        )
+
+    info_messages = [r.message for r in caplog.records if r.levelno == logging.INFO]
+    startup_logs = [m for m in info_messages if "CompositeLLMProvider initialized" in m]
+    assert len(startup_logs) >= 1
+    log = startup_logs[0]
+    assert "custom-llama:3b" in log
+    assert "gemini-3.8-flash" in log
+    assert "openai/gpt-oss-120b" in log
+    assert "@cf/google/gemma-3-12b-it" in log
+    assert "deterministic-fallback-v1" in log
+    # Crucially ensure zero secret values are logged
+    assert "test-key-mock" not in log
+    assert "test-acc" not in log
+    assert "test-tok" not in log
