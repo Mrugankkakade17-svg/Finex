@@ -130,7 +130,7 @@ jobs:
       - name: PostgreSQL migration round-trip
         run: |
           python -m alembic upgrade head
-          python -m alembic downgrade -1
+          python -m alembic downgrade s2mr01_fx005
           python -m alembic upgrade head
 
       - name: Pytest
