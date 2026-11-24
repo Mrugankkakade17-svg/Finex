@@ -94,7 +94,7 @@ class Settings(BaseSettings):
     market_data_api_key: str = ""
 
     google_client_id: str = ""
-    allow_mock_google_auth: bool = False
+    allow_mock_google_auth: bool | None = None
 
     log_level: str = "INFO"
 
@@ -236,7 +236,9 @@ class Settings(BaseSettings):
 
         if self.is_production_like and self.fixture_mode != "disabled":
             raise ValueError("fixture_mode must be disabled in UAT and production")
-        if self.is_production_like and self.allow_mock_google_auth:
+        if self.allow_mock_google_auth is None:
+            self.allow_mock_google_auth = not self.is_production_like
+        elif self.is_production_like and self.allow_mock_google_auth:
             raise ConfigurationError("ALLOW_MOCK_GOOGLE_AUTH is forbidden in UAT and production.")
         if wildcard and self.allow_credentials:
             raise ConfigurationError(
