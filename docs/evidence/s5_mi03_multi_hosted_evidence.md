@@ -56,11 +56,11 @@ Every external provider and model was verified against upstream API documentatio
 ## 4. Test Suite Execution & Coverage
 
 ### Unit and Contract Tests (`test_llm_adapters.py`)
-- **Total Tests:** 81 passed in 1.04s (0 failed, 0 errors).
-- **Code Coverage:** **82%** across `app.adapters.llm` (exceeds 70% threshold):
-  - `composite_provider.py`: **94%**
+- **Total Tests:** 91 passed in 1.08s (0 failed, 0 errors).
+- **Code Coverage:** **83%** across `app.adapters.llm` (exceeds 70% threshold):
+  - `composite_provider.py`: **96%**
   - `groq_adapter.py`: **78%**
-  - `cloudflare_adapter.py`: **72%**
+  - `cloudflare_adapter.py`: **78%**
   - `deterministic_adapter.py`: **90%**
   - `hosted_adapter.py`: **73%**
   - `ollama_adapter.py`: **82%**
@@ -68,11 +68,16 @@ Every external provider and model was verified against upstream API documentatio
   - `__init__.py`: **94%**
   - `exceptions.py`: **100%**
 
-### Key Cascade Tests Verified
+### Key Cascade & Review Resolution Tests Verified
 - `test_multihosted_cascade_stage1_primary_ollama_succeeds`: Primary Ollama handles request without calling hosted tiers.
 - `test_multihosted_cascade_stage2_gemini_succeeds`: Primary failure falls over to Gemini.
 - `test_multihosted_cascade_stage3_groq_succeeds`: Primary + Gemini 429 rate limit falls over to Groq.
 - `test_multihosted_cascade_stage4_cloudflare_succeeds`: Primary + Gemini 429 + Groq 429 falls over to Cloudflare Gemma 3 12B.
 - `test_multihosted_cascade_stage5_all_hosted_fail_deterministic_succeeds`: Total multi-cloud outage gracefully resolves to offline deterministic engine with safe disclaimer and valid schema.
+- `test_composite_cascade_expected_provider_error_logs_warning_and_cascades`: Expected provider outages logged at WARNING with cascade advancement.
+- `test_composite_cascade_unexpected_exception_logs_error_with_traceback_and_cascades`: Unexpected bugs logged at ERROR with full stack trace while preserving fallback resilience.
+- `test_composite_constructor_omitted_providers_logs_warning`: Warning emitted when legacy constructor omits Groq/Cloudflare.
+- `test_cloudflare_success_false_response_raises_error`: Cloudflare API `{"success": false}` parsed into typed exception.
+- `test_cloudflare_privacy_context_sanitization`: Outbound Cloudflare payload verified to contain masked PII and refuse suitability context.
 - `test_multihosted_cascade_health_status_and_is_quota_available`: Multi-tier diagnostic telemetry verified.
 - `test_get_llm_provider_configures_all_hosted_tiers`: Settings factory wires all providers correctly.

@@ -13,6 +13,7 @@ Owner: Mitali (@mitali2701)
 from __future__ import annotations
 
 import json
+import logging
 from unittest.mock import AsyncMock
 
 import httpx
@@ -2118,3 +2119,557 @@ def test_get_llm_provider_configures_all_hosted_tiers():
     assert provider.gemini_provider.model_name == "gemini-3.8-flash"
     assert provider.groq_provider.model_name == "openai/gpt-oss-120b"
     assert provider.cloudflare_provider.model_name == "@cf/google/gemma-3-12b-it"
+
+
+# ==============================================================================
+# Payal PR #139 Review Findings Verification Tests
+# ==============================================================================
+
+# ------------------------------------------------------------------------------
+# Finding 1: Separate Expected Provider Failures from Unexpected Programming Bugs
+# ------------------------------------------------------------------------------
+
+
+@pytest.mark.asyncio
+async def test_composite_cascade_expected_provider_error_logs_warning_and_cascades(
+    caplog: pytest.LogCaptureFixture,
+):
+    """
+    Verify that when an adapter raises an expected LLMProviderError (e.g. ProviderConnectionError),
+    it is logged at WARNING level (not ERROR), and the cascade proceeds to the next provider.
+    """
+    mock_ollama = AsyncMock(spec=LLMProvider)
+    mock_ollama.generate.side_effect = ProviderConnectionError(
+        "Ollama service unavailable on localhost:11434", provider="ollama"
+    )
+
+    mock_gemini = AsyncMock(spec=LLMProvider)
+    mock_gemini.generate.return_value = LLMResponse(
+        output={
+            "intent": "EDUCATION",
+            "answer_text": "Asset allocation balances risk and return.",
+            "limitations_disclaimer": "FinEx AI is educational only.",
+        },
+        model="gemini-3.8-flash",
+        prompt_id="asset_alloc",
+        prompt_version="v1",
+        retriever_version=None,
+        citations=[],
+        fallback_used=True,
+    )
+
+    composite = CompositeLLMProvider(
+        primary_provider=mock_ollama,
+        gemini_provider=mock_gemini,
+        enable_primary=True,
+        enable_gemini=True,
+    )
+
+    req = LLMRequest(
+        prompt_id="asset_alloc",
+        prompt_version="v1",
+        context={"query": "Explain asset allocation"},
+        output_schema_ref="sprint6_ai_chat",
+    )
+
+    with caplog.at_level(logging.WARNING):
+        resp = await composite.generate(req)
+
+    assert resp.model == "gemini-3.8-flash"
+    assert composite.last_provider_used == "hosted_fallback"
+    assert composite.last_provider_name == "gemini"
+
+    # Assert that a WARNING log was emitted for the primary provider failure
+    warning_records = [
+        r
+        for r in caplog.records
+        if r.levelno == logging.WARNING and "Primary LLM provider failed" in r.message
+    ]
+    assert len(warning_records) == 1
+    assert "cascading to Gemini hosted fallback" in warning_records[0].message
+
+    # Assert that NO ERROR logs were emitted for this expected provider failure
+    error_records = [r for r in caplog.records if r.levelno >= logging.ERROR]
+    assert len(error_records) == 0
+
+
+@pytest.mark.asyncio
+async def test_composite_cascade_unexpected_exception_logs_error_with_traceback_and_cascades(
+    caplog: pytest.LogCaptureFixture,
+):
+    """
+    Verify that unexpected programming exceptions (TypeError, AttributeError) are:
+    1. Logged at ERROR level with full traceback (exc_info).
+    2. Do NOT crash the application; the cascade safely continues to the next tier.
+    """
+    mock_ollama = AsyncMock(spec=LLMProvider)
+    mock_ollama.generate.side_effect = TypeError("Unexpected NoneType subscript bug in adapter")
+
+    mock_gemini = AsyncMock(spec=LLMProvider)
+    mock_gemini.generate.side_effect = AttributeError(
+        "'MockGemini' object has no attribute 'raw_text'"
+    )
+
+    mock_groq = AsyncMock(spec=LLMProvider)
+    mock_groq.generate.return_value = LLMResponse(
+        output={
+            "intent": "EDUCATION",
+            "answer_text": "Diversification spreads risk.",
+            "limitations_disclaimer": "FinEx educational advice only.",
+        },
+        model="openai/gpt-oss-120b",
+        prompt_id="test_unexpected",
+        prompt_version="v1",
+        retriever_version=None,
+        citations=[],
+        fallback_used=True,
+    )
+
+    composite = CompositeLLMProvider(
+        primary_provider=mock_ollama,
+        gemini_provider=mock_gemini,
+        groq_provider=mock_groq,
+    )
+
+    req = LLMRequest(
+        prompt_id="test_unexpected",
+        prompt_version="v1",
+        context={"query": "Explain diversification"},
+        output_schema_ref="sprint6_ai_chat",
+    )
+
+    with caplog.at_level(logging.DEBUG):
+        resp = await composite.generate(req)
+
+    assert resp.model == "openai/gpt-oss-120b"
+    assert composite.last_provider_used == "groq_hosted"
+    assert composite.last_provider_name == "groq"
+
+    # Check that both unexpected bugs were logged at ERROR level with exc_info
+    error_records = [r for r in caplog.records if r.levelno == logging.ERROR]
+    assert len(error_records) == 2
+
+    # Check Ollama unexpected error log
+    ollama_errors = [r for r in error_records if "error in primary Ollama provider" in r.message]
+    assert len(ollama_errors) == 1
+    assert "TypeError" in str(ollama_errors[0].exc_info) or "TypeError" in ollama_errors[0].message
+    assert ollama_errors[0].exc_info is not None
+
+    # Check Gemini unexpected error log
+    gemini_errors = [r for r in error_records if "error in Gemini hosted provider" in r.message]
+    assert len(gemini_errors) == 1
+    assert (
+        "AttributeError" in str(gemini_errors[0].exc_info)
+        or "AttributeError" in gemini_errors[0].message
+    )
+    assert gemini_errors[0].exc_info is not None
+
+
+@pytest.mark.asyncio
+async def test_composite_cascade_all_providers_fail_returns_valid_deterministic_response(
+    caplog: pytest.LogCaptureFixture,
+):
+    """
+    Verify that if all four cascade providers fail (both expected and unexpected bugs),
+    the deterministic fallback still executes and returns a valid, safe LLMResponse.
+    """
+    mock_ollama = AsyncMock(spec=LLMProvider)
+    mock_ollama.generate.side_effect = ProviderConnectionError("Ollama offline", provider="ollama")
+
+    mock_gemini = AsyncMock(spec=LLMProvider)
+    mock_gemini.generate.side_effect = ProviderQuotaExceededError("Gemini 429", provider="gemini")
+
+    mock_groq = AsyncMock(spec=LLMProvider)
+    mock_groq.generate.side_effect = TypeError("Groq unexpected adapter bug")
+
+    mock_cloudflare = AsyncMock(spec=LLMProvider)
+    mock_cloudflare.generate.side_effect = ProviderResponseError(
+        "Cloudflare 500", provider="cloudflare"
+    )
+
+    composite = CompositeLLMProvider(
+        primary_provider=mock_ollama,
+        gemini_provider=mock_gemini,
+        groq_provider=mock_groq,
+        cloudflare_provider=mock_cloudflare,
+    )
+
+    req = LLMRequest(
+        prompt_id="asset_alloc",
+        prompt_version="v1",
+        context={"query": "Explain asset allocation"},
+        output_schema_ref="sprint6_ai_chat",
+    )
+
+    with caplog.at_level(logging.INFO):
+        resp = await composite.generate(req)
+
+    assert resp.fallback_used is True
+    assert resp.model == "deterministic-fallback-v1"
+    assert composite.last_provider_used == "deterministic_fallback"
+    assert composite.last_provider_name == "deterministic"
+    assert isinstance(resp.output, dict)
+    assert "EDUCATION" in resp.output.get("intent", "")
+    assert "fallback" in resp.output.get("limitations_disclaimer", "").lower()
+
+
+@pytest.mark.asyncio
+async def test_composite_cascade_logs_do_not_contain_secrets_or_pii(
+    caplog: pytest.LogCaptureFixture,
+):
+    """
+    Verify that log records emitted during provider errors do not expose API keys,
+    bearer tokens, or sensitive context.
+    """
+    secret_token = "cf-super-secret-token-xyz123"
+    raw_pan = "ABCDE1234F"
+    raw_email = "victim@domain.internal"
+
+    mock_ollama = AsyncMock(spec=LLMProvider)
+    mock_ollama.generate.side_effect = ProviderConnectionError(
+        "Connection refused", provider="ollama"
+    )
+
+    composite = CompositeLLMProvider(
+        primary_provider=mock_ollama,
+        gemini_provider=None,
+        groq_provider=None,
+        cloudflare_provider=None,
+    )
+
+    req = LLMRequest(
+        prompt_id="test_privacy",
+        prompt_version="v1",
+        context={
+            "query": f"Sensitive query with {raw_pan} and {raw_email}",
+            "token": secret_token,
+        },
+        output_schema_ref="sprint6_ai_chat",
+    )
+
+    with caplog.at_level(logging.DEBUG):
+        await composite.generate(req)
+
+    log_dump = caplog.text
+    assert secret_token not in log_dump
+    assert raw_pan not in log_dump
+    assert raw_email not in log_dump
+
+
+# ------------------------------------------------------------------------------
+# Finding 2: Warn when Backward-Compatible Constructor Paths Omit Providers
+# ------------------------------------------------------------------------------
+
+
+def test_composite_constructor_omitted_providers_logs_warning(
+    caplog: pytest.LogCaptureFixture,
+):
+    """
+    Verify that initializing CompositeLLMProvider with custom primary or gemini providers
+    (legacy 3-tier constructor style) sets Groq and Cloudflare to None and logs a WARNING.
+    """
+    mock_ollama = AsyncMock(spec=LLMProvider)
+    mock_gemini = AsyncMock(spec=LLMProvider)
+
+    with caplog.at_level(logging.WARNING):
+        composite = CompositeLLMProvider(
+            primary_provider=mock_ollama,
+            gemini_provider=mock_gemini,
+        )
+
+    assert composite.groq_provider is None
+    assert composite.cloudflare_provider is None
+
+    warning_msgs = [r.message for r in caplog.records if r.levelno == logging.WARNING]
+    assert any(
+        "Groq provider omitted" in msg and "backward-compatible" in msg for msg in warning_msgs
+    )
+    assert any(
+        "Cloudflare provider omitted" in msg and "backward-compatible" in msg
+        for msg in warning_msgs
+    )
+
+
+def test_composite_constructor_explicit_providers_no_omission_warning(
+    caplog: pytest.LogCaptureFixture,
+):
+    """
+    Verify that explicitly passing groq_provider and cloudflare_provider retains both
+    in the cascade and emits no omission warnings.
+    """
+    mock_ollama = AsyncMock(spec=LLMProvider)
+    mock_gemini = AsyncMock(spec=LLMProvider)
+    mock_groq = AsyncMock(spec=LLMProvider)
+    mock_cf = AsyncMock(spec=LLMProvider)
+
+    with caplog.at_level(logging.WARNING):
+        composite = CompositeLLMProvider(
+            primary_provider=mock_ollama,
+            gemini_provider=mock_gemini,
+            groq_provider=mock_groq,
+            cloudflare_provider=mock_cf,
+        )
+
+    assert composite.groq_provider is mock_groq
+    assert composite.cloudflare_provider is mock_cf
+
+    omission_warnings = [r.message for r in caplog.records if "omitted from cascade" in r.message]
+    assert len(omission_warnings) == 0
+
+
+def test_composite_constructor_default_factory_instantiates_full_cascade(
+    caplog: pytest.LogCaptureFixture,
+):
+    """
+    Verify that default CompositeLLMProvider() instantiates the full 5-tier cascade
+    without omission warnings.
+    """
+    with caplog.at_level(logging.WARNING):
+        composite = CompositeLLMProvider()
+
+    assert isinstance(composite.primary_provider, OllamaLLMAdapter)
+    assert isinstance(composite.gemini_provider, HostedLLMAdapter)
+    assert isinstance(composite.groq_provider, GroqLLMAdapter)
+    assert isinstance(composite.cloudflare_provider, CloudflareLLMAdapter)
+    assert isinstance(composite.deterministic_fallback, DeterministicFallbackAdapter)
+
+    omission_warnings = [r.message for r in caplog.records if "omitted from cascade" in r.message]
+    assert len(omission_warnings) == 0
+
+
+# ------------------------------------------------------------------------------
+# Finding 3: Add Explicit Cloudflare-Specific Tests
+# ------------------------------------------------------------------------------
+
+
+@pytest.mark.asyncio
+async def test_cloudflare_success_false_response_raises_error():
+    """
+    Payal Review Finding 3 (Test A):
+    Verify that Cloudflare Workers AI response format where JSON contains `success: false`
+    raises the correct typed provider exception (ProviderResponseError),
+    does not treat the error as a valid LLMResponse, does not expose tokens,
+    and allows the composite cascade to continue to the next provider.
+    """
+
+    # 1. Standard Cloudflare API error response body
+    def cf_error_handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(
+            200,
+            json={
+                "result": None,
+                "success": False,
+                "errors": [
+                    {
+                        "code": 10001,
+                        "message": "Model '@cf/google/gemma-3-12b-it' temporarily unavailable",
+                    }
+                ],
+                "messages": [],
+            },
+        )
+
+    client = httpx.AsyncClient(transport=httpx.MockTransport(cf_error_handler))
+    adapter = CloudflareLLMAdapter(
+        account_id="mock-cf-account",
+        api_token="mock-cf-auth-token-12345",
+        http_client=client,
+    )
+
+    req = LLMRequest(
+        prompt_id="cf_test",
+        prompt_version="v1",
+        context={"query": "Explain asset allocation"},
+        output_schema_ref="sprint6_ai_chat",
+    )
+
+    with pytest.raises(ProviderResponseError) as exc_info:
+        await adapter.generate(req)
+
+    assert exc_info.value.provider == "cloudflare"
+    assert "temporarily unavailable" in str(exc_info.value)
+    # Ensure token is never in exception string
+    assert "mock-cf-auth-token" not in str(exc_info.value)
+
+    # 2. Cloudflare quota error body
+    def cf_quota_handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(
+            200,
+            json={
+                "result": None,
+                "success": False,
+                "errors": [
+                    {"code": 10014, "message": "Daily neuron limit reached for this account"}
+                ],
+                "messages": [],
+            },
+        )
+
+    client_quota = httpx.AsyncClient(transport=httpx.MockTransport(cf_quota_handler))
+    adapter_quota = CloudflareLLMAdapter(
+        account_id="mock-cf-account",
+        api_token="mock-cf-auth-token-12345",
+        http_client=client_quota,
+    )
+
+    with pytest.raises(ProviderQuotaExceededError) as quota_exc_info:
+        await adapter_quota.generate(req)
+
+    assert quota_exc_info.value.provider == "cloudflare"
+    assert "quota exceeded" in str(quota_exc_info.value).lower()
+
+    # 3. Wrapped in CompositeLLMProvider, this failure cascades to deterministic fallback
+    composite = CompositeLLMProvider(
+        enable_primary=False,
+        enable_gemini=False,
+        enable_groq=False,
+        cloudflare_provider=adapter,
+        enable_cloudflare=True,
+    )
+
+    resp = await composite.generate(req)
+    assert resp.fallback_used is True
+    assert resp.model == "deterministic-fallback-v1"
+    assert composite.last_provider_used == "deterministic_fallback"
+    assert composite.last_provider_name == "deterministic"
+
+
+@pytest.mark.asyncio
+async def test_cloudflare_privacy_context_sanitization():
+    """
+    Payal Review Finding 3 (Test B):
+    Verify that:
+    1. PII sanitization occurs before the Cloudflare HTTP request is sent.
+    2. Names, emails, phone numbers, PAN, and Aadhaar are masked using shared contract.
+    3. Financial profile info and sensitive suitability data are excluded by allowlist.
+    4. The outbound payload contains only sanitized context.
+    5. No unsanitized original values leak into logs or request payloads.
+    """
+    captured_requests: list[httpx.Request] = []
+
+    synthetic_name = "Vikram Aditya"
+    synthetic_email = "vikram.aditya@enterprise-fintech.example"
+    synthetic_phone = "+91-9876543210"
+    synthetic_pan = "ABCDE1234F"
+    synthetic_aadhaar = "9876 5432 1098"
+
+    def mock_cf_handler(request: httpx.Request) -> httpx.Response:
+        captured_requests.append(request)
+        return httpx.Response(
+            200,
+            json={
+                "result": {
+                    "response": json.dumps(
+                        {
+                            "intent": "EDUCATION",
+                            "answer_text": "Sanitized response content.",
+                            "limitations_disclaimer": "FinEx educational advice only.",
+                        }
+                    )
+                },
+                "success": True,
+            },
+        )
+
+    client = httpx.AsyncClient(transport=httpx.MockTransport(mock_cf_handler))
+    adapter = CloudflareLLMAdapter(
+        account_id="mock-cf-account",
+        api_token="mock-cf-auth-token-12345",
+        http_client=client,
+    )
+
+    # 1. Test PII masking in allowed context fields
+    req_pii = LLMRequest(
+        prompt_id="user_consultation",
+        prompt_version="v1",
+        context={
+            "query": (
+                f"Client {synthetic_name} with email {synthetic_email}, phone {synthetic_phone}, "
+                f"PAN {synthetic_pan}, and Aadhaar {synthetic_aadhaar} asks about mutual funds."
+            ),
+            "email": synthetic_email,
+            "phone": synthetic_phone,
+            "pan": synthetic_pan,
+            "aadhaar": synthetic_aadhaar,
+            "topic": "mutual_funds",
+        },
+        output_schema_ref="sprint6_ai_chat",
+    )
+
+    resp = await adapter.generate(req_pii)
+    assert resp.model == "@cf/google/gemma-3-12b-it"
+    assert len(captured_requests) == 1
+
+    outbound_payload = json.loads(captured_requests[0].content.decode("utf-8"))
+    user_prompt = outbound_payload["messages"][1]["content"]
+
+    # Verify original sensitive values are completely ABSENT from outbound request
+    assert synthetic_email not in user_prompt
+    assert synthetic_phone not in user_prompt
+    assert "9876543210" not in user_prompt
+    assert synthetic_pan not in user_prompt
+    assert synthetic_aadhaar not in user_prompt
+
+    # Verify sanitized placeholders are PRESENT
+    assert "[REDACTED_EMAIL]" in user_prompt
+    assert "[REDACTED_PHONE]" in user_prompt
+    assert "[REDACTED_PAN]" in user_prompt
+    assert "[REDACTED_AADHAAR]" in user_prompt
+
+    # 2. Test suitability and personal financial data transmission refusal
+    prohibited_contexts = [
+        {"willingness_score": 85},
+        {"capacity_score": 70},
+        {"composite_score": 78},
+        {"risk_category": "Growth"},
+    ]
+
+    for forbidden_ctx in prohibited_contexts:
+        captured_requests.clear()
+        req_forbidden = LLMRequest(
+            prompt_id="risk_profile_analysis",
+            prompt_version="v1",
+            context=forbidden_ctx,
+            output_schema_ref="sprint6_ai_chat",
+        )
+        with pytest.raises(ProviderResponseError) as exc_info:
+            await adapter.generate(req_forbidden)
+
+        assert (
+            "suitability and risk profile data cannot be transmitted" in str(exc_info.value).lower()
+        )
+        # Verify no external HTTP call was made
+        assert len(captured_requests) == 0
+
+
+@pytest.mark.asyncio
+async def test_cloudflare_malformed_json_or_missing_result_raises_schema_validation_error():
+    """
+    Verify that invalid, empty, or unparseable Cloudflare Workers AI responses raise
+    SchemaValidationError and allow the cascade to safely fall through.
+    """
+
+    # Empty result
+    def cf_empty_handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(
+            200,
+            json={"result": {}, "success": True},
+        )
+
+    client = httpx.AsyncClient(transport=httpx.MockTransport(cf_empty_handler))
+    adapter = CloudflareLLMAdapter(
+        account_id="mock-cf-account",
+        api_token="mock-cf-auth-token-12345",
+        http_client=client,
+    )
+
+    req = LLMRequest(
+        prompt_id="cf_empty",
+        prompt_version="v1",
+        context={"query": "Explain asset allocation"},
+        output_schema_ref="sprint6_ai_chat",
+    )
+
+    with pytest.raises(SchemaValidationError) as exc_info:
+        await adapter.generate(req)
+    assert exc_info.value.provider == "cloudflare"

@@ -69,6 +69,10 @@ class CompositeLLMProvider(LLMProvider):
             self.groq_provider = GroqLLMAdapter()
         else:
             self.groq_provider = None
+            logger.warning(
+                "Groq provider omitted from cascade because custom primary/hosted providers "
+                "were passed without an explicit groq_provider (backward-compatible 3-tier mode)."
+            )
 
         self.cloudflare_provider: LLMProvider | None
         if cloudflare_provider is not None:
@@ -77,6 +81,11 @@ class CompositeLLMProvider(LLMProvider):
             self.cloudflare_provider = CloudflareLLMAdapter()
         else:
             self.cloudflare_provider = None
+            logger.warning(
+                "Cloudflare provider omitted from cascade because custom primary/hosted providers "
+                "were passed without an explicit cloudflare_provider "
+                "(backward-compatible 3-tier mode)."
+            )
 
         self.deterministic_fallback = deterministic_fallback or DeterministicFallbackAdapter()
 
@@ -111,10 +120,19 @@ class CompositeLLMProvider(LLMProvider):
                 self.last_provider_name = "ollama"
                 self.last_fallback_reason = None
                 return response
-            except (LLMProviderError, Exception) as exc:
+            except LLMProviderError as exc:
                 self.last_fallback_reason = f"Primary Ollama failed: {exc}"
                 logger.warning(
                     "Primary LLM provider failed (%s); cascading to Gemini hosted fallback...",
+                    exc,
+                )
+            except Exception as exc:
+                self.last_fallback_reason = (
+                    f"Primary Ollama unexpected error: {type(exc).__name__}: {exc}"
+                )
+                logger.exception(
+                    "Unexpected error in primary Ollama provider (%s); "
+                    "cascading to Gemini hosted fallback...",
                     exc,
                 )
 
@@ -125,10 +143,19 @@ class CompositeLLMProvider(LLMProvider):
                 self.last_provider_used = "hosted_fallback"
                 self.last_provider_name = "gemini"
                 return response
-            except (LLMProviderError, Exception) as exc:
+            except LLMProviderError as exc:
                 self.last_fallback_reason = f"Gemini hosted failed: {exc}"
                 logger.warning(
                     "Gemini hosted provider failed (%s); cascading to Groq hosted fallback...",
+                    exc,
+                )
+            except Exception as exc:
+                self.last_fallback_reason = (
+                    f"Gemini hosted unexpected error: {type(exc).__name__}: {exc}"
+                )
+                logger.exception(
+                    "Unexpected error in Gemini hosted provider (%s); "
+                    "cascading to Groq hosted fallback...",
                     exc,
                 )
 
@@ -139,10 +166,19 @@ class CompositeLLMProvider(LLMProvider):
                 self.last_provider_used = "groq_hosted"
                 self.last_provider_name = "groq"
                 return response
-            except (LLMProviderError, Exception) as exc:
+            except LLMProviderError as exc:
                 self.last_fallback_reason = f"Groq hosted failed: {exc}"
                 logger.warning(
                     "Groq hosted provider failed (%s); "
+                    "cascading to Cloudflare Workers AI fallback...",
+                    exc,
+                )
+            except Exception as exc:
+                self.last_fallback_reason = (
+                    f"Groq hosted unexpected error: {type(exc).__name__}: {exc}"
+                )
+                logger.exception(
+                    "Unexpected error in Groq hosted provider (%s); "
                     "cascading to Cloudflare Workers AI fallback...",
                     exc,
                 )
@@ -154,10 +190,19 @@ class CompositeLLMProvider(LLMProvider):
                 self.last_provider_used = "cloudflare_hosted"
                 self.last_provider_name = "cloudflare"
                 return response
-            except (LLMProviderError, Exception) as exc:
+            except LLMProviderError as exc:
                 self.last_fallback_reason = f"Cloudflare hosted failed: {exc}"
                 logger.warning(
                     "Cloudflare hosted provider failed (%s); "
+                    "cascading to safe deterministic fallback...",
+                    exc,
+                )
+            except Exception as exc:
+                self.last_fallback_reason = (
+                    f"Cloudflare hosted unexpected error: {type(exc).__name__}: {exc}"
+                )
+                logger.exception(
+                    "Unexpected error in Cloudflare hosted provider (%s); "
                     "cascading to safe deterministic fallback...",
                     exc,
                 )
