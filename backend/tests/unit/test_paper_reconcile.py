@@ -26,9 +26,7 @@ def test_reconciles_buy_and_sell_using_fee_adjusted_order_cash_deltas() -> None:
             "cash_delta_cents": 59_950,
         },
     ]
-    result = reconcile_paper_account(
-        orders, {"SYN:AAPL": 7}, 859_850, initial_cash_cents=1_000_000
-    )
+    result = reconcile_paper_account(orders, {"SYN:AAPL": 7}, 859_850, initial_cash_cents=1_000_000)
     assert result.is_reconciled
     assert result.expected_cash_cents == 859_850
     assert result.expected_positions == {"SYN:AAPL": 7}
