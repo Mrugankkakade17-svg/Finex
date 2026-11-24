@@ -59,9 +59,9 @@ Every external provider and model was verified against upstream API documentatio
 ## 4. Test Suite Execution & Coverage
 
 ### Unit and Contract Tests (`test_llm_adapters.py`)
-- **Total Tests:** 92 passed in 1.27s (0 failed, 0 errors).
-- **Code Coverage:** **83%** across `app.adapters.llm` (exceeds 70% threshold):
-  - `composite_provider.py`: **93%**
+- **Total Tests:** 93 passed in 1.27s (0 failed, 0 errors).
+- **Code Coverage:** **82%** across `app.adapters.llm` (exceeds 70% threshold):
+  - `composite_provider.py`: **91%**
   - `groq_adapter.py`: **78%**
   - `cloudflare_adapter.py`: **73%**
   - `deterministic_adapter.py`: **90%**
@@ -83,5 +83,6 @@ Every external provider and model was verified against upstream API documentatio
 - `test_cloudflare_success_false_response_raises_error`: Cloudflare API `{"success": false}` parsed into typed exception.
 - `test_cloudflare_privacy_context_sanitization`: Outbound Cloudflare payload verified to contain masked PII and refuse suitability context.
 - `test_composite_cascade_logging_and_fallback_reason_privacy_sanitization`: Outbound logging and `last_fallback_reason` verified to redact API tokens, Authorization headers, and PII.
+- `test_composite_cascade_traceback_sanitization_across_all_unexpected_tiers`: Complete traceback sanitization verified across all tiers with original exception class names preserved and zero leaked tokens/PII.
 - `test_multihosted_cascade_health_status_and_is_quota_available`: Multi-tier diagnostic telemetry verified.
 - `test_get_llm_provider_configures_all_hosted_tiers`: Settings factory wires all providers correctly.

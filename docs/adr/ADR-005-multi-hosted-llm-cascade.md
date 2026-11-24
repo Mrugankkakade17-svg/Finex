@@ -80,6 +80,6 @@ To prevent unexpected programming bugs (such as `TypeError` or `AttributeError`)
 
 ## Verification
 
-- **92 unit and contract tests** in `backend/tests/unit/test_llm_adapters.py` passing with 100% success (82.67% coverage across `app.adapters.llm`).
+- **93 unit and contract tests** in `backend/tests/unit/test_llm_adapters.py` passing with 100% success (82.44% coverage across `app.adapters.llm`).
 - Official Google Gemini model `gemini-3.8-flash` verified active, stable, and $0.00 free-tier eligible in Google Gemini Developer API documentation (`gemini-api-guides/pricing.md`, `gemini-api-guides/models/gemini-3.8-flash.md`, verified 24 November 2026).
 - Full cascade fail-over verified across all 5 tiers (Ollama $\to$ Gemini $\to$ Groq $\to$ Cloudflare $\to$ Deterministic).

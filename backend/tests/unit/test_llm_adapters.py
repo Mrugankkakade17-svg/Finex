@@ -2763,6 +2763,19 @@ async def test_composite_cascade_logging_and_fallback_reason_privacy_sanitizatio
         assert raw_email not in msg
         assert "9876543210" not in msg
 
+    # Complete formatted log output verification (including full traceback)
+    full_log_text = caplog.text
+    assert "mock-auth-secret-token" not in full_log_text
+    assert raw_gemini_key not in full_log_text
+    assert raw_groq_key not in full_log_text
+    assert raw_email not in full_log_text
+    assert "9876543210" not in full_log_text
+
+    # Diagnostic traceback and class name are preserved with sanitized message
+    assert "Traceback (most recent call last):" in full_log_text
+    assert "RuntimeError" in full_log_text
+    assert "[REDACTED_GROQ_KEY]" in full_log_text
+
     # Verify redaction placeholders appear in log messages
     assert any("Authorization: [REDACTED]" in m for m in log_messages)
     assert any("[REDACTED_GEMINI_KEY]" in m for m in log_messages)
@@ -2775,3 +2788,102 @@ async def test_composite_cascade_logging_and_fallback_reason_privacy_sanitizatio
     errors = [r for r in caplog.records if r.levelno == logging.ERROR]
     assert any("Primary LLM provider failed" in r.message for r in warnings)
     assert any("Unexpected error in Gemini hosted provider" in r.message for r in errors)
+
+
+@pytest.mark.asyncio
+async def test_composite_cascade_traceback_sanitization_across_all_unexpected_tiers(
+    caplog: pytest.LogCaptureFixture,
+):
+    """
+    Verify complete traceback sanitization across all cascade stages:
+    1. Unexpected exceptions containing Bearer tokens, Gemini keys, Groq keys,
+       emails, phone numbers, and raw prompt payloads are raised across tiers.
+    2. The formatted log stream and tracebacks retain diagnostic stack frames
+       and original exception class names (TypeError, RuntimeError, AttributeError).
+    3. The complete formatted log output (caplog.text) contains ZERO raw secret,
+       PII, or prompt values in either message or traceback.
+    4. Fallback proceeds safely to the deterministic offline engine.
+    """
+    token_bearer = "mock-bearer-token-secret-999"
+    key_gemini = "AI" + "za" + "SyD_GEMINI_LEAK_PROOF_123456789012345678"
+    key_groq = "gs" + "k_" + "groq_leak_proof_token_1234567890abcdef"
+    pii_email = "investor.vip@wealth-management.example"
+    pii_phone = "+91-9123456789"
+    sensitive_prompt = "CONFIDENTIAL_FINANCIAL_PROMPT_PAYLOAD_" * 10
+
+    mock_ollama = AsyncMock(spec=LLMProvider)
+    # Tier 1 unexpected TypeError containing bearer token and email
+    mock_ollama.generate.side_effect = TypeError(
+        f"Invalid argument with Bearer {token_bearer} for user {pii_email}"
+    )
+
+    mock_gemini = AsyncMock(spec=LLMProvider)
+    # Tier 2 unexpected RuntimeError containing Gemini API key and phone
+    mock_gemini.generate.side_effect = RuntimeError(
+        f"Service dispatch failed with key {key_gemini} and contact {pii_phone}"
+    )
+
+    mock_groq = AsyncMock(spec=LLMProvider)
+    # Tier 3 unexpected AttributeError containing Groq key and prompt payload
+    mock_groq.generate.side_effect = AttributeError(
+        f"Missing parser attribute with key {key_groq}. Prompt: {sensitive_prompt}"
+    )
+
+    mock_cloudflare = AsyncMock(spec=LLMProvider)
+    # Tier 4 expected LLMProviderError (normal outage)
+    mock_cloudflare.generate.side_effect = LLMProviderError(
+        "Cloudflare Workers AI temporarily unavailable"
+    )
+
+    composite = CompositeLLMProvider(
+        primary_provider=mock_ollama,
+        gemini_provider=mock_gemini,
+        groq_provider=mock_groq,
+        cloudflare_provider=mock_cloudflare,
+    )
+
+    req = LLMRequest(
+        prompt_id="test_traceback_audit",
+        prompt_version="v1",
+        context={"query": "Explain asset allocation"},
+        output_schema_ref="sprint6_ai_chat",
+    )
+
+    with caplog.at_level(logging.DEBUG):
+        resp = await composite.generate(req)
+
+    # Reached safe deterministic fallback
+    assert resp.model == "deterministic-fallback-v1"
+    assert composite.last_provider_used == "deterministic_fallback"
+    assert composite.last_provider_name == "deterministic"
+
+    # Capture the complete formatted log output including all tracebacks
+    log_output = caplog.text
+
+    # 1. VERIFY NONE OF THE SENSITIVE VALUES APPEAR ANYWHERE IN FORMATTED LOG OUTPUT
+    assert token_bearer not in log_output
+    assert key_gemini not in log_output
+    assert key_groq not in log_output
+    assert pii_email not in log_output
+    assert "9123456789" not in log_output
+    assert "CONFIDENTIAL_FINANCIAL_PROMPT_PAYLOAD_" not in log_output
+
+    # 2. VERIFY DIAGNOSTIC TRACEBACK FRAMES AND CLASS NAMES ARE PRESERVED
+    assert "TypeError" in log_output
+    assert "RuntimeError" in log_output
+    assert "AttributeError" in log_output
+    assert "Traceback (most recent call last):" in log_output
+
+    # 3. VERIFY REDACTION PLACEHOLDERS ARE PRESENT IN TRACEBACK / LOGS
+    assert "[REDACTED_BEARER_TOKEN]" in log_output
+    assert "[REDACTED_GEMINI_KEY]" in log_output
+    assert "[REDACTED_GROQ_KEY]" in log_output
+    assert "[REDACTED_EMAIL]" in log_output
+    assert "[REDACTED_PHONE]" in log_output
+    assert "[REDACTED_PAYLOAD]" in log_output
+
+    # 4. VERIFY LOG LEVEL SEPARATION: ERROR FOR UNEXPECTED, WARNING FOR EXPECTED
+    error_records = [r for r in caplog.records if r.levelno == logging.ERROR]
+    warning_records = [r for r in caplog.records if r.levelno == logging.WARNING]
+    assert len(error_records) == 3
+    assert any("Cloudflare hosted provider failed" in r.message for r in warning_records)

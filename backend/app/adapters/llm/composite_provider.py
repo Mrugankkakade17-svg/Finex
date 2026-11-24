@@ -109,8 +109,12 @@ class CompositeLLMProvider(LLMProvider):
         """
         msg = str(exc)
         # Redact Authorization header / Bearer tokens
-        msg = re.sub(r"(?i)bearer\s+[A-Za-z0-9_\-\.]+", "[REDACTED_BEARER_TOKEN]", msg)
-        msg = re.sub(r"(?i)authorization:\s*[^\s]+", "Authorization: [REDACTED]", msg)
+        msg = re.sub(
+            r"(?i)authorization:\s*(?:bearer\s+)?[^\s]+",
+            "Authorization: [REDACTED]",
+            msg,
+        )
+        msg = re.sub(r"(?i)\bbearer\s+[A-Za-z0-9_\-\.]+", "[REDACTED_BEARER_TOKEN]", msg)
         # Redact Google Gemini API keys
         msg = re.sub(r"AIza[0-9A-Za-z_\-]{20,}", "[REDACTED_GEMINI_KEY]", msg)
         # Redact Groq API keys
@@ -122,10 +126,46 @@ class CompositeLLMProvider(LLMProvider):
             "[REDACTED_PHONE]",
             msg,
         )
+        # Redact prompt, payload, query, response, or context echoes in exception strings
+        msg = re.sub(
+            r"(?i)\b(?:prompt|payload|response|query|context)\s*[:=]\s*[\s\S]+",
+            "[REDACTED_PAYLOAD]",
+            msg,
+        )
         # Prevent prompt/response body echo by truncating excessively long error strings
         if len(msg) > 200:
             msg = msg[:197] + "..."
         return msg
+
+    @classmethod
+    def _create_sanitized_exc_info(
+        cls, exc: Exception, clean_msg: str
+    ) -> tuple[type, Exception, Any]:
+        """
+        Build an exc_info 3-tuple preserving the original exception class name
+        and stack traceback frames, but with the sanitized message so raw secrets,
+        tokens, headers, or PII never appear in formatted traceback logs.
+        """
+        orig_type = type(exc)
+        tb = exc.__traceback__
+        try:
+            SanitizedClass = type(
+                orig_type.__name__,
+                (orig_type,),
+                {
+                    "__str__": lambda self: clean_msg,
+                    "__repr__": lambda self: f"{orig_type.__name__}({clean_msg!r})",
+                    "__module__": getattr(orig_type, "__module__", "builtins"),
+                    "__init__": lambda self, *args, **kwargs: None,
+                },
+            )
+            sanitized_instance = SanitizedClass()
+            sanitized_instance = sanitized_instance.with_traceback(tb)
+            return (SanitizedClass, sanitized_instance, tb)
+        except Exception:
+            fallback_exc = RuntimeError(f"{orig_type.__name__}: {clean_msg}")
+            fallback_exc = fallback_exc.with_traceback(tb)
+            return (RuntimeError, fallback_exc, tb)
 
     async def generate(self, request: LLMRequest) -> LLMResponse:
         """
@@ -156,13 +196,15 @@ class CompositeLLMProvider(LLMProvider):
                 )
             except Exception as exc:
                 clean_msg = self._sanitize_fallback_reason(exc)
+                sanitized_exc_info = self._create_sanitized_exc_info(exc, clean_msg)
                 self.last_fallback_reason = (
                     f"Primary Ollama unexpected error: {type(exc).__name__}: {clean_msg}"
                 )
-                logger.exception(
+                logger.error(
                     "Unexpected error in primary Ollama provider (%s); "
                     "cascading to Gemini hosted fallback...",
                     clean_msg,
+                    exc_info=sanitized_exc_info,
                 )
 
         # Stage 2: Try Hosted Tier 1 (Google Gemini: gemini-3.8-flash)
@@ -181,13 +223,15 @@ class CompositeLLMProvider(LLMProvider):
                 )
             except Exception as exc:
                 clean_msg = self._sanitize_fallback_reason(exc)
+                sanitized_exc_info = self._create_sanitized_exc_info(exc, clean_msg)
                 self.last_fallback_reason = (
                     f"Gemini hosted unexpected error: {type(exc).__name__}: {clean_msg}"
                 )
-                logger.exception(
+                logger.error(
                     "Unexpected error in Gemini hosted provider (%s); "
                     "cascading to Groq hosted fallback...",
                     clean_msg,
+                    exc_info=sanitized_exc_info,
                 )
 
         # Stage 3: Try Hosted Tier 2 (Groq: openai/gpt-oss-120b)
@@ -207,13 +251,15 @@ class CompositeLLMProvider(LLMProvider):
                 )
             except Exception as exc:
                 clean_msg = self._sanitize_fallback_reason(exc)
+                sanitized_exc_info = self._create_sanitized_exc_info(exc, clean_msg)
                 self.last_fallback_reason = (
                     f"Groq hosted unexpected error: {type(exc).__name__}: {clean_msg}"
                 )
-                logger.exception(
+                logger.error(
                     "Unexpected error in Groq hosted provider (%s); "
                     "cascading to Cloudflare Workers AI fallback...",
                     clean_msg,
+                    exc_info=sanitized_exc_info,
                 )
 
         # Stage 4: Try Hosted Tier 3 (Cloudflare Workers AI: @cf/google/gemma-3-12b-it)
@@ -233,13 +279,15 @@ class CompositeLLMProvider(LLMProvider):
                 )
             except Exception as exc:
                 clean_msg = self._sanitize_fallback_reason(exc)
+                sanitized_exc_info = self._create_sanitized_exc_info(exc, clean_msg)
                 self.last_fallback_reason = (
                     f"Cloudflare hosted unexpected error: {type(exc).__name__}: {clean_msg}"
                 )
-                logger.exception(
+                logger.error(
                     "Unexpected error in Cloudflare hosted provider (%s); "
                     "cascading to safe deterministic fallback...",
                     clean_msg,
+                    exc_info=sanitized_exc_info,
                 )
 
         # Stage 5: Final Safe Deterministic Fallback (Guaranteed Safe, Offline)
