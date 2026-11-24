@@ -172,6 +172,7 @@ def setup_probe_resources() -> Generator[None, None, None]:
 # Routes secured under Sprint 1 (e.g. S1-MR05: Ops, Release, Privacy) now strictly enforce
 # authentication and pass cleanly. Routes not yet migrated retain xfail(strict=False).
 SECURED_ROUTERS_S1 = {
+    "goals",
     "spending",
     "alerts",
     "ops_hardening",
