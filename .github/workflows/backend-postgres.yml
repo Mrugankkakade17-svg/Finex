@@ -76,9 +76,13 @@ jobs:
           asyncio.run(check())
           "
 
-      - name: Run Alembic migrations (if present)
+      - name: Run Alembic migrations
         run: |
-          python -m alembic upgrade head || echo "No migrations to apply or skipped"
+          if [ -d "alembic/versions" ] && [ -n "$(find alembic/versions -name '*.py' ! -name '__*' 2>/dev/null)" ]; then
+            python -m alembic upgrade head
+          else
+            echo "No migrations present in alembic/versions; skipping upgrade."
+          fi
 
       - name: Run @pytest.mark.postgres tests
         run: |
