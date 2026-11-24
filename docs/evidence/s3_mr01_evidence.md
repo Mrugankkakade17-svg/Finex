@@ -6,6 +6,7 @@
 - Added normalized allocation model headers and target-weight rows, plus a versioned benchmark map for EQUITY, FIXED_INCOME and CASH.
 - Added deterministic educational reference records for Conservative (20/70/10), Moderate (50/40/10) and Aggressive (80/10/10) profiles. These illustrative examples are not investment advice.
 - Addressed reviewer feedback by keying benchmark mappings on both asset class and version. Multiple benchmark versions can now coexist, and reseeding an existing `(asset_class, version)` updates only that version.
+- Assigned the CASH reference a distinct synthetic benchmark symbol (`CSHX`) rather than reusing the asset-class label, avoiding ambiguous symbol/version collisions.
 - Added an idempotent PostgreSQL seed command at `scripts/seed_reference_data.py`. It uses `DATABASE_URL` and `ON CONFLICT` upserts; rerunning converges to the same versioned data.
 - Added unit coverage for full allocation sums, monotonic equity weights and benchmark coverage; added PostgreSQL coverage for repeated seeding, coexistence of benchmark versions and database constraints.
 
