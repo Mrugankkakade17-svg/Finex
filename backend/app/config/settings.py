@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import os
+from decimal import Decimal
 from enum import Enum
 from functools import lru_cache
 from ipaddress import ip_address
@@ -92,6 +93,11 @@ class Settings(BaseSettings):
 
     market_data_provider: str = "mock"
     market_data_api_key: str = ""
+
+    paper_trading_initial_cash: Decimal = Field(
+        default=Decimal("50000.00"), gt=0, max_digits=12, decimal_places=2
+    )
+    paper_trading_fee_bps: int = Field(default=10, ge=0, le=1000)
 
     log_level: str = "INFO"
 
