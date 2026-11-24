@@ -8,7 +8,7 @@ from decimal import Decimal
 from typing import Dict, List
 from uuid import uuid4
 
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile
 
 from app.auth.principal import Principal, get_current_principal
 from app.core.responses import APIResponse
@@ -17,6 +17,11 @@ from app.schemas.sprint5_privacy_spending import (
     CategoryCorrectionRequest,
     MonthlyCategoryTrend,
     SpendingTrendResponse,
+)
+from app.services.csv_import_service import (
+    MAX_UPLOAD_BYTES,
+    CSVImportError,
+    import_spending_csv,
 )
 
 router = APIRouter(
@@ -109,5 +114,36 @@ def get_spending_trends(
     return APIResponse.success(
         message="Spending trends calculated",
         data=res.model_dump(mode="json"),
+        correlation_id=correlation_id,
+    )
+
+
+@router.post("/imports", summary="Safely import spending transactions from CSV")
+async def import_transactions(
+    request: Request,
+    file: UploadFile = File(...),
+    principal: Principal = Depends(get_current_principal),
+):
+    """Import bounded CSV data into the authenticated user's spending account."""
+    correlation_id = getattr(request.state, "correlation_id", str(uuid4()))
+    content = await file.read(MAX_UPLOAD_BYTES + 1)
+    await file.close()
+    if len(content) > MAX_UPLOAD_BYTES:
+        raise HTTPException(status_code=413, detail="CSV exceeds the 5 MiB upload limit.")
+    content_type = (file.content_type or "").split(";", maxsplit=1)[0].strip().lower()
+    if content_type not in {"text/csv", "application/csv", "application/vnd.ms-excel"}:
+        raise HTTPException(status_code=415, detail="Upload must be a CSV file.")
+    try:
+        summary = import_spending_csv(
+            content,
+            file.filename or "transactions.csv",
+            principal.user_id,
+            settings=getattr(request.app.state, "settings", None),
+        )
+    except CSVImportError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    return APIResponse.success(
+        message="Spending CSV imported",
+        data=summary.model_dump(mode="json"),
         correlation_id=correlation_id,
     )

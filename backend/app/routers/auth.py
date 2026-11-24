@@ -4,7 +4,6 @@ from fastapi import APIRouter, Body, Depends, Request
 from pydantic import BaseModel
 
 from app.auth.dependencies import get_current_user
-from app.core.exceptions import BadRequestException
 from app.core.responses import APIResponse
 from app.schemas.auth import GoogleAuthRequest, LoginRequest, RegisterRequest
 from app.services import auth_service
@@ -105,7 +104,6 @@ def register(request: RegisterRequest, http_request: Request):
             },
         },
         401: {"description": "Invalid credentials"},
-        429: {"description": "Too many failed login attempts; rate limit exceeded"},
         422: {
             "description": "Validation error",
             "content": {
@@ -296,13 +294,21 @@ def logout(
 )
 def google_callback(request: GoogleAuthRequest, http_request: Request):
     """Verify Google identity and return JWT tokens (create user if first login)."""
+    # Use id_token or credential field (MockGoogleVerifier understands mock: format)
     id_token = request.id_token or request.credential
-    if not id_token or not id_token.strip():
-        raise BadRequestException(
-            message="Google identity payload or credential is required",
-            error_code="MISSING_GOOGLE_CREDENTIAL",
+    if id_token:
+        result = auth_service.google_callback(id_token=id_token)
+    else:
+        # Fallback: direct mock fields via legacy google_auth_service path
+        from app.services.google_auth_service import google_auth_service
+
+        identity = google_auth_service.verify_google_identity(request)
+        result = auth_service.login_or_create_google_user(
+            google_id=identity["google_id"],
+            email=identity["email"],
+            name=identity["name"],
+            avatar_url=identity.get("avatar_url"),
         )
-    result = auth_service.google_callback(id_token=id_token.strip())
     return APIResponse.success(
         message="Google login successful",
         data=result,

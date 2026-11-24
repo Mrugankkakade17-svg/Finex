@@ -13,4 +13,3 @@ class GoogleIdentity(BaseModel):
     email: EmailStr
     name: str
     picture: Optional[str] = None
-    email_verified: bool = True

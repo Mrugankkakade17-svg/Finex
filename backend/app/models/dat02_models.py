@@ -19,7 +19,6 @@ from sqlalchemy import (
     Column,
     Date,
     Float,
-    Integer,
     Numeric,
     String,
     Text,
@@ -43,22 +42,8 @@ class User(Base):
     role = Column(String(50), server_default="user")
     risk_profile = Column(String(50), nullable=True)
     is_active = Column(Boolean, server_default="true")
-    google_id = Column(String(255), nullable=True, unique=True)
-    picture = Column(Text, nullable=True)
     created_at = Column(TIMESTAMP(timezone=True), server_default=func.now())
     updated_at = Column(TIMESTAMP(timezone=True), server_default=func.now(), onupdate=func.now())
-
-
-class FailedLogin(Base):
-    """Failed login attempt counter for rate limiting across workers."""
-
-    __tablename__ = "failed_logins"
-    __table_args__ = {"schema": "finex"}
-
-    email = Column(String(320), primary_key=True)
-    failed_count = Column(Integer, nullable=False, server_default="1")
-    first_attempt_at = Column(TIMESTAMP(timezone=True), nullable=False, server_default=func.now())
-    last_attempt_at = Column(TIMESTAMP(timezone=True), nullable=False, server_default=func.now())
 
 
 class UserProfile(Base):

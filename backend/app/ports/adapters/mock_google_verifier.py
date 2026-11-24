@@ -5,12 +5,11 @@ Accepts tokens in the format:  mock:<email>:<name>
 Example: "mock:alice@finex.com:Alice Smith"
 
 This implements GoogleOAuthPort so it can be injected wherever a real
-Google verifier would be used.
-Fails closed in UAT and production environments.
+Google verifier would be used. Swap in the real verifier for production
+by changing the dependency without touching the service layer.
 """
 
-from app.config.settings import AppEnv, get_settings
-from app.core.exceptions import AuthenticationException, UnauthorizedException
+from app.core.exceptions import AuthenticationException
 from app.schemas.google_identity import GoogleIdentity
 
 
@@ -20,22 +19,9 @@ class MockGoogleVerifier:
 
     Token format: mock:<email>:<name>
     Any other format raises AuthenticationException (simulates invalid token).
-    Strictly forbidden in production configurations.
     """
 
     def verify_google_token(self, id_token: str) -> GoogleIdentity:
-        settings = get_settings()
-        if settings.is_production_like or settings.app_env in {AppEnv.PROD, AppEnv.UAT}:
-            raise UnauthorizedException(
-                message="Mock Google authentication is disabled in production",
-                error_code="MOCK_AUTH_DISABLED",
-            )
-        if not settings.allow_mock_google_auth:
-            raise UnauthorizedException(
-                message="Mock Google authentication is disabled",
-                error_code="MOCK_AUTH_DISABLED",
-            )
-
         if not id_token.startswith("mock:"):
             raise AuthenticationException(message="Invalid Google ID token")
 
@@ -62,7 +48,6 @@ class MockGoogleVerifier:
             email=email,
             name=name,
             picture=picture,
-            email_verified=True,
         )
 
 

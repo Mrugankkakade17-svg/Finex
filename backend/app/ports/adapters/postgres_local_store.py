@@ -32,9 +32,6 @@ def postgres_dsn(database_url: str) -> str:
     }:
         raise ValueError("APP_DATABASE_URL must be a PostgreSQL URL.")
     normalized = parsed._replace(scheme="postgresql")
-    if normalized.hostname == "localhost":
-        netloc = normalized.netloc.replace("localhost", "127.0.0.1")
-        normalized = normalized._replace(netloc=netloc)
     if normalized.query == "ssl=require":
         normalized = normalized._replace(query="sslmode=require")
     return urlunparse(normalized)
