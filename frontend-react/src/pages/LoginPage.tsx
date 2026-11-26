@@ -10,27 +10,36 @@ import {
 import { authService } from '../services/authService';
 
 export const LoginPage: React.FC = () => {
-  const { login, isAuthenticated } = useAuth();
+  const { user, login, isAuthenticated } = useAuth();
   const navigate = useNavigate();
 
+  const [displayName, setDisplayName] = useState(
+    user?.displayName && user.displayName !== 'Investor' ? user.displayName : ''
+  );
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const handleLogin = async () => {
+  const handleLogin = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
     setIsLoading(true);
     setError('');
 
+    const chosenName = displayName.trim() || user?.displayName || 'Investor';
+
     try {
-      const response = await authService.login();
+      const response = await authService.login({
+        displayName: chosenName,
+      });
 
-      login(response.user);
+      login({
+        ...response.user,
+        displayName: chosenName,
+      });
 
-      navigate('/consent');
+      navigate('/dashboard');
     } catch (err) {
       console.error('Login failed:', err);
-      setError(
-        'Unable to sign in right now. Please try again.'
-      );
+      setError('Unable to sign in right now. Please try again.');
     } finally {
       setIsLoading(false);
     }
@@ -40,23 +49,23 @@ export const LoginPage: React.FC = () => {
     setIsLoading(true);
     setError('');
 
+    const chosenName = displayName.trim() || 'Demo Investor';
+
     try {
       const response = await authService.login({
-        displayName: 'Demo Investor',
+        displayName: chosenName,
       });
 
       login({
         ...response.user,
-        displayName: 'Demo Investor',
-        riskProfile: 'AGGRESSIVE',
+        displayName: chosenName,
+        riskProfile: 'MODERATE',
       });
 
       navigate('/dashboard');
     } catch (err) {
       console.error('Demo login failed:', err);
-      setError(
-        'Unable to start demo login. Please try again.'
-      );
+      setError('Unable to start demo login. Please try again.');
     } finally {
       setIsLoading(false);
     }
@@ -65,8 +74,8 @@ export const LoginPage: React.FC = () => {
   return (
     <div
       style={{
-        maxWidth: '480px',
-        margin: '40px auto 0 auto',
+        maxWidth: '500px',
+        margin: '32px auto',
       }}
     >
       <div
@@ -80,15 +89,13 @@ export const LoginPage: React.FC = () => {
           style={{
             width: '64px',
             height: '64px',
-            borderRadius: '16px',
-            background:
-              'linear-gradient(135deg, #10b981, #6366f1)',
+            borderRadius: '18px',
+            background: 'var(--color-accent-coral)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             margin: '0 auto 20px auto',
-            boxShadow:
-              '0 0 25px rgba(16, 185, 129, 0.4)',
+            boxShadow: '0 10px 25px rgba(255, 114, 94, 0.32)',
           }}
         >
           <Sparkles size={32} color="#ffffff" />
@@ -96,35 +103,33 @@ export const LoginPage: React.FC = () => {
 
         <h2
           style={{
-            fontSize: '1.75rem',
-            color: '#ffffff',
+            fontSize: '1.9rem',
+            color: 'var(--color-text)',
             marginBottom: '8px',
           }}
         >
-          Welcome to FinEx
+          Welcome to finex*
         </h2>
 
         <p
           style={{
-            color: 'var(--text-secondary)',
-            fontSize: '0.9rem',
-            marginBottom: '28px',
+            color: 'var(--color-text-muted)',
+            fontSize: '0.95rem',
+            marginBottom: '24px',
           }}
         >
-          AI-Powered Financial Intelligence & Paper-Trading
-          Platform
+          Small steps. Big future energy. Personalize your financial space below.
         </p>
 
-        {isAuthenticated && (
+        {isAuthenticated && user && (
           <div
             style={{
-              padding: '12px',
-              borderRadius: '10px',
-              background: 'rgba(16, 185, 129, 0.1)',
-              border:
-                '1px solid rgba(16, 185, 129, 0.3)',
-              color: '#10b981',
-              fontSize: '0.85rem',
+              padding: '12px 16px',
+              borderRadius: '12px',
+              background: '#ECFDF5',
+              border: '1px solid #6EE7B7',
+              color: '#065F46',
+              fontSize: '0.88rem',
               marginBottom: '20px',
               display: 'flex',
               alignItems: 'center',
@@ -133,8 +138,7 @@ export const LoginPage: React.FC = () => {
             }}
           >
             <CheckCircle2 size={16} />
-            Currently Authenticated as{' '}
-            <strong>{' '}{'Khyati'}</strong>
+            Currently Authenticated as <strong>{user.displayName}</strong>
           </div>
         )}
 
@@ -145,9 +149,9 @@ export const LoginPage: React.FC = () => {
               padding: '12px',
               marginBottom: '20px',
               borderRadius: '10px',
-              background: 'rgba(239, 68, 68, 0.1)',
-              border: '1px solid rgba(239, 68, 68, 0.3)',
-              color: '#ef4444',
+              background: '#FEF3F2',
+              border: '1px solid #FDA29B',
+              color: '#B42318',
               fontSize: '0.85rem',
             }}
           >
@@ -155,33 +159,56 @@ export const LoginPage: React.FC = () => {
           </div>
         )}
 
-        <div
+        <form
+          onSubmit={handleLogin}
           style={{
             display: 'flex',
             flexDirection: 'column',
             gap: '14px',
+            textAlign: 'left',
           }}
         >
+          <div>
+            <label
+              htmlFor="login-user-name"
+              style={{
+                display: 'block',
+                fontSize: '0.85rem',
+                fontWeight: 700,
+                color: 'var(--color-text)',
+                marginBottom: '6px',
+              }}
+            >
+              Your Name
+            </label>
+            <input
+              id="login-user-name"
+              type="text"
+              value={displayName}
+              onChange={(e) => setDisplayName(e.target.value)}
+              placeholder="Enter your name"
+              style={{ width: '100%' }}
+            />
+          </div>
+
           <button
-            onClick={handleLogin}
+            type="submit"
             disabled={isLoading}
             aria-disabled={isLoading}
             className="btn-primary"
             style={{
               width: '100%',
               justifyContent: 'center',
-              padding: '12px',
+              padding: '13px',
               opacity: isLoading ? 0.6 : 1,
             }}
           >
             <LogIn size={18} />
-
-            {isLoading
-              ? 'Signing In...'
-              : 'Sign In with Google (Mock OAuth)'}
+            {isLoading ? 'Signing In...' : 'Sign In & Build Your Rhythm'}
           </button>
 
           <button
+            type="button"
             onClick={handleDemoLogin}
             disabled={isLoading}
             aria-disabled={isLoading}
@@ -194,37 +221,31 @@ export const LoginPage: React.FC = () => {
             }}
           >
             <ShieldCheck size={18} />
-
-            {isLoading
-              ? 'Please Wait...'
-              : 'Demo Quick Login'}
+            {isLoading ? 'Please Wait...' : 'Quick Demo Login'}
           </button>
-        </div>
+        </form>
 
         <div
           style={{
-            marginTop: '30px',
-            paddingTop: '20px',
-            borderTop:
-              '1px solid var(--border-glass)',
-            fontSize: '0.75rem',
-            color: 'var(--text-muted)',
+            marginTop: '28px',
+            paddingTop: '18px',
+            borderTop: '1px solid var(--color-surface-divider)',
+            fontSize: '0.78rem',
+            color: 'var(--color-text-muted)',
             textAlign: 'left',
           }}
         >
           <div
             style={{
-              fontWeight: 600,
-              color: 'var(--text-secondary)',
+              fontWeight: 700,
+              color: 'var(--color-text)',
               marginBottom: '4px',
             }}
           >
-            Prototype Note (Task W0-KHY):
+            Your Money, In Your Orbit:
           </div>
-
-          Authentication uses the typed authentication
-          service. Mock OAuth responses are used while the
-          backend API is pending.
+          Your chosen display name personalizes your dashboard, onboarding profile, and AI assistant
+          session locally on your device.
         </div>
       </div>
     </div>

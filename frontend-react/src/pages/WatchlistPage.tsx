@@ -23,7 +23,6 @@ export const WatchlistPage: React.FC = () => {
   };
 
   useEffect(() => {
-    // Loaded once on mount; the mock service holds state module-side.
     loadWatchlist();
   }, []);
 
@@ -34,20 +33,38 @@ export const WatchlistPage: React.FC = () => {
 
   return (
     <div>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '24px' }}>
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: '12px',
+          marginBottom: '24px',
+        }}
+      >
         <div>
-          <h2 style={{ fontSize: '1.75rem', color: '#ffffff' }}>Watchlist</h2>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
-            Securities you're tracking, with the latest available freshness status
+          <p className="local-eyebrow">TRACK YOUR FAVORITES</p>
+          <h2 style={{ fontSize: '1.9rem', color: 'var(--color-text)' }}>Watchlist</h2>
+          <p style={{ color: 'var(--color-text-muted)', fontSize: '0.95rem' }}>
+            Securities you&apos;re tracking, with the latest available freshness status
           </p>
         </div>
-        <button type="button" className="btn-secondary" onClick={loadWatchlist} style={{ fontSize: '0.85rem' }}>
+        <button
+          type="button"
+          className="btn-secondary"
+          onClick={loadWatchlist}
+          style={{ fontSize: '0.88rem' }}
+        >
           <RefreshCw size={14} /> Refresh
         </button>
       </div>
 
       {loading && (
-        <div data-testid="watchlist-loading" style={{ color: 'var(--text-secondary)', padding: '20px 0' }}>
+        <div
+          data-testid="watchlist-loading"
+          style={{ color: 'var(--color-text-muted)', padding: '20px 0' }}
+        >
           Loading your watchlist…
         </div>
       )}
@@ -58,11 +75,11 @@ export const WatchlistPage: React.FC = () => {
           data-testid="watchlist-error"
           style={{
             padding: '16px',
-            borderRadius: '8px',
-            background: 'rgba(239, 68, 68, 0.1)',
-            border: '1px solid rgba(239, 68, 68, 0.3)',
-            color: '#ef4444',
-            fontSize: '0.85rem',
+            borderRadius: '12px',
+            background: '#FEF3F2',
+            border: '1px solid #FDA29B',
+            color: '#B42318',
+            fontSize: '0.88rem',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
@@ -71,7 +88,12 @@ export const WatchlistPage: React.FC = () => {
           <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <AlertTriangle size={16} /> {error}
           </span>
-          <button type="button" className="btn-secondary" onClick={loadWatchlist} style={{ fontSize: '0.75rem' }}>
+          <button
+            type="button"
+            className="btn-secondary"
+            onClick={loadWatchlist}
+            style={{ fontSize: '0.78rem' }}
+          >
             Retry
           </button>
         </div>
@@ -81,9 +103,9 @@ export const WatchlistPage: React.FC = () => {
         <div
           data-testid="watchlist-empty"
           className="glass-card"
-          style={{ padding: '32px', textAlign: 'center', color: 'var(--text-secondary)' }}
+          style={{ padding: '36px', textAlign: 'center', color: 'var(--color-text-muted)' }}
         >
-          <Star size={28} style={{ marginBottom: '10px', opacity: 0.6 }} />
+          <Star size={32} color="var(--color-accent-coral)" style={{ marginBottom: '10px' }} />
           <p>Your watchlist is empty. Search for a security to add one.</p>
         </div>
       )}
@@ -95,15 +117,19 @@ export const WatchlistPage: React.FC = () => {
               key={item.symbol}
               className="glass-card"
               style={{
-                padding: '16px 20px',
+                padding: '18px 22px',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
               }}
             >
               <div>
-                <div style={{ fontWeight: 600, color: '#ffffff' }}>{item.symbol}</div>
-                <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{item.name}</div>
+                <div style={{ fontWeight: 700, color: 'var(--color-text)', fontSize: '1.05rem' }}>
+                  {item.symbol}
+                </div>
+                <div style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)' }}>
+                  {item.name}
+                </div>
               </div>
               <button
                 type="button"
@@ -112,9 +138,10 @@ export const WatchlistPage: React.FC = () => {
                 style={{
                   background: 'transparent',
                   border: 'none',
-                  color: 'var(--text-muted)',
+                  color: 'var(--color-text-muted)',
                   cursor: 'pointer',
-                  padding: '6px',
+                  padding: '8px',
+                  borderRadius: '8px',
                 }}
               >
                 <Trash2 size={18} />

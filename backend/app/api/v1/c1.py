@@ -4,6 +4,8 @@ import uuid
 from fastapi import APIRouter, Depends, Header, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.auth.dependencies import get_current_user
+
 # Import our database connection and layers
 from app.ports.adapters.lakebase import get_db_session
 from app.repositories.c1_repository import C1Repository
@@ -24,12 +26,12 @@ router = APIRouter(
 )
 async def create_portfolio(
     payload: PortfolioCreateRequest,
-    x_user_id: str = Header(..., alias="X-User-ID"),
     x_correlation_id: str = Header(
         default_factory=lambda: str(uuid.uuid4()),
         alias="X-Correlation-ID",
     ),
     db: AsyncSession = Depends(get_db_session),
+    user: dict = Depends(get_current_user),
 ):
     """
     Creates a new manual portfolio for the user.
@@ -40,7 +42,7 @@ async def create_portfolio(
 
     # Execute the deterministic business logic
     portfolio = await service.create_user_portfolio(
-        user_id=x_user_id,
+        user_id=str(user["user_id"]),
         name=payload.name,
         p_type=payload.type,
         currency=payload.base_currency,

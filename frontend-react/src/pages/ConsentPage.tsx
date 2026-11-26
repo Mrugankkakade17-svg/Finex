@@ -54,7 +54,7 @@ export const ConsentPage: React.FC<{ basePath?: string }> = ({ basePath = '' }) 
         <div className="s1-journey__icon" aria-hidden="true">
           <ShieldCheck size={32} color="#ffffff" />
         </div>
-        <p className="s1-journey__eyebrow">Sprint 1 onboarding · {CONSENT_VERSION}</p>
+        <p className="s1-journey__eyebrow">Onboarding · {CONSENT_VERSION}</p>
         <h2 id="consent-heading">Educational consent</h2>
         <p className="s1-journey__lede">
           FinEx is an educational pilot. This step records your consent to use a

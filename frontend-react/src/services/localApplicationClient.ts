@@ -1,4 +1,5 @@
 import { createLocalS2Client } from './localS2Client';
+import { createApiClient, DEFAULT_API_BASE_URL } from './apiClient';
 import { LocalApplicationError, LOCAL_SCOPE, LOCAL_CONTRACT_VERSION, LOCAL_PROFILE_VERSION, LOCAL_CONSENT_VERSION, validateLocalBaseOrigin, isKnownLocalErrorCode } from './localApplicationBoundary';
 export { LocalApplicationError, LOCAL_SCOPE, LOCAL_CONTRACT_VERSION, LOCAL_PROFILE_VERSION, LOCAL_CONSENT_VERSION, validateLocalBaseOrigin } from './localApplicationBoundary';
 /** Typed boundary for the persistent, synthetic local application, never the pilot. */
@@ -158,12 +159,13 @@ export function validateLocalLogout(value: unknown): LocalLogout {
 
 export function createLocalApplicationClient(config: LocalClientConfiguration = {}): LocalApplicationClient {
   // This is evaluated before login can acquire a token, and remains immutable per client.
-  const origin = validateLocalBaseOrigin(config.baseOrigin || process.env.REACT_APP_FINEX_API_BASE_URL || 'http://127.0.0.1:8000');
+  const origin = validateLocalBaseOrigin(config.baseOrigin || process.env.REACT_APP_FINEX_API_BASE_URL || DEFAULT_API_BASE_URL);
   const timeoutMs = config.timeoutMs ?? 8000;
   if (!Number.isInteger(timeoutMs) || timeoutMs < 50 || timeoutMs > 30000) {
     throw new LocalApplicationError('LOCAL_ORIGIN_INVALID');
   }
   const fetchImpl = config.fetchImpl;
+  const api = createApiClient({ baseUrl: origin, fetchImpl });
   async function request<T>(path: string, method: 'GET' | 'POST' | 'PUT', decode: (data: unknown) => T,
     bearer: string | undefined, payload: Record<string, unknown> | undefined, options: LocalRequestOptions = {}): Promise<T> {
     if (options.signal?.aborted) throw new LocalApplicationError('REQUEST_CANCELLED');
@@ -177,12 +179,9 @@ export function createLocalApplicationClient(config: LocalClientConfiguration = 
       timer = setTimeout(() => { controller.abort(); reject(new LocalApplicationError('REQUEST_TIMEOUT')); }, timeoutMs);
     });
     async function perform(): Promise<T> {
-      const sender = fetchImpl ?? (typeof globalThis.fetch === 'function' ? globalThis.fetch.bind(globalThis) : undefined);
-      if (typeof sender !== 'function') throw new LocalApplicationError('API_UNAVAILABLE');
       const headers: Record<string, string> = { Accept: 'application/json' };
-      if (bearer !== undefined) headers.Authorization = 'Bearer ' + bearer;
       if (payload !== undefined) headers['Content-Type'] = 'application/json';
-      const response = await sender(origin + path, { method, headers,
+      const response = await api.request(path, { method, headers, accessToken: bearer,
         body: payload === undefined ? undefined : JSON.stringify(payload), signal: controller.signal,
         credentials: 'omit', cache: 'no-store', redirect: 'error' });
       // A current HTTP401 ends the session even when a proxy/body cannot be decoded.
