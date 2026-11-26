@@ -60,7 +60,10 @@ def test_cross_user_portfolio_access_is_rejected() -> None:
     assert denied.status_code == 404
 
 
-def test_analytics_endpoint_is_owner_scoped_and_reports_missing_history() -> None:
+def test_analytics_endpoint_is_owner_scoped_and_reports_missing_history(monkeypatch) -> None:
+    from app.routers import portfolio as portfolio_router
+
+    monkeypatch.setattr(portfolio_router, "fetch_close_price_history", lambda *args, **kwargs: {})
     app = create_app()
     client = TestClient(app)
     token_a = create_access_token({"sub": "analytics-a", "user_id": "analytics-a"})

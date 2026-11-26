@@ -10,11 +10,97 @@ from __future__ import annotations
 
 import math
 from collections.abc import Mapping, Sequence
+from datetime import date
 from typing import Any
+
+from app.config.database import execute_query
 
 _PERIODS_PER_YEAR = 252
 _MIN_RETURNS = 2
 _Z_SCORES = {0.95: 1.6448536269514722, 0.99: 2.3263478740408408}
+
+
+def fetch_close_price_history(
+    symbols: Sequence[str],
+    *,
+    currency: str,
+    start_date: date,
+    end_date: date,
+) -> dict[str, list[dict[str, object]]]:
+    """Load daily closes through the canonical S2-PA03 market warehouse table."""
+    normalized_currency = currency.strip().upper()
+    if normalized_currency == "INR":
+        exchanges = "('NSE', 'BSE')"
+        preferred_exchange = "CASE upper(i.exchange) WHEN 'NSE' THEN 0 ELSE 1 END"
+    elif normalized_currency == "USD":
+        exchanges = "('NASDAQ', 'NYSE')"
+        preferred_exchange = "CASE upper(i.exchange) WHEN 'NASDAQ' THEN 0 ELSE 1 END"
+    else:
+        return {}
+
+    history: dict[str, list[dict[str, object]]] = {}
+    for symbol in sorted({item.strip().upper() for item in symbols if item.strip()}):
+        rows = execute_query(
+            f"""WITH selected_instrument AS (
+                    SELECT i.instrument_id
+                    FROM finex_dev.market.instruments i
+                    WHERE upper(i.symbol) = :symbol AND upper(i.exchange) IN {exchanges}
+                    ORDER BY {preferred_exchange}
+                    LIMIT 1
+                )
+                SELECT p.price_date AS timestamp, p.close_price AS close
+                FROM finex_dev.market.prices p
+                JOIN selected_instrument i ON i.instrument_id = p.instrument_id
+                WHERE p.price_date >= :start_date AND p.price_date <= :end_date
+                ORDER BY p.price_date ASC""",
+            {"symbol": symbol, "start_date": start_date, "end_date": end_date},
+        )
+        history[symbol] = [
+            {
+                "timestamp": row["timestamp"],
+                "close": _finite_number(row["close"], field="close", positive=True),
+            }
+            for row in rows
+        ]
+    return history
+
+
+def align_close_price_history(
+    history: Mapping[str, Sequence[Mapping[str, object]]],
+    symbols: Sequence[str],
+    benchmark_symbol: str,
+) -> tuple[dict[str, list[float]], list[float] | None]:
+    """Align position and benchmark closes on their common observation dates."""
+    requested = [symbol.strip().upper() for symbol in symbols]
+    series = {
+        symbol: {
+            str(row["timestamp"])[:10]: _finite_number(
+                row["close"], field=f"{symbol} close", positive=True
+            )
+            for row in history.get(symbol, ())
+        }
+        for symbol in requested
+    }
+    if not requested or any(not series[symbol] for symbol in requested):
+        return {}, None
+    common_dates = set.intersection(*(set(series[symbol]) for symbol in requested))
+    benchmark = benchmark_symbol.strip().upper()
+    benchmark_series = {
+        str(row["timestamp"])[:10]: _finite_number(
+            row["close"], field=f"{benchmark} close", positive=True
+        )
+        for row in history.get(benchmark, ())
+    }
+    if benchmark_series:
+        common_dates &= set(benchmark_series)
+    ordered_dates = sorted(common_dates)
+    if len(ordered_dates) < _MIN_RETURNS + 1:
+        return {}, None
+    aligned = {symbol: [series[symbol][day] for day in ordered_dates] for symbol in requested}
+    benchmark_prices = (
+        [benchmark_series[day] for day in ordered_dates] if benchmark_series else None
+    )
+    return aligned, benchmark_prices
 
 
 def _finite_number(value: object, *, field: str, positive: bool = False) -> float:

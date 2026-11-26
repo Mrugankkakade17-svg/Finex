@@ -1,3 +1,4 @@
+from datetime import date, timedelta
 from typing import Literal, cast
 
 from fastapi import APIRouter, Depends, Query, Request
@@ -12,7 +13,11 @@ from app.schemas.portfolio import (
     PortfolioCreate,
     PortfolioUpdate,
 )
-from app.services.portfolio_analytics_service import calculate_portfolio_analytics
+from app.services.portfolio_analytics_service import (
+    align_close_price_history,
+    calculate_portfolio_analytics,
+    fetch_close_price_history,
+)
 from app.services.portfolio_service import portfolio_service
 
 router = APIRouter(prefix="/api/v1/portfolios", tags=["Portfolio"])
@@ -200,8 +205,28 @@ async def get_portfolio_analytics(
     confidence_level: Literal[0.95, 0.99] = Query(default=0.95),
 ):
     """Return current concentration plus history-dependent risk metrics."""
+    portfolio = await portfolio_service.get_portfolio(portfolio_id, user["user_id"])
     holdings = await portfolio_service.list_holdings(portfolio_id, user["user_id"])
     settings = get_settings()
+    symbols = [holding.symbol for holding in holdings]
+    price_history: dict[str, list[float]] = {}
+    benchmark_prices: list[float] | None = None
+    if symbols:
+        end_date = date.today()
+        start_date = end_date - timedelta(days=365)
+        try:
+            market_history = fetch_close_price_history(
+                [*symbols, benchmark],
+                currency=portfolio.currency,
+                start_date=start_date,
+                end_date=end_date,
+            )
+            price_history, benchmark_prices = align_close_price_history(
+                market_history, symbols, benchmark
+            )
+        except Exception:
+            # Market history may not be provisioned in local or test environments.
+            price_history, benchmark_prices = {}, None
     result = calculate_portfolio_analytics(
         portfolio_id=portfolio_id,
         holdings=[
@@ -212,6 +237,8 @@ async def get_portfolio_analytics(
             }
             for holding in holdings
         ],
+        price_history=price_history,
+        benchmark_prices=benchmark_prices,
         benchmark_symbol=benchmark,
         confidence_level=confidence_level,
         top_n=top_n,
