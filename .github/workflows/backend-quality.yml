@@ -130,7 +130,7 @@ jobs:
       - name: PostgreSQL migration round-trip
         run: |
           python -m alembic upgrade head
-          python -c "import subprocess, sys; from alembic.config import Config; from alembic.script import ScriptDirectory; cfg = Config('alembic.ini'); s = ScriptDirectory.from_config(cfg); h = s.get_revision('head'); target = h.down_revision[0] if len(h.down_revision or ()) > 1 else '-1'; res = subprocess.run([sys.executable, '-m', 'alembic', 'downgrade', target]); sys.exit(res.returncode)"
+          python -c "import subprocess, sys; from alembic.config import Config; from alembic.script import ScriptDirectory; cfg = Config('alembic.ini'); s = ScriptDirectory.from_config(cfg); h = s.get_revision('head'); target = h.down_revision[0] if isinstance(h.down_revision, (tuple, list)) and len(h.down_revision) > 1 else '-1'; res = subprocess.run([sys.executable, '-m', 'alembic', 'downgrade', target]); sys.exit(res.returncode)"
           python -m alembic upgrade head
 
       - name: Pytest

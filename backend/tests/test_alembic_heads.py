@@ -20,9 +20,18 @@ def test_alembic_has_exactly_one_head() -> None:
         f"Alembic must have exactly one head revision, found {len(heads)}: {heads}. "
         "Create an Alembic merge migration to resolve parallel branch heads."
     )
-    assert heads[0] == "3fd080792601"
+    assert heads[0] == "s3_fx006_checkpoint"
 
     # Verify the merge revision parents
-    merge_revision = script_dir.get_revision("3fd080792601")
+    merge_revision = script_dir.get_revision("s3_merge_fx006_heads")
     assert merge_revision is not None
-    assert set(merge_revision.down_revision or ()) == {"s2pa04_fx006", "s3mr01_fx006"}
+    assert set(merge_revision.down_revision or ()) == {
+        "s1li02_auth_persistence",
+        "s3mr01_fx006",
+        "s2pa04_fx006",
+    }
+
+    # Verify checkpoint revision points to merge revision
+    checkpoint_revision = script_dir.get_revision("s3_fx006_checkpoint")
+    assert checkpoint_revision is not None
+    assert checkpoint_revision.down_revision == "s3_merge_fx006_heads"
