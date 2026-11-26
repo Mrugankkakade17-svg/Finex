@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
+import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { LocalSessionProvider } from './context/LocalSessionContext';
 import { LocalApplicationShell } from './components/LocalApplicationShell';
 import { LocalApplicationGuard } from './components/LocalApplicationGuard';
@@ -22,13 +22,13 @@ import { ChatPage } from './pages/ChatPage';
 import { AlertsPage } from './pages/AlertsPage';
 import { OpsPage } from './pages/OpsPage';
 import { ReleasePage } from './pages/ReleasePage';
+import { LoginPage } from './pages/LoginPage';
 
-function App({ client }: { client?: LocalApplicationClient } = {}) {
-  return <LocalSessionProvider client={client}>
-    <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
-      <LocalApplicationShell>
-        <Routes>
-          <Route path="/login" element={<LocalLoginPage />} />
+function AppRoutes() {
+  const location = useLocation();
+  const realAccountAuthEnabled = process.env.REACT_APP_ENABLE_REAL_AUTH === 'true';
+  const routes = <Routes>
+          <Route path="/login" element={realAccountAuthEnabled ? <LoginPage /> : <LocalLoginPage />} />
           <Route path="/onboarding" element={<LocalApplicationGuard requireCompletion={false}><LocalOnboardingPage /></LocalApplicationGuard>} />
           <Route path="/consent" element={<Navigate to="/onboarding#consent" replace />} />
           <Route path="/dashboard" element={<LocalApplicationGuard><LocalDashboardPage /></LocalApplicationGuard>} />
@@ -49,9 +49,17 @@ function App({ client }: { client?: LocalApplicationClient } = {}) {
           <Route path="/pilot/risk" element={<RiskPage basePath="/pilot" />} />
           <Route path="/" element={<Navigate to="/login" replace />} />
           <Route path="*" element={<Navigate to="/login" replace />} />
-        </Routes>
-      </LocalApplicationShell>
+        </Routes>;
+  const useLocalShell = !realAccountAuthEnabled || location.pathname !== '/login';
+  return useLocalShell ? <LocalApplicationShell>{routes}</LocalApplicationShell> : routes;
+}
+
+function App({ client }: { client?: LocalApplicationClient } = {}) {
+  return <LocalSessionProvider client={client}>
+    <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+      <AppRoutes />
     </BrowserRouter>
   </LocalSessionProvider>;
 }
 export default App;
+
