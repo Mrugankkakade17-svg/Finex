@@ -94,6 +94,12 @@ class Settings(BaseSettings):
     market_data_provider: str = "mock"
     market_data_api_key: str = ""
 
+    # Annual effective rate used by deterministic portfolio analytics. The
+    # default is explicitly unconfigured and must not be presented as a quote.
+    analytics_risk_free_rate: float = 0.0
+    analytics_risk_free_rate_source: str = "Unconfigured FinEx default"
+    analytics_risk_free_rate_as_of: str = "UNCONFIGURED"
+
     paper_trading_initial_cash: Decimal = Field(
         default=Decimal("50000.00"), gt=0, max_digits=12, decimal_places=2
     )

@@ -1,8 +1,9 @@
-from typing import cast
+from typing import Literal, cast
 
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends, Query, Request
 
 from app.auth.dependencies import get_current_user
+from app.config.settings import get_settings
 from app.core.responses import APIResponse
 from app.schemas.envelope import DataStatus
 from app.schemas.portfolio import (
@@ -11,6 +12,7 @@ from app.schemas.portfolio import (
     PortfolioCreate,
     PortfolioUpdate,
 )
+from app.services.portfolio_analytics_service import calculate_portfolio_analytics
 from app.services.portfolio_service import portfolio_service
 
 router = APIRouter(prefix="/api/v1/portfolios", tags=["Portfolio"])
@@ -185,4 +187,41 @@ async def get_portfolio_summary(
         data=summary.model_dump(mode="json"),
         correlation_id=request.state.correlation_id,
         data_status=cast(DataStatus, summary.data_status),
+    )
+
+
+@router.get("/{portfolio_id}/analytics")
+async def get_portfolio_analytics(
+    portfolio_id: str,
+    request: Request,
+    user: dict = Depends(get_current_user),
+    benchmark: str = Query(default="SPY", min_length=1, max_length=20),
+    top_n: int = Query(default=5, ge=1, le=100),
+    confidence_level: Literal[0.95, 0.99] = Query(default=0.95),
+):
+    """Return current concentration plus history-dependent risk metrics."""
+    holdings = await portfolio_service.list_holdings(portfolio_id, user["user_id"])
+    settings = get_settings()
+    result = calculate_portfolio_analytics(
+        portfolio_id=portfolio_id,
+        holdings=[
+            {
+                "symbol": holding.symbol,
+                "quantity": holding.quantity,
+                "current_value": holding.current_value,
+            }
+            for holding in holdings
+        ],
+        benchmark_symbol=benchmark,
+        confidence_level=confidence_level,
+        top_n=top_n,
+        risk_free_rate_annual=settings.analytics_risk_free_rate,
+        risk_free_rate_source=settings.analytics_risk_free_rate_source,
+        risk_free_rate_as_of=settings.analytics_risk_free_rate_as_of,
+    )
+    return APIResponse.success(
+        message="Portfolio analytics calculated successfully",
+        data=result,
+        correlation_id=request.state.correlation_id,
+        data_status="UNAVAILABLE" if result["status"] == "INSUFFICIENT_DATA" else "CACHED",
     )
