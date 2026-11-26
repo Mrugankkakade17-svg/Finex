@@ -25,8 +25,10 @@ def main() -> int:
                  target.sector = source.sector,
                  target.is_active = true,
                  target.updated_at = current_timestamp()
-               WHEN NOT MATCHED THEN INSERT
-                 (symbol, name, instrument_type, exchange, sector, is_active, created_at, updated_at)
+               WHEN NOT MATCHED THEN INSERT (
+                 symbol, name, instrument_type, exchange, sector, is_active,
+                 created_at, updated_at
+               )
                VALUES
                  (source.symbol, source.name, source.instrument_type, source.exchange,
                   source.sector, true, current_timestamp(), current_timestamp())""",
