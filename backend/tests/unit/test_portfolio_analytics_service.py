@@ -141,9 +141,12 @@ def test_market_history_rejects_unsupported_currency_without_query(monkeypatch):
         "execute_query",
         lambda *args, **kwargs: pytest.fail("Unsupported currency must not query market history"),
     )
-    assert portfolio_analytics_service.fetch_close_price_history(
-        ["AAPL"],
-        currency="EUR",
-        start_date=date(2026, 1, 1),
-        end_date=date(2026, 1, 31),
-    ) == {}
+    assert (
+        portfolio_analytics_service.fetch_close_price_history(
+            ["AAPL"],
+            currency="EUR",
+            start_date=date(2026, 1, 1),
+            end_date=date(2026, 1, 31),
+        )
+        == {}
+    )
