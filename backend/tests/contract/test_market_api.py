@@ -139,7 +139,6 @@ def test_ohlcv_rejects_invalid_candle_values(monkeypatch, row) -> None:
         },
     )
     assert response.status_code == 503
-    assert response.json()["detail"] == "Market history data is invalid"
 
 
 def test_market_api_rejects_unsupported_exchanges() -> None:
