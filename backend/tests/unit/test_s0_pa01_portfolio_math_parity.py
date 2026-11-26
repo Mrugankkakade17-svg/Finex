@@ -5,7 +5,7 @@ def test_shared_portfolio_fixtures_match_decimal_canonical_results() -> None:
     report = compare_fixtures()
 
     assert report["canonical_module"].endswith("calculate_portfolio_metrics")
-    assert report["mismatching_fixtures"] == ["fractional_rounding"]
+    assert report["mismatching_fixtures"] == []
 
     comparisons = {row["fixture"]: row for row in report["comparisons"]}
     for fixture_name, holdings in SHARED_FIXTURES:
@@ -27,10 +27,15 @@ def test_shared_portfolio_fixtures_match_decimal_canonical_results() -> None:
     assert comparisons["two_asset"]["canonical"]["weights"] == ["50.00", "50.00"]
 
     fractional = comparisons["fractional_rounding"]
-    assert fractional["differences"] == {
-        "cost_basis": {"legacy": "1.01", "canonical": "1.00"},
-        "market_value": {"legacy": "2.01", "canonical": "2.02"},
-        "gain_loss": {"legacy": "1.00", "canonical": "1.02"},
-        "gain_loss_percent": {"legacy": "99.01", "canonical": "102.00"},
-        "weights": {"legacy": ["49.75", "50.25"], "canonical": ["50.00", "50.00"]},
-    }
+    assert fractional["differences"] == {}
+    assert fractional["legacy"]["cost_basis"] == fractional["canonical"]["cost_basis"] == "1.00"
+    assert fractional["legacy"]["market_value"] == fractional["canonical"]["market_value"] == "2.02"
+    assert fractional["legacy"]["gain_loss"] == fractional["canonical"]["gain_loss"] == "1.02"
+    assert (
+        fractional["legacy"]["gain_loss_percent"]
+        == fractional["canonical"]["gain_loss_percent"]
+        == "102.00"
+    )
+    assert (
+        fractional["legacy"]["weights"] == fractional["canonical"]["weights"] == ["50.00", "50.00"]
+    )

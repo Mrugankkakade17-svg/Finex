@@ -8,49 +8,27 @@ from decimal import Decimal
 from typing import Dict, List
 from uuid import uuid4
 
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile
 
+from app.auth.principal import Principal, get_current_principal
 from app.core.responses import APIResponse
+from app.repositories.spending_repository import spending_repository
 from app.schemas.sprint5_privacy_spending import (
     CategoryCorrectionRequest,
     MonthlyCategoryTrend,
-    SpendingTransaction,
     SpendingTrendResponse,
 )
+from app.services.csv_import_service import (
+    MAX_UPLOAD_BYTES,
+    CSVImportError,
+    import_spending_csv,
+)
 
-router = APIRouter(prefix="/api/v1/spending", tags=["Sprint 5 - Spending & Trends"])
-
-# Pre-populated transactions with masked descriptions
-_transactions_db: Dict[str, SpendingTransaction] = {
-    "tx-001": SpendingTransaction(
-        transaction_id="tx-001",
-        date="2026-10-05",
-        description_masked="GROCERY STORE #***12",
-        amount=Decimal("84.50"),
-        category="Groceries",
-    ),
-    "tx-002": SpendingTransaction(
-        transaction_id="tx-002",
-        date="2026-10-12",
-        description_masked="ELECTRIC UTILITY CO #***99",
-        amount=Decimal("115.00"),
-        category="Utilities",
-    ),
-    "tx-003": SpendingTransaction(
-        transaction_id="tx-003",
-        date="2026-10-18",
-        description_masked="STREAMING SUBSCRIPTION #***44",
-        amount=Decimal("14.99"),
-        category="Entertainment",
-    ),
-    "tx-004": SpendingTransaction(
-        transaction_id="tx-004",
-        date="2026-10-22",
-        description_masked="METRO TRANSIT PASS #***01",
-        amount=Decimal("45.00"),
-        category="Transportation",
-    ),
-}
+router = APIRouter(
+    prefix="/api/v1/spending",
+    tags=["Sprint 5 - Spending & Trends"],
+    dependencies=[Depends(get_current_principal)],
+)
 
 
 def _mask_raw_description(raw: str) -> str:
@@ -61,24 +39,33 @@ def _mask_raw_description(raw: str) -> str:
 
 
 @router.get("/transactions", summary="List masked spending transactions")
-def list_transactions(request: Request):
+def list_transactions(
+    request: Request,
+    principal: Principal = Depends(get_current_principal),
+):
     correlation_id = getattr(request.state, "correlation_id", str(uuid4()))
+    transactions = spending_repository.list_transactions(principal.user_id)
     return APIResponse.success(
         message="Transactions retrieved with descriptions masked",
-        data=[tx.model_dump(mode="json") for tx in _transactions_db.values()],
+        data=[tx.model_dump(mode="json") for tx in transactions],
         correlation_id=correlation_id,
     )
 
 
 @router.post("/correct-category", summary="User correction of transaction category")
-def correct_category(correction: CategoryCorrectionRequest, request: Request):
+def correct_category(
+    correction: CategoryCorrectionRequest,
+    request: Request,
+    principal: Principal = Depends(get_current_principal),
+):
     correlation_id = getattr(request.state, "correlation_id", str(uuid4()))
-    if correction.transaction_id not in _transactions_db:
+    tx = spending_repository.correct_category(
+        principal.user_id,
+        correction.transaction_id,
+        correction.corrected_category,
+    )
+    if tx is None:
         raise HTTPException(status_code=404, detail="Transaction not found.")
-
-    tx = _transactions_db[correction.transaction_id]
-    tx.category = correction.corrected_category
-    tx.is_user_corrected = True
 
     return APIResponse.success(
         message="Category corrected successfully",
@@ -88,12 +75,16 @@ def correct_category(correction: CategoryCorrectionRequest, request: Request):
 
 
 @router.get("/trends", summary="Get monthly spending aggregated trends and insights")
-def get_spending_trends(request: Request):
+def get_spending_trends(
+    request: Request,
+    principal: Principal = Depends(get_current_principal),
+):
     correlation_id = getattr(request.state, "correlation_id", str(uuid4()))
+    transactions = spending_repository.list_transactions(principal.user_id)
 
-    total = sum((t.amount for t in _transactions_db.values()), Decimal("0.00"))
+    total = sum((t.amount for t in transactions), Decimal("0.00"))
     cat_totals: Dict[str, Decimal] = {}
-    for t in _transactions_db.values():
+    for t in transactions:
         cat_totals[t.category] = cat_totals.get(t.category, Decimal("0.00")) + t.amount
 
     trends: List[MonthlyCategoryTrend] = []
@@ -104,7 +95,7 @@ def get_spending_trends(request: Request):
                 month="2026-10",
                 category=cat,
                 total_amount=amt,
-                transaction_count=sum(1 for t in _transactions_db.values() if t.category == cat),
+                transaction_count=sum(1 for t in transactions if t.category == cat),
                 percentage_of_month=pct.quantize(Decimal("0.1")),
             )
         )
@@ -123,5 +114,36 @@ def get_spending_trends(request: Request):
     return APIResponse.success(
         message="Spending trends calculated",
         data=res.model_dump(mode="json"),
+        correlation_id=correlation_id,
+    )
+
+
+@router.post("/imports", summary="Safely import spending transactions from CSV")
+async def import_transactions(
+    request: Request,
+    file: UploadFile = File(...),
+    principal: Principal = Depends(get_current_principal),
+):
+    """Import bounded CSV data into the authenticated user's spending account."""
+    correlation_id = getattr(request.state, "correlation_id", str(uuid4()))
+    content = await file.read(MAX_UPLOAD_BYTES + 1)
+    await file.close()
+    if len(content) > MAX_UPLOAD_BYTES:
+        raise HTTPException(status_code=413, detail="CSV exceeds the 5 MiB upload limit.")
+    content_type = (file.content_type or "").split(";", maxsplit=1)[0].strip().lower()
+    if content_type not in {"text/csv", "application/csv", "application/vnd.ms-excel"}:
+        raise HTTPException(status_code=415, detail="Upload must be a CSV file.")
+    try:
+        summary = import_spending_csv(
+            content,
+            file.filename or "transactions.csv",
+            principal.user_id,
+            settings=getattr(request.app.state, "settings", None),
+        )
+    except CSVImportError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    return APIResponse.success(
+        message="Spending CSV imported",
+        data=summary.model_dump(mode="json"),
         correlation_id=correlation_id,
     )

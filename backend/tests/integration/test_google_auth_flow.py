@@ -9,6 +9,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from app.auth.token_store import TokenRevocationStore
+from app.config.settings import get_settings
 from app.main import app
 from app.repositories.user_repository import UserRepository
 
@@ -24,6 +25,7 @@ def reset_state(monkeypatch):
     monkeypatch.setattr("app.services.auth_service.token_revocation_store", fresh_store)
     monkeypatch.setattr("app.auth.dependencies.token_revocation_store", fresh_store)
     monkeypatch.setattr("app.routers.users.user_repository", fresh_repo)
+    monkeypatch.setattr(get_settings(), "allow_mock_google_auth", True)
 
 
 def _google_login(email: str = "alice@finex.com", name: str = "Alice") -> dict:

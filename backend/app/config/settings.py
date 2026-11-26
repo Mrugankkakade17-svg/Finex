@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import os
+from decimal import Decimal
 from enum import Enum
 from functools import lru_cache
 from ipaddress import ip_address
@@ -108,6 +109,13 @@ class Settings(BaseSettings):
 
     market_data_provider: str = "mock"
     market_data_api_key: str = ""
+
+    google_client_id: str = ""
+    allow_mock_google_auth: bool | None = None
+    paper_trading_initial_cash: Decimal = Field(
+        default=Decimal("50000.00"), gt=0, max_digits=12, decimal_places=2
+    )
+    paper_trading_fee_bps: int = Field(default=10, ge=0, le=1000)
 
     log_level: str = "INFO"
 
@@ -252,6 +260,10 @@ class Settings(BaseSettings):
 
         if self.is_production_like and self.fixture_mode != "disabled":
             raise ValueError("fixture_mode must be disabled in UAT and production")
+        if self.allow_mock_google_auth is None:
+            self.allow_mock_google_auth = not self.is_production_like
+        elif self.is_production_like and self.allow_mock_google_auth:
+            raise ConfigurationError("ALLOW_MOCK_GOOGLE_AUTH is forbidden in UAT and production.")
         if wildcard and self.allow_credentials:
             raise ConfigurationError(
                 "Wildcard ALLOWED_ORIGINS cannot be combined with ALLOW_CREDENTIALS=true."

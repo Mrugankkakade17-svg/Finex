@@ -41,6 +41,8 @@ from app.routers.local_portfolio import router as local_portfolio_router
 from app.routers.local_risk import router as local_risk_router
 from app.routers.onboarding import router as onboarding_router
 from app.routers.ops_hardening import router as ops_hardening_router
+from app.routers.paper import router as paper_router
+from app.routers.portfolio import router as portfolio_router
 from app.routers.privacy import router as privacy_router
 from app.routers.profile import router as profile_router
 from app.routers.release_handover import router as release_handover_router
@@ -48,6 +50,7 @@ from app.routers.risk import router as risk_router
 from app.routers.risk_contract import router as risk_contract_router
 from app.routers.spending import router as spending_router
 from app.routers.users import router as users_router
+from app.services.csv_import_service import CSVUploadRequestLimitMiddleware
 
 
 def create_app(
@@ -100,7 +103,12 @@ def create_app(
         application.state.local_risk_store = local_risk_store
         application.state.local_portfolio_store = local_portfolio_store
         application.state.local_foundation_store = local_foundation_store
+        from app.repositories.postgres_user_repository import postgres_user_repository
+        from app.services import auth_service
 
+        auth_service.user_repository = postgres_user_repository
+
+    application.add_middleware(CSVUploadRequestLimitMiddleware)
     application.add_middleware(LocalApplicationBoundaryMiddleware)
     application.add_middleware(CorrelationIdMiddleware)
     application.add_middleware(CORSMiddleware, **get_cors_middleware_kwargs(active_settings))
@@ -120,6 +128,8 @@ def create_app(
     application.include_router(local_portfolio_router)
     application.include_router(local_risk_router)
     application.include_router(local_foundation_router)
+    application.include_router(portfolio_router)
+    application.include_router(paper_router)
     application.include_router(goals_router)
     application.include_router(privacy_router)
     application.include_router(spending_router)
