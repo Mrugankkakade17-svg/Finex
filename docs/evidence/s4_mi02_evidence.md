@@ -260,9 +260,11 @@ uv run --with ruff ruff format --check .
 
 ---
 
-## 10. Operational Limitations
-- **Unadjusted Close Prices:** Relies on unadjusted close prices stored in `finex_dev.market.prices`. If corporate actions (stock splits, bonus issues, dividends) occurred, historical returns reflect nominal prices unless adjusted bars are provided.
-- **Databricks Warehouse Connectivity:** Upstream live warehouse queries require environment Databricks SQL credentials; the test suite verifies calculation accuracy using verified candle fixtures and mocked database layers.
+## 10. Operational Limitations & Upstream Repository Observations
+1. **Unadjusted Close Prices:** Relies on unadjusted close prices stored in `finex_dev.market.prices`. If corporate actions (stock splits, bonus issues, dividends) occurred, historical returns reflect nominal prices unless adjusted bars are provided.
+2. **Databricks Warehouse Connectivity:** Upstream live warehouse queries require environment Databricks SQL credentials; the test suite verifies calculation accuracy using verified candle fixtures and mocked database layers.
+3. **Upstream `dev` Alembic Split Head (Non-Blocking Observation):**
+   Upstream PR #147 (merged into `dev` at commit `ff4dd15` just prior to this branch) introduced `backend/alembic/versions/s2mr02_fx007_merge_heads.py`, which caused a split-head conflict with `s3_fx006_checkpoint` on `origin/dev`. Because S4-MI02 is purely an AI analytical calculation module and introduces zero database migrations, database maintenance on `dev` remains the responsibility of the database code owners. All application and contract CI suites succeed.
 
 ---
 
@@ -275,13 +277,17 @@ uv run --with ruff ruff format --check .
 - [x] S2-PA03 Candle contract verified and compatible
 - [x] Ruff check passes with 0 errors
 - [x] Ruff format passes with 362 files formatted
-- [x] 46/46 unit and contract tests passed
+- [x] 46/46 unit and contract tests passed locally
 - [x] Zero breaking changes to frozen routes or working modules
 
 ---
 
-## 12. Final Commit Information
-- **Commit SHA:** `43ef56eb6ba1dfc95cb7962ae0fe3ea4c947ff96` (`43ef56e`)
+## 12. Final Pull Request & Commit Information
+- **Pull Request:** [#154](https://github.com/Mrugankkakade17-svg/Finex/pull/154)
+- **PR Title:** `feat(s4-mi02): implement historical stress and drawdown scenarios`
+- **Head Commit SHA:** `50fa14b061237fa7a88a8ac658bb14fc7f95c6ed` (`50fa14b`)
 - **Author:** Mitali (`@mitali2701`)
+- **Assigned Reviewer:** Payal (`@payalmude14-star`)
 - **Branch:** `feature/s4-mi02`
 - **Target:** `dev`
+- **Status:** Open, Ready for Review (Do Not Merge per instructions)
