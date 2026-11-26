@@ -1,9 +1,8 @@
 """Deterministic portfolio return and risk analytics.
 
 Price histories are ordered oldest to newest and must share the same observation
-calendar. This module is deliberately independent of a market-data vendor; until
-the OHLCV history port is available, callers pass no history and performance
-metrics are reported as INSUFFICIENT_DATA.
+calendar. This module consumes normalized closes from the market-data storage
+port and reports INSUFFICIENT_DATA when there is not enough aligned history.
 """
 
 from __future__ import annotations
@@ -103,7 +102,7 @@ def align_close_price_history(
     return aligned, benchmark_prices
 
 
-def _finite_number(value: object, *, field: str, positive: bool = False) -> float:
+def _finite_number(value: Any, *, field: str, positive: bool = False) -> float:
     if isinstance(value, bool):
         raise ValueError(f"{field} must be a finite number.")
     try:

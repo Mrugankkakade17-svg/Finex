@@ -8,7 +8,7 @@
 - Loads 1 year of daily close prices from the S2-PA03 market warehouse, selects an exchange matching the portfolio currency, and aligns positions and benchmark on shared dates. Missing or unavailable history degrades to `INSUFFICIENT_DATA`.
 - Historical VaR uses the empirical loss quantile with linear interpolation. Parametric VaR uses the documented 95%/99% standard-normal quantiles. VaR is a one-day monetary loss at current portfolio value.
 - Risk-free rate configuration: `ANALYTICS_RISK_FREE_RATE`, `ANALYTICS_RISK_FREE_RATE_SOURCE`, and `ANALYTICS_RISK_FREE_RATE_AS_OF`. The default is zero and explicitly marked unconfigured; it is not represented as an external market observation.
-- No storage schema or migration was added. Existing portfolio routes remain unchanged.
+- No storage schema changes were added. A reversible Alembic merge point joins the two migration heads introduced as `dev` advanced, so a fresh PostgreSQL database can run the existing migrations in one linear upgrade path. Existing portfolio routes remain unchanged.
 
 ## Hand-computed fixtures
 
@@ -18,7 +18,8 @@
 
 ## Verification log
 
-- `backend/.venv/Scripts/python.exe -m ruff check .` — passed (`All checks passed!`).
-- `backend/.venv/Scripts/python.exe -m ruff check .` — passed (`All checks passed!`).
-- `backend/.venv/Scripts/python.exe -m pytest -q` — passed against merged `dev`: 3,087 passed, 25 skipped, 2 xfailed, 2 xpassed; 81.89% coverage. The repository virtual environment initially lacked `python-multipart` (already declared in requirements); after installing that declared dependency into `.venv`, the complete suite collected and passed.
-- Focused service and endpoint contract run after market-history integration — 12 passed, covering hand-calculated math, market-query configuration, date alignment, insufficient history, response envelope, current HHI/top-N, and cross-user isolation.
+- `python -m ruff check . ../scripts/serve-s1-web-probe.py` — passed.
+- `python -m ruff format --check . ../scripts/serve-s1-web-probe.py` — passed.
+- CI Mypy commands for both Linux and Windows targets — passed locally against the updated analytics endpoint and service.
+- `python -m pytest tests/unit/test_portfolio_analytics_service.py tests/test_s1_pa02_portfolio.py -q --no-cov` — 14 passed, 1 skipped, including hand-calculated math and cross-user endpoint isolation.
+- The full suite passed on the preceding `dev` base: 3,087 passed, 25 skipped, 2 xfailed, 2 xpassed; 81.89% coverage. A full rerun against the subsequently advanced `dev` base is left to the refreshed PR CI run. The repository virtual environment initially lacked `python-multipart` (already declared in requirements); after installing that declared dependency into `.venv`, the complete suite collected and passed.

@@ -202,7 +202,7 @@ async def get_portfolio_analytics(
     user: dict = Depends(get_current_user),
     benchmark: str = Query(default="SPY", min_length=1, max_length=20),
     top_n: int = Query(default=5, ge=1, le=100),
-    confidence_level: Literal[0.95, 0.99] = Query(default=0.95),
+    confidence_level: Literal["0.95", "0.99"] = Query(default="0.95"),
 ):
     """Return current concentration plus history-dependent risk metrics."""
     portfolio = await portfolio_service.get_portfolio(portfolio_id, user["user_id"])
@@ -240,7 +240,7 @@ async def get_portfolio_analytics(
         price_history=price_history,
         benchmark_prices=benchmark_prices,
         benchmark_symbol=benchmark,
-        confidence_level=confidence_level,
+        confidence_level=float(confidence_level),
         top_n=top_n,
         risk_free_rate_annual=settings.analytics_risk_free_rate,
         risk_free_rate_source=settings.analytics_risk_free_rate_source,
