@@ -19,7 +19,9 @@ def test_usd_to_inr_uses_dated_rate_and_returns_lineage():
     assert converted.amount == Decimal("1040.6250")
     assert converted.rate == Decimal("83.25")
     assert (converted.rate_id, converted.source, converted.as_of) == (
-        "usd-inr-1", "fixture-bank", D1
+        "usd-inr-1",
+        "fixture-bank",
+        D1,
     )
     assert converted.freshness == "DELAYED"
     assert not converted.inverted
