@@ -55,4 +55,3 @@ def test_next_session_date_skips_weekends(day: date, expected: date) -> None:
 def test_next_session_date_rejects_unsupported_exchange() -> None:
     with pytest.raises(ValueError, match="Unsupported exchange"):
         next_session_date("LSE", date(2026, 11, 27))
-
