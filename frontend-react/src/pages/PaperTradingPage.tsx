@@ -14,26 +14,66 @@ export const PaperTradingPage: React.FC = () => {
 
   return (
     <div>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '24px' }}>
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: '12px',
+          marginBottom: '24px',
+        }}
+      >
         <div>
-          <h2 style={{ fontSize: '1.75rem', color: '#ffffff' }}>Paper Trading Simulator</h2>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
+          <p className="local-eyebrow">GROW WITH CONFIDENCE</p>
+          <h2 style={{ fontSize: '1.9rem', color: 'var(--color-text)' }}>
+            Paper Trading Simulator
+          </h2>
+          <p style={{ color: 'var(--color-text-muted)', fontSize: '0.95rem' }}>
             Simulate buy/sell orders with zero real-money risk
           </p>
         </div>
         <span className="badge badge-warning">Simulated Environment</span>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+          gap: '24px',
+        }}
+      >
         {/* Order Entry Form */}
         <div className="glass-card" style={{ padding: '28px' }}>
-          <h3 style={{ fontSize: '1.2rem', color: '#ffffff', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <TrendingUp size={20} color="#10b981" /> Order Ticket
+          <h3
+            style={{
+              fontSize: '1.25rem',
+              color: 'var(--color-text)',
+              marginBottom: '20px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+            }}
+          >
+            <TrendingUp size={20} color="var(--color-accent-coral)" /> Order Ticket
           </h3>
 
-          <form onSubmit={handleTrade} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <form
+            onSubmit={handleTrade}
+            style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}
+          >
             <div>
-              <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '6px' }}>Order Side</label>
+              <label
+                style={{
+                  display: 'block',
+                  fontSize: '0.82rem',
+                  fontWeight: 700,
+                  color: 'var(--color-text)',
+                  marginBottom: '6px',
+                }}
+              >
+                Order Side
+              </label>
               <div style={{ display: 'flex', gap: '12px' }}>
                 <button
                   type="button"
@@ -41,11 +81,14 @@ export const PaperTradingPage: React.FC = () => {
                   style={{
                     flex: 1,
                     padding: '10px',
-                    borderRadius: '8px',
-                    border: orderType === 'BUY' ? '1px solid #10b981' : '1px solid var(--border-glass)',
-                    background: orderType === 'BUY' ? 'rgba(16, 185, 129, 0.2)' : 'transparent',
-                    color: orderType === 'BUY' ? '#10b981' : 'var(--text-secondary)',
-                    fontWeight: 600,
+                    borderRadius: '999px',
+                    border:
+                      orderType === 'BUY'
+                        ? '2px solid #16654E'
+                        : '1.5px solid var(--color-surface-divider)',
+                    background: orderType === 'BUY' ? '#ECFDF5' : 'var(--color-surface)',
+                    color: orderType === 'BUY' ? '#16654E' : 'var(--color-text-muted)',
+                    fontWeight: 700,
                     cursor: 'pointer',
                   }}
                 >
@@ -57,11 +100,16 @@ export const PaperTradingPage: React.FC = () => {
                   style={{
                     flex: 1,
                     padding: '10px',
-                    borderRadius: '8px',
-                    border: orderType === 'SELL' ? '1px solid #ef4444' : '1px solid var(--border-glass)',
-                    background: orderType === 'SELL' ? 'rgba(239, 68, 68, 0.2)' : 'transparent',
-                    color: orderType === 'SELL' ? '#ef4444' : 'var(--text-secondary)',
-                    fontWeight: 600,
+                    borderRadius: '999px',
+                    border:
+                      orderType === 'SELL'
+                        ? '2px solid var(--color-accent-coral)'
+                        : '1.5px solid var(--color-surface-divider)',
+                    background:
+                      orderType === 'SELL' ? 'rgba(255, 114, 94, 0.14)' : 'var(--color-surface)',
+                    color:
+                      orderType === 'SELL' ? '#B42318' : 'var(--color-text-muted)',
+                    fontWeight: 700,
                     cursor: 'pointer',
                   }}
                 >
@@ -71,54 +119,133 @@ export const PaperTradingPage: React.FC = () => {
             </div>
 
             <div>
-              <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '6px' }}>Security Symbol</label>
+              <label
+                style={{
+                  display: 'block',
+                  fontSize: '0.82rem',
+                  fontWeight: 700,
+                  color: 'var(--color-text)',
+                  marginBottom: '6px',
+                }}
+              >
+                Security Symbol
+              </label>
               <input
                 type="text"
                 value={symbol}
                 onChange={(e) => setSymbol(e.target.value.toUpperCase())}
-                style={{ width: '100%', padding: '10px 14px', borderRadius: '8px', background: 'var(--bg-input)', border: '1px solid var(--border-glass)', color: '#ffffff' }}
+                style={{ width: '100%' }}
               />
             </div>
 
             <div>
-              <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '6px' }}>Quantity</label>
+              <label
+                style={{
+                  display: 'block',
+                  fontSize: '0.82rem',
+                  fontWeight: 700,
+                  color: 'var(--color-text)',
+                  marginBottom: '6px',
+                }}
+              >
+                Quantity
+              </label>
               <input
                 type="number"
                 value={quantity}
                 onChange={(e) => setQuantity(e.target.value)}
                 min="1"
-                style={{ width: '100%', padding: '10px 14px', borderRadius: '8px', background: 'var(--bg-input)', border: '1px solid var(--border-glass)', color: '#ffffff' }}
+                style={{ width: '100%' }}
               />
             </div>
 
-            <button type="submit" className="btn-primary" style={{ marginTop: '8px', justifyContent: 'center' }}>
+            <button
+              type="submit"
+              className="btn-primary"
+              style={{ marginTop: '8px', justifyContent: 'center' }}
+            >
               Submit Paper {orderType} Order
             </button>
           </form>
 
           {executed && (
-            <div style={{ marginTop: '20px', padding: '12px', borderRadius: '8px', background: 'rgba(16, 185, 129, 0.15)', border: '1px solid #10b981', color: '#10b981', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <CheckCircle2 size={16} /> Paper {orderType} order for {quantity} shares of {symbol} executed atomically.
+            <div
+              style={{
+                marginTop: '20px',
+                padding: '12px 16px',
+                borderRadius: '12px',
+                background: '#ECFDF5',
+                border: '1px solid #6EE7B7',
+                color: '#065F46',
+                fontSize: '0.88rem',
+                fontWeight: 600,
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+              }}
+            >
+              <CheckCircle2 size={16} /> Paper {orderType} order for {quantity} shares of {symbol}{' '}
+              executed atomically.
             </div>
           )}
         </div>
 
         {/* Account Cash Ledger */}
         <div className="glass-card" style={{ padding: '28px' }}>
-          <h3 style={{ fontSize: '1.2rem', color: '#ffffff', marginBottom: '20px' }}>Virtual Cash Account</h3>
+          <h3 style={{ fontSize: '1.25rem', color: 'var(--color-text)', marginBottom: '20px' }}>
+            Virtual Cash Account
+          </h3>
 
-          <div style={{ padding: '20px', borderRadius: '12px', background: 'rgba(255, 255, 255, 0.03)', border: '1px solid var(--border-glass)', marginBottom: '20px' }}>
-            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Current Virtual Cash</div>
-            <div style={{ fontSize: '2rem', fontWeight: 700, color: '#ffffff' }}>$10,000.00 USD</div>
-            <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '4px' }}>
+          <div
+            style={{
+              padding: '22px',
+              borderRadius: '16px',
+              background: '#F6FAF7',
+              border: '1px solid var(--color-surface-divider)',
+              marginBottom: '20px',
+            }}
+          >
+            <div style={{ fontSize: '0.82rem', color: 'var(--color-text-muted)', fontWeight: 600 }}>
+              Current Virtual Cash
+            </div>
+            <div
+              style={{
+                fontFamily: 'var(--font-display)',
+                fontSize: '2.1rem',
+                fontWeight: 700,
+                color: 'var(--color-text)',
+                marginTop: '4px',
+              }}
+            >
+              $10,000.00 USD
+            </div>
+            <div
+              style={{
+                fontSize: '0.78rem',
+                color: 'var(--color-text-muted)',
+                marginTop: '4px',
+              }}
+            >
               Append-only cash ledger — No real funds involved.
             </div>
           </div>
 
-          <div style={{ padding: '14px', borderRadius: '10px', background: 'rgba(245, 158, 11, 0.1)', border: '1px solid rgba(245, 158, 11, 0.3)', color: '#f59e0b', fontSize: '0.8rem', display: 'flex', gap: '10px' }}>
-            <ShieldAlert size={20} style={{ flexShrink: 0 }} />
+          <div
+            style={{
+              padding: '16px',
+              borderRadius: '14px',
+              background: 'rgba(230, 237, 115, 0.35)',
+              border: '1px solid #C8D14B',
+              color: 'var(--color-text)',
+              fontSize: '0.85rem',
+              display: 'flex',
+              gap: '10px',
+            }}
+          >
+            <ShieldAlert size={20} style={{ flexShrink: 0, color: 'var(--color-accent-violet)' }} />
             <div>
-              <strong>Financial Safety Rule:</strong> Paper trading is an educational simulation. Order execution never calls real brokerages.
+              <strong>Financial Safety Rule:</strong> Paper trading is an educational simulation.
+              Order execution never calls real brokerages.
             </div>
           </div>
         </div>
