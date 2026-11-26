@@ -1,7 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useLocalSession } from '../context/LocalSessionContext';
-import { useAuth } from '../context/AuthContext';
 import {
   hasCompletedOnboarding,
   LOCAL_CONSENT_VERSION,
@@ -14,16 +13,11 @@ const experiences: { value: LocalExperience; label: string }[] = [
   { value: 'intermediate', label: 'Intermediate — I know the fundamentals' },
   { value: 'advanced', label: 'Advanced — I am comfortable with the terminology' },
 ];
-
 export function LocalOnboardingPage() {
   const session = useLocalSession();
-  const { user: authUser, updateUser } = useAuth();
   const state = session.onboarding;
   const navigate = useNavigate();
-  const [label, setLabel] = useState(
-    state?.draft.display_name ||
-      (authUser?.displayName && authUser.displayName !== 'Investor' ? authUser.displayName : '')
-  );
+  const [label, setLabel] = useState(state?.draft.display_name || '');
   const [experience, setExperience] = useState<LocalExperience | null>(
     state?.draft.experience_level || null
   );
@@ -41,18 +35,15 @@ export function LocalOnboardingPage() {
   const consentRef = useRef<HTMLInputElement>(null);
   const errorRef = useRef<HTMLDivElement>(null);
   const surfacedError = useRef<typeof session.error>(null);
-
   useEffect(() => {
     mounted.current = true;
     return () => {
       mounted.current = false;
     };
   }, []);
-
   const busy = session.busy || submitting;
   const confirmedConsent =
-    (state?.consent?.accepted === true && state.consent.version === LOCAL_CONSENT_VERSION) ||
-    (!session.user && consentChoice);
+    state?.consent?.accepted === true && state.consent.version === LOCAL_CONSENT_VERSION;
   const complete = hasCompletedOnboarding(state);
   const error =
     localError || (session.errorOperation !== 'logout' ? session.error?.message : '') || '';
@@ -67,6 +58,8 @@ export function LocalOnboardingPage() {
     }
     if (surfacedError.current === session.error) return;
     surfacedError.current = session.error;
+    // Only new async form failures move focus. Local validation keeps focus on its field,
+    // and editing retained input must not repeatedly jump back to an old server error.
     if (localError || !['consent', 'save', 'complete'].includes(session.errorOperation || ''))
       return;
     const alert = errorRef.current;
@@ -100,7 +93,6 @@ export function LocalOnboardingPage() {
     }
     return true;
   }
-
   async function run(action: (epoch: number) => Promise<void>) {
     if (submittingRef.current || session.busy) return;
     const epoch = session.sessionEpoch;
@@ -116,20 +108,10 @@ export function LocalOnboardingPage() {
       if (mounted.current) setSubmitting(false);
     }
   }
-
   const save = (finish: boolean) => {
     if (submittingRef.current || session.busy || !validate(finish)) return;
-    const trimmed = label.trim();
-    if (trimmed) {
-      updateUser({ displayName: trimmed });
-    }
-    if (!session.user) {
-      setMessage('Profile saved locally.');
-      if (finish) navigate('/dashboard');
-      return;
-    }
     void run(async (epoch) => {
-      const draft = { display_name: trimmed || null, experience_level: experience };
+      const draft = { display_name: label.trim() || null, experience_level: experience };
       if (!(await session.saveDraft(draft)) || !session.isCurrentSession(epoch) || !mounted.current)
         return;
       setLabel(draft.display_name || '');
@@ -143,17 +125,7 @@ export function LocalOnboardingPage() {
         navigate('/dashboard');
     });
   };
-
   const recordConsent = (accepted: boolean) => {
-    if (!session.user) {
-      setConsentChoice(accepted);
-      setMessage(
-        accepted
-          ? 'Consent choice saved.'
-          : 'Consent withdrawn. Complete onboarding again after reaccepting.'
-      );
-      return;
-    }
     void run(async (epoch) => {
       if (
         (await session.setConsent(accepted)) &&
@@ -169,7 +141,6 @@ export function LocalOnboardingPage() {
       }
     });
   };
-
   return (
     <section className="local-card" aria-labelledby="local-onboarding-heading" aria-busy={busy}>
       <p className="local-eyebrow">Your profile, your progress</p>
@@ -177,11 +148,12 @@ export function LocalOnboardingPage() {
         Your local onboarding
       </h1>
       <p className="local-lede">
-        Save a draft now and resume it later. Your display name personalizes your FinEx workspace.
+        Save a draft now and resume it later by selecting the same synthetic persona. Completion is
+        confirmed by the backend, not a browser flag.
       </p>
       <ol className="local-steps" aria-label="Onboarding sequence">
         <li>
-          <span>1</span>Account active
+          <span>1</span>Persona selected
         </li>
         <li>
           <span>2</span>Review consent
@@ -219,7 +191,8 @@ export function LocalOnboardingPage() {
           {state?.consent && (
             <>
               {' '}
-              · Recorded <time dateTime={state.consent.recorded_at}>{state.consent.recorded_at}</time>
+              · Recorded{' '}
+              <time dateTime={state.consent.recorded_at}>{state.consent.recorded_at}</time>
             </>
           )}
         </p>
@@ -321,7 +294,8 @@ export function LocalOnboardingPage() {
         </fieldset>
         {state?.draft.updated_at && (
           <p className="local-help">
-            Last server draft: <time dateTime={state.draft.updated_at}>{state.draft.updated_at}</time>
+            Last server draft:{' '}
+            <time dateTime={state.draft.updated_at}>{state.draft.updated_at}</time>
           </p>
         )}
         {complete && (

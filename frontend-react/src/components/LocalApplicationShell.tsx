@@ -1,8 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom';
+import { Link, NavLink, useLocation } from 'react-router-dom';
 import { Menu, X, Sun, Sparkles } from 'lucide-react';
 import { useLocalSession } from '../context/LocalSessionContext';
-import { useAuth } from '../context/AuthContext';
 import './LocalApplication.css';
 
 const links = [
@@ -43,14 +42,9 @@ function FinexAsterisk() {
 
 export function LocalApplicationShell({ children }: { children: React.ReactNode }) {
   const session = useLocalSession();
-  const { user: authUser, isAuthenticated, logout: authLogout } = useAuth();
   const location = useLocation();
-  const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
-  const [theme, setTheme] = useState<'gme' | 'ledger'>(() => {
-    return (localStorage.getItem('finex_theme_mode') as 'gme' | 'ledger') || 'gme';
-  });
-
+  const [theme, setTheme] = useState<'gme' | 'ledger'>('gme');
   const pilot = location.pathname.startsWith('/pilot/');
 
   useEffect(() => {
@@ -60,27 +54,12 @@ export function LocalApplicationShell({ children }: { children: React.ReactNode 
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
-    localStorage.setItem('finex_theme_mode', theme);
   }, [theme]);
 
-  const activeUserName =
-    session.onboarding?.draft?.display_name?.trim() ||
-    (isAuthenticated && authUser?.displayName ? authUser.displayName : null) ||
-    session.user?.alias ||
-    null;
+  const activeUserName = session.onboarding?.draft?.display_name?.trim() || null;
 
   const toggleTheme = () => {
     setTheme((prev) => (prev === 'gme' ? 'ledger' : 'gme'));
-  };
-
-  const handleSignOut = async () => {
-    if (session.user) {
-      await session.logout();
-    }
-    if (isAuthenticated) {
-      authLogout();
-    }
-    navigate('/login');
   };
 
   return (
@@ -89,7 +68,6 @@ export function LocalApplicationShell({ children }: { children: React.ReactNode 
         Skip to content
       </a>
 
-      {/* Top Navigation Bar — Good Money Energy Header */}
       <header className="local-header">
         <Link className="local-brand" to="/login" aria-label="FinEx home">
           <div>
@@ -143,33 +121,19 @@ export function LocalApplicationShell({ children }: { children: React.ReactNode 
 
           {session.user && (
             <span data-testid="local-persona" className="local-user-pill">
-              <span className="local-user-pill__avatar" aria-hidden="true">
-                {(activeUserName || session.user.alias).charAt(0).toUpperCase()}
-              </span>
-              <span>
-                {activeUserName && activeUserName !== session.user.alias
-                  ? `${activeUserName} · ${session.user.alias}`
-                  : `Synthetic persona · ${session.user.alias}`}
-              </span>
+              {activeUserName
+                ? `${activeUserName} · ${session.user.alias}`
+                : `Synthetic persona · ${session.user.alias}`}
             </span>
           )}
 
-          {!session.user && isAuthenticated && activeUserName && (
-            <span className="local-user-pill">
-              <span className="local-user-pill__avatar" aria-hidden="true">
-                {activeUserName.charAt(0).toUpperCase()}
-              </span>
-              <span>{activeUserName}</span>
-            </span>
-          )}
-
-          {session.user || isAuthenticated ? (
+          {session.user ? (
             <button
               className="btn-secondary"
               disabled={session.busy}
               aria-busy={session.operation === 'logout'}
               onClick={() => {
-                void handleSignOut();
+                void session.logout();
               }}
             >
               {session.operation === 'logout'
@@ -199,42 +163,32 @@ export function LocalApplicationShell({ children }: { children: React.ReactNode 
         </div>
       </header>
 
-      {/* Good Money Energy Hero Banner (shown on Login & Dashboard) */}
       {(location.pathname === '/login' || location.pathname === '/dashboard') && (
-        <section className="gme-hero" aria-label="FinEx highlight">
+        <div className="gme-hero" aria-hidden="true">
           <div className="gme-hero__inner">
             <div className="gme-hero__content">
               <p className="gme-hero__eyebrow">YOUR MONEY, IN YOUR ORBIT</p>
-              <h2 className="gme-hero__title">
+              <p className="gme-hero__title">
                 Small steps.
                 <br />
                 Big future energy.
-              </h2>
+              </p>
               <p className="gme-hero__subtitle">
                 Make a little progress today, and feel it add up tomorrow.
                 {activeUserName ? ` Welcome back, ${activeUserName}!` : ''}
               </p>
               <div className="gme-hero__cta-row">
-                <Link
-                  className="gme-hero__cta"
-                  to={session.user || isAuthenticated ? '/goals' : '/onboarding'}
-                >
+                <span className="gme-hero__cta">
                   <span>Build your money rhythm</span>
-                  <span className="gme-hero__cta-arrow" aria-hidden="true">
-                    ↗
-                  </span>
-                </Link>
+                  <span className="gme-hero__cta-arrow">↗</span>
+                </span>
               </div>
             </div>
 
-            <div className="gme-hero__visual" aria-hidden="true">
+            <div className="gme-hero__visual">
               <div className="gme-shape-lime" />
               <div className="gme-shape-violet" />
-              <div
-                className="gme-savings-card"
-                onClick={() => navigate('/goals')}
-                role="presentation"
-              >
+              <div className="gme-savings-card">
                 <div className="gme-savings-card__label">NEXT GOAL</div>
                 <div className="gme-savings-card__amount">₹ 50,000</div>
                 <div className="gme-savings-card__divider" />
@@ -256,12 +210,12 @@ export function LocalApplicationShell({ children }: { children: React.ReactNode 
               <span className="gme-strip__item">Grow with confidence</span>
             </div>
           </div>
-        </section>
+        </div>
       )}
 
       <div className="local-layout">
         <aside id="local-navigation" className="local-sidebar" data-open={menuOpen}>
-          <p className="local-eyebrow">Your money orbit</p>
+          <p className="local-eyebrow">Your learning journey</p>
           <nav aria-label="Local application">
             {links.map((link) => (
               <NavLink
@@ -281,7 +235,7 @@ export function LocalApplicationShell({ children }: { children: React.ReactNode 
             <p>Explore your personal finance rhythm, goals, portfolios, and grounded AI insights.</p>
           </div>
           <nav className="local-pilot-nav" aria-label="Compatibility pilots">
-            <p className="local-eyebrow">Guided experiences</p>
+            <p className="local-eyebrow">Separate contract pilots</p>
             <Link to="/pilot/consent">Pilot consent</Link>
             <Link to="/pilot/onboarding">Pilot profile</Link>
             <Link to="/pilot/risk">Pilot risk</Link>
@@ -291,18 +245,16 @@ export function LocalApplicationShell({ children }: { children: React.ReactNode 
         <main id="local-main" tabIndex={-1} className="local-main">
           {session.errorOperation === 'logout' && (
             <div className="local-error" role="alert">
-              <strong>Sign-out was not confirmed.</strong> Your session and unsaved input are retained.{' '}
-              {session.error?.message}
+              <strong>Sign-out was not confirmed.</strong> Your session and unsaved input are
+              retained. {session.error?.message}
             </div>
           )}
           {pilot && (
-            <div className="local-pilot-banner">
-              Guided interactive preview — explore at your own pace
-            </div>
+            <div className="local-pilot-banner">Compatibility pilot — not saved to a persona</div>
           )}
           {children}
           <footer className="local-footer">
-            finex* · Small steps. Big future energy. · Educational financial intelligence platform.
+            Synthetic local learning only · No real account, money or investment advice.
           </footer>
         </main>
       </div>

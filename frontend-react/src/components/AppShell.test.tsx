@@ -25,7 +25,7 @@ test.each(['/risk', '/onboarding', '/consent'])(
     expect(screen.queryByText('Unrelated mock user')).not.toBeInTheDocument();
     expect(screen.queryByText('MODERATE Risk')).not.toBeInTheDocument();
     expect(screen.getByText('No saved assessment')).toBeInTheDocument();
-    expect(screen.getByText(path === '/risk' ? 'Sprint 2' : 'Sprint 1')).toBeInTheDocument();
+    expect(screen.getByText('Good Money Energy')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /Mock Auth:/ })).not.toBeInTheDocument();
   },
 );
