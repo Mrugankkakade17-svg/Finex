@@ -52,14 +52,14 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
   };
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', backgroundColor: 'var(--bg-dark)' }}>
+    <div style={{ display: 'flex', minHeight: '100vh', backgroundColor: 'var(--bg-page)' }}>
       {/* Sidebar Navigation for Desktop */}
       <aside
         id="platform-navigation"
         className={`app-sidebar${mobileMenuOpen ? ' app-sidebar--open' : ''}`}
         style={{
-          backgroundColor: 'var(--bg-sidebar)',
-          borderRight: '1px solid var(--border-glass)',
+          backgroundColor: 'var(--color-surface)',
+          borderRight: '1px solid var(--color-surface-divider)',
           display: 'flex',
           flexDirection: 'column',
           position: 'fixed',
@@ -67,51 +67,52 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
           bottom: 0,
           left: 0,
           zIndex: 40,
-          backdropFilter: 'blur(16px)',
           transition: 'transform var(--transition-normal)',
         }}
       >
-        {/* Logo & Task Header */}
-        <div style={{ padding: '24px 20px', borderBottom: '1px solid var(--border-glass)' }}>
+        {/* Logo Header */}
+        <div style={{ padding: '24px 20px', borderBottom: '1px solid var(--color-surface-divider)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <div
               style={{
                 width: '36px',
                 height: '36px',
                 borderRadius: '10px',
-                background: 'linear-gradient(135deg, #10b981, #6366f1)',
+                background: 'var(--color-accent-coral)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                boxShadow: '0 0 15px rgba(16, 185, 129, 0.4)',
+                boxShadow: '0 6px 16px rgba(255, 114, 94, 0.3)',
               }}
             >
               <Sparkles size={20} color="#ffffff" />
             </div>
             <div>
-              <h1 style={{ fontSize: '1.25rem', color: '#ffffff', lineHeight: 1.2 }}>FinEx</h1>
-              <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 600 }}>
-                Financial Excellence
+              <h1 style={{ fontSize: '1.35rem', color: 'var(--color-text)', lineHeight: 1.2 }}>
+                finex*
+              </h1>
+              <span style={{ fontSize: '0.72rem', color: 'var(--color-text-muted)', fontWeight: 600 }}>
+                Your Money, In Your Orbit
               </span>
             </div>
           </div>
           <div
             style={{
               marginTop: '12px',
-              padding: '4px 8px',
-              borderRadius: '6px',
-              background: 'rgba(255, 255, 255, 0.04)',
-              border: '1px solid var(--border-glass)',
-              fontSize: '0.7rem',
-              color: 'var(--text-secondary)',
+              padding: '6px 10px',
+              borderRadius: '8px',
+              background: '#F4F9F6',
+              border: '1px solid var(--color-surface-divider)',
+              fontSize: '0.72rem',
+              color: 'var(--color-text-muted)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
             }}
           >
-            <span>{location.pathname === '/risk' ? 'Sprint 2' : 'Sprint 1'}</span>
+            <span>Good Money Energy</span>
             <span className="badge badge-success" style={{ fontSize: '0.65rem' }}>
-              Local pilot
+              Active
             </span>
           </div>
         </div>
@@ -122,10 +123,10 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
             style={{
               fontSize: '0.7rem',
               textTransform: 'uppercase',
-              color: 'var(--text-muted)',
-              fontWeight: 700,
+              color: 'var(--color-text-muted)',
+              fontWeight: 800,
               padding: '0 12px 8px 12px',
-              letterSpacing: '0.05em',
+              letterSpacing: '0.08em',
             }}
           >
             Platform Modules
@@ -143,18 +144,17 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
                   alignItems: 'center',
                   gap: '12px',
                   padding: '10px 14px',
-                  borderRadius: '10px',
+                  borderRadius: '12px',
                   marginBottom: '4px',
-                  color: isActive ? '#ffffff' : 'var(--text-secondary)',
-                  backgroundColor: isActive ? 'rgba(16, 185, 129, 0.15)' : 'transparent',
-                  border: isActive ? '1px solid rgba(16, 185, 129, 0.3)' : '1px solid transparent',
+                  color: isActive ? '#ffffff' : 'var(--color-text-muted)',
+                  backgroundColor: isActive ? 'var(--color-text)' : 'transparent',
                   textDecoration: 'none',
                   fontSize: '0.9rem',
-                  fontWeight: isActive ? 600 : 500,
+                  fontWeight: isActive ? 700 : 600,
                   transition: 'all var(--transition-fast)',
                 }}
               >
-                <Icon size={18} color={isActive ? '#10b981' : '#94a3b8'} />
+                <Icon size={18} color={isActive ? '#E6ED73' : '#496368'} />
                 <span>{item.label}</span>
               </NavLink>
             );
@@ -165,34 +165,40 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
         <div
           style={{
             padding: '16px',
-            borderTop: '1px solid var(--border-glass)',
-            backgroundColor: 'rgba(0,0,0,0.2)',
+            borderTop: '1px solid var(--color-surface-divider)',
+            backgroundColor: '#F7FAF8',
           }}
         >
           {isPilot ? (
             <div>
-              <div style={{ fontWeight: 600 }}>Educational pilot</div>
-              <div style={{ fontSize: '0.8rem' }}>No saved assessment</div>
+              <div style={{ fontWeight: 700, color: 'var(--color-text)' }}>Educational pilot</div>
+              <div style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>
+                No saved assessment
+              </div>
             </div>
           ) : isAuthenticated && user ? (
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <img
-                  src={user.avatarUrl}
-                  alt={user.displayName}
+                <div
                   style={{
                     width: '36px',
                     height: '36px',
                     borderRadius: '50%',
-                    border: '2px solid var(--primary-emerald)',
+                    background: 'var(--color-accent-violet)',
+                    color: '#FFFFFF',
+                    display: 'grid',
+                    placeItems: 'center',
+                    fontWeight: 800,
                   }}
-                />
+                >
+                  {user.displayName.charAt(0).toUpperCase()}
+                </div>
                 <div>
-                  <div style={{ fontSize: '0.85rem', fontWeight: 600, color: '#ffffff' }}>
+                  <div style={{ fontSize: '0.88rem', fontWeight: 700, color: 'var(--color-text)' }}>
                     {user.displayName}
                   </div>
-                  <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
-                    {user.riskProfile} Risk
+                  <div style={{ fontSize: '0.72rem', color: 'var(--color-text-muted)' }}>
+                    {user.riskProfile} Profile
                   </div>
                 </div>
               </div>
@@ -202,7 +208,7 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
                 style={{
                   background: 'transparent',
                   border: 'none',
-                  color: 'var(--text-muted)',
+                  color: 'var(--color-text-muted)',
                   cursor: 'pointer',
                   padding: '6px',
                   borderRadius: '6px',
@@ -239,9 +245,6 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
         <header
           className="app-header"
           style={{
-            backgroundColor: 'rgba(15, 23, 42, 0.8)',
-            backdropFilter: 'blur(12px)',
-            borderBottom: '1px solid var(--border-glass)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
@@ -260,14 +263,13 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
             >
               {mobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
             </button>
-            <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 500 }}>
+            <span style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)', fontWeight: 600 }}>
               Route:{' '}
-              <strong style={{ color: 'var(--primary-emerald)' }}>{location.pathname}</strong>
+              <strong style={{ color: 'var(--color-accent-violet)' }}>{location.pathname}</strong>
             </span>
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            {/* Quick Mock Auth Toggle Button */}
             {!isPilot && (
               <button
                 onClick={toggleAuth}
@@ -275,26 +277,30 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
                   display: 'inline-flex',
                   alignItems: 'center',
                   gap: '6px',
-                  padding: '6px 12px',
-                  borderRadius: '20px',
+                  padding: '6px 14px',
+                  borderRadius: '999px',
                   fontSize: '0.75rem',
-                  fontWeight: 600,
+                  fontWeight: 700,
                   cursor: 'pointer',
                   background: isAuthenticated
-                    ? 'rgba(16, 185, 129, 0.15)'
-                    : 'rgba(239, 68, 68, 0.15)',
-                  color: isAuthenticated ? '#10b981' : '#ef4444',
+                    ? 'rgba(29, 122, 95, 0.12)'
+                    : 'rgba(217, 72, 59, 0.12)',
+                  color: isAuthenticated ? '#16654E' : '#B42318',
                   border: isAuthenticated
-                    ? '1px solid rgba(16, 185, 129, 0.3)'
-                    : '1px solid rgba(239, 68, 68, 0.3)',
+                    ? '1px solid rgba(29, 122, 95, 0.3)'
+                    : '1px solid rgba(217, 72, 59, 0.3)',
                 }}
               >
                 <ShieldCheck size={14} />
-                <span>Mock Auth: {isAuthenticated ? 'Authenticated' : 'Unauthenticated'}</span>
+                <span>
+                  {isAuthenticated
+                    ? `Signed in: ${user?.displayName || 'Investor'}`
+                    : 'Unauthenticated'}
+                </span>
               </button>
             )}
 
-            <span className="badge badge-info">React client</span>
+            <span className="badge badge-info">finex* Web</span>
           </div>
         </header>
 

@@ -8,14 +8,14 @@ import { User, AuthContextType } from '../types/auth';
 import { authService } from '../services/authService';
 
 const defaultUser: User = {
-  userId: 'usr_alpha_khyati_01',
-  displayName: 'Khyati',
-  email: 'khyati@finex.app',
+  userId: 'usr_finex_member_01',
+  displayName: 'Investor',
+  email: 'member@finex.app',
   avatarUrl:
     'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
   onboardingStatus: 'COMPLETED',
   riskProfile: 'MODERATE',
-  preferredCurrency: 'USD',
+  preferredCurrency: 'INR',
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(
@@ -33,7 +33,12 @@ export const AuthProvider: React.FC<{
     }
 
     try {
-      return JSON.parse(saved);
+      const parsed = JSON.parse(saved) as User;
+      // Migrate any legacy cached 'Khyati' placeholder to the active user or default
+      if (parsed && parsed.displayName === 'Khyati' && parsed.userId === 'usr_alpha_khyati_01') {
+        return defaultUser;
+      }
+      return parsed;
     } catch {
       localStorage.removeItem('finex_auth_user');
       return defaultUser;
@@ -47,18 +52,18 @@ export const AuthProvider: React.FC<{
       );
 
       if (saved === null) {
-        return true;
+        return false;
       }
 
       try {
         return JSON.parse(saved);
       } catch {
         localStorage.removeItem('finex_is_authenticated');
-        return true;
+        return false;
       }
     });
 
-  const [isLoading, setIsLoading] = useState(false);
+  const [, setIsLoading] = useState(false);
 
   useEffect(() => {
     localStorage.setItem(
@@ -77,9 +82,12 @@ export const AuthProvider: React.FC<{
   }, [isAuthenticated, user]);
 
   const login = (userData?: Partial<User>) => {
+    const cleanName = userData?.displayName?.trim();
     const updatedUser: User = {
       ...defaultUser,
+      ...(user || {}),
       ...userData,
+      ...(cleanName ? { displayName: cleanName } : {}),
     };
 
     setUser(updatedUser);
@@ -112,12 +120,9 @@ export const AuthProvider: React.FC<{
 
   const updateUser = (userData: Partial<User>) => {
     setUser((currentUser) => {
-      if (!currentUser) {
-        return currentUser;
-      }
-
+      const base = currentUser || defaultUser;
       return {
-        ...currentUser,
+        ...base,
         ...userData,
       };
     });
@@ -143,9 +148,14 @@ export const useAuth = (): AuthContextType => {
   const context = useContext(AuthContext);
 
   if (!context) {
-    throw new Error(
-      'useAuth must be used within an AuthProvider'
-    );
+    return {
+      user: defaultUser,
+      isAuthenticated: false,
+      login: () => undefined,
+      logout: () => undefined,
+      toggleAuth: () => undefined,
+      updateUser: () => undefined,
+    };
   }
 
   return context;
