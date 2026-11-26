@@ -103,6 +103,10 @@ def create_app(
         application.state.local_risk_store = local_risk_store
         application.state.local_portfolio_store = local_portfolio_store
         application.state.local_foundation_store = local_foundation_store
+        from app.repositories.postgres_user_repository import postgres_user_repository
+        from app.services import auth_service
+
+        auth_service.user_repository = postgres_user_repository
 
     application.add_middleware(CSVUploadRequestLimitMiddleware)
     application.add_middleware(LocalApplicationBoundaryMiddleware)

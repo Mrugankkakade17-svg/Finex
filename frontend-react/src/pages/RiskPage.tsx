@@ -136,7 +136,7 @@ export const RiskPage: React.FC<{ client?: RiskContractClient; basePath?: string
     <section className="s1-journey" aria-busy={loading} aria-labelledby="risk-heading">
       <div className="glass-card s1-journey__card">
         <p className="s1-journey__eyebrow">
-          Sprint 2 · {config.mode === 'fixture' ? 'Synthetic fixture replay' : 'Local API pilot'}
+          {config.mode === 'fixture' ? 'Synthetic fixture replay' : 'Local API pilot'}
         </p>
         {!questionnaire && (
           <h2 id="risk-heading" ref={heading} tabIndex={-1}>

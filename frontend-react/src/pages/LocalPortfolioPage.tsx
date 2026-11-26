@@ -286,7 +286,7 @@ export function LocalPortfolioPage() {
       setNotice(target.entity === 'holding' ? v.detail?.m.status === 'success' ? 'Holding deletion confirmed. Valuation refreshed.' : 'Holding deletion confirmed. Valuation remains unconfirmed; retry the read.' : 'Portfolio and its manual holdings deletion confirmed.');
     });
   };
-  return <section className="local-card local-s2"><p className="local-eyebrow">Sprint 2 · Owned manual practice</p><h1 tabIndex={-1}>Your manual portfolios</h1>
+  return <section className="local-card local-s2"><p className="local-eyebrow">Owned manual practice</p><h1 tabIndex={-1}>Your manual portfolios</h1>
  <p className="local-lede">Manual records, USD only. Quotes are invented training fixtures, not market data. No broker positions, trades or suitability recommendation.</p>
  {tasks.busy && <p role="status">Confirming the portfolio operation on the local backend…</p>}
  {tasks.error && <div className="local-error" role="alert" tabIndex={-1} ref={tasks.errorRef}>{tasks.error.message}</div>}
