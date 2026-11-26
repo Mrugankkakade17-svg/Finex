@@ -1,232 +1,82 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
-import {
-  ShieldCheck,
-  LogIn,
-  Sparkles,
-  CheckCircle2,
-} from 'lucide-react';
-import { authService } from '../services/authService';
+import React, { FormEvent, useState } from 'react';
+import { realAuthService } from '../services/authService';
+
+type Mode = 'login' | 'register';
 
 export const LoginPage: React.FC = () => {
-  const { login, isAuthenticated } = useAuth();
-  const navigate = useNavigate();
-
-  const [isLoading, setIsLoading] = useState(false);
+  const [mode, setMode] = useState<Mode>('login');
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  const [message, setMessage] = useState('');
 
-  const handleLogin = async () => {
-    setIsLoading(true);
+  const submit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!event.currentTarget.reportValidity()) return;
     setError('');
-
+    setMessage('');
+    setBusy(true);
     try {
-      const response = await authService.login();
-
-      login(response.user);
-
-      navigate('/consent');
-    } catch (err) {
-      console.error('Login failed:', err);
-      setError(
-        'Unable to sign in right now. Please try again.'
-      );
+      if (mode === 'register') await realAuthService.register(name.trim(), email.trim(), password);
+      else await realAuthService.login(email.trim(), password);
+      setMessage(mode === 'register'
+        ? 'Your account was created. You can now sign in.'
+        : 'Sign-in succeeded. Real-account sessions are not connected to the local educational application.');
+      if (mode === 'register') {
+        setMode('login');
+        setPassword('');
+      }
+    } catch (failure) {
+      setError(failure instanceof Error ? failure.message : 'Authentication failed. Please try again.');
     } finally {
-      setIsLoading(false);
+      setBusy(false);
     }
   };
 
-  const handleDemoLogin = async () => {
-    setIsLoading(true);
+  const switchMode = (next: Mode) => {
+    setMode(next);
     setError('');
-
-    try {
-      const response = await authService.login({
-        displayName: 'Demo Investor',
-      });
-
-      login({
-        ...response.user,
-        displayName: 'Demo Investor',
-        riskProfile: 'AGGRESSIVE',
-      });
-
-      navigate('/dashboard');
-    } catch (err) {
-      console.error('Demo login failed:', err);
-      setError(
-        'Unable to start demo login. Please try again.'
-      );
-    } finally {
-      setIsLoading(false);
-    }
+    setMessage('');
   };
 
-  return (
-    <div
-      style={{
-        maxWidth: '480px',
-        margin: '40px auto 0 auto',
-      }}
-    >
-      <div
-        className="glass-card"
-        style={{
-          padding: '40px',
-          textAlign: 'center',
-        }}
-      >
-        <div
-          style={{
-            width: '64px',
-            height: '64px',
-            borderRadius: '16px',
-            background:
-              'linear-gradient(135deg, #10b981, #6366f1)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            margin: '0 auto 20px auto',
-            boxShadow:
-              '0 0 25px rgba(16, 185, 129, 0.4)',
-          }}
-        >
-          <Sparkles size={32} color="#ffffff" />
-        </div>
-
-        <h2
-          style={{
-            fontSize: '1.75rem',
-            color: '#ffffff',
-            marginBottom: '8px',
-          }}
-        >
-          Welcome to FinEx
-        </h2>
-
-        <p
-          style={{
-            color: 'var(--text-secondary)',
-            fontSize: '0.9rem',
-            marginBottom: '28px',
-          }}
-        >
-          AI-Powered Financial Intelligence & Paper-Trading
-          Platform
-        </p>
-
-        {isAuthenticated && (
-          <div
-            style={{
-              padding: '12px',
-              borderRadius: '10px',
-              background: 'rgba(16, 185, 129, 0.1)',
-              border:
-                '1px solid rgba(16, 185, 129, 0.3)',
-              color: '#10b981',
-              fontSize: '0.85rem',
-              marginBottom: '20px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '8px',
-            }}
-          >
-            <CheckCircle2 size={16} />
-            Currently Authenticated as{' '}
-            <strong>{' '}{'Khyati'}</strong>
-          </div>
-        )}
-
-        {error && (
-          <div
-            role="alert"
-            style={{
-              padding: '12px',
-              marginBottom: '20px',
-              borderRadius: '10px',
-              background: 'rgba(239, 68, 68, 0.1)',
-              border: '1px solid rgba(239, 68, 68, 0.3)',
-              color: '#ef4444',
-              fontSize: '0.85rem',
-            }}
-          >
-            {error}
-          </div>
-        )}
-
-        <div
-          style={{
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '14px',
-          }}
-        >
-          <button
-            onClick={handleLogin}
-            disabled={isLoading}
-            aria-disabled={isLoading}
-            className="btn-primary"
-            style={{
-              width: '100%',
-              justifyContent: 'center',
-              padding: '12px',
-              opacity: isLoading ? 0.6 : 1,
-            }}
-          >
-            <LogIn size={18} />
-
-            {isLoading
-              ? 'Signing In...'
-              : 'Sign In with Google (Mock OAuth)'}
-          </button>
-
-          <button
-            onClick={handleDemoLogin}
-            disabled={isLoading}
-            aria-disabled={isLoading}
-            className="btn-secondary"
-            style={{
-              width: '100%',
-              justifyContent: 'center',
-              padding: '12px',
-              opacity: isLoading ? 0.6 : 1,
-            }}
-          >
-            <ShieldCheck size={18} />
-
-            {isLoading
-              ? 'Please Wait...'
-              : 'Demo Quick Login'}
-          </button>
-        </div>
-
-        <div
-          style={{
-            marginTop: '30px',
-            paddingTop: '20px',
-            borderTop:
-              '1px solid var(--border-glass)',
-            fontSize: '0.75rem',
-            color: 'var(--text-muted)',
-            textAlign: 'left',
-          }}
-        >
-          <div
-            style={{
-              fontWeight: 600,
-              color: 'var(--text-secondary)',
-              marginBottom: '4px',
-            }}
-          >
-            Prototype Note (Task W0-KHY):
-          </div>
-
-          Authentication uses the typed authentication
-          service. Mock OAuth responses are used while the
-          backend API is pending.
-        </div>
+  return <main style={{ maxWidth: 440, margin: '48px auto', padding: 24 }}>
+    <section className="glass-card" style={{ padding: 32 }}>
+      <h1 style={{ color: '#fff', marginTop: 0 }}>FinEx account</h1>
+      <p style={{ color: 'var(--text-secondary)' }}>Create an account or sign in to your existing account.</p>
+      <div role="tablist" aria-label="Account access" style={{ display: 'flex', gap: 8, margin: '24px 0' }}>
+        <button type="button" role="tab" aria-selected={mode === 'login'} onClick={() => switchMode('login')} className="btn-primary">Sign in</button>
+        <button type="button" role="tab" aria-selected={mode === 'register'} onClick={() => switchMode('register')} className="btn-primary">Create account</button>
       </div>
-    </div>
-  );
+      <form onSubmit={submit} noValidate>
+        {mode === 'register' && <label style={{ display: 'block', marginBottom: 16, color: '#fff' }}>
+          Full name
+          <input autoComplete="name" required minLength={2} maxLength={100} value={name} onChange={(event) => setName(event.target.value)} style={fieldStyle} />
+        </label>}
+        <label style={{ display: 'block', marginBottom: 16, color: '#fff' }}>
+          Email
+          <input type="email" autoComplete="email" required value={email} onChange={(event) => setEmail(event.target.value)} style={fieldStyle} />
+        </label>
+        <label style={{ display: 'block', marginBottom: 20, color: '#fff' }}>
+          Password
+          <input type="password" autoComplete={mode === 'register' ? 'new-password' : 'current-password'} required minLength={mode === 'register' ? 8 : undefined} maxLength={64} value={password} onChange={(event) => setPassword(event.target.value)} style={fieldStyle} />
+        </label>
+        {error && <p role="alert" style={{ color: '#f87171' }}>{error}</p>}
+        {message && <p role="status" style={{ color: '#34d399' }}>{message}</p>}
+        <button type="submit" className="btn-primary" disabled={busy} style={{ width: '100%', justifyContent: 'center' }}>
+          {busy ? 'Please wait…' : mode === 'register' ? 'Create account' : 'Sign in'}
+        </button>
+      </form>
+      <p style={{ marginTop: 20, color: 'var(--text-secondary)', fontSize: 13 }}>
+        Real account access is enabled for this deployment. Local persona sign-in remains available when this feature is turned off.
+      </p>
+    </section>
+  </main>;
 };
+
+const fieldStyle: React.CSSProperties = {
+  display: 'block', width: '100%', boxSizing: 'border-box', marginTop: 6, padding: 12,
+  borderRadius: 8, border: '1px solid #475569', background: '#0f172a', color: '#fff',
+};
+
