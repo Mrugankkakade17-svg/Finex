@@ -1,0 +1,191 @@
+{
+  "schema_version": "v1.0.0",
+  "task_id": "S4-MI02",
+  "description": "Deterministic hand-calculated golden stress and drawdown scenario test vectors for FinEx.",
+  "total_scenarios": 6,
+  "scenarios": [
+    {
+      "scenario_id": "GOLDEN-01-MONOTONIC-GROWTH",
+      "title": "Monotonically Increasing Prices (Zero Drawdown)",
+      "observations": [
+        {"date": "2026-01-05", "price": 100.00},
+        {"date": "2026-01-06", "price": 110.00},
+        {"date": "2026-01-07", "price": 120.00},
+        {"date": "2026-01-08", "price": 125.00},
+        {"date": "2026-01-09", "price": 150.00}
+      ],
+      "expected": {
+        "trading_days": 5,
+        "calendar_days": 4,
+        "start_price": 100.00,
+        "end_price": 150.00,
+        "cumulative_return": 0.50,
+        "cumulative_return_pct": 50.00,
+        "max_drawdown": 0.00,
+        "max_drawdown_pct": 0.00,
+        "peak_date": "2026-01-09",
+        "peak_price": 150.00,
+        "trough_date": "2026-01-09",
+        "trough_price": 150.00,
+        "recovered": true,
+        "recovery_date": "2026-01-09",
+        "peak_to_trough_days": 0,
+        "recovery_days": 0,
+        "peak_to_recovery_days": 0
+      }
+    },
+    {
+      "scenario_id": "GOLDEN-02-CONTINUOUS-DECLINE",
+      "title": "Monotonically Decreasing Prices (Continuous Drawdown, Unrecovered)",
+      "observations": [
+        {"date": "2026-02-02", "price": 200.00},
+        {"date": "2026-02-03", "price": 180.00},
+        {"date": "2026-02-04", "price": 160.00},
+        {"date": "2026-02-05", "price": 140.00},
+        {"date": "2026-02-06", "price": 100.00}
+      ],
+      "expected": {
+        "trading_days": 5,
+        "calendar_days": 4,
+        "start_price": 200.00,
+        "end_price": 100.00,
+        "cumulative_return": -0.50,
+        "cumulative_return_pct": -50.00,
+        "max_drawdown": -0.50,
+        "max_drawdown_pct": -50.00,
+        "peak_date": "2026-02-02",
+        "peak_price": 200.00,
+        "trough_date": "2026-02-06",
+        "trough_price": 100.00,
+        "recovered": false,
+        "recovery_date": null,
+        "peak_to_trough_days": 4,
+        "recovery_days": null,
+        "peak_to_recovery_days": null
+      }
+    },
+    {
+      "scenario_id": "GOLDEN-03-V-SHAPE-FULL-RECOVERY",
+      "title": "Sharp V-Shape Decline Followed by Complete Recovery",
+      "observations": [
+        {"date": "2026-03-02", "price": 100.00},
+        {"date": "2026-03-03", "price": 120.00},
+        {"date": "2026-03-04", "price": 84.00},
+        {"date": "2026-03-05", "price": 96.00},
+        {"date": "2026-03-06", "price": 120.00},
+        {"date": "2026-03-09", "price": 132.00}
+      ],
+      "expected": {
+        "trading_days": 6,
+        "calendar_days": 7,
+        "start_price": 100.00,
+        "end_price": 132.00,
+        "cumulative_return": 0.32,
+        "cumulative_return_pct": 32.00,
+        "max_drawdown": -0.30,
+        "max_drawdown_pct": -30.00,
+        "peak_date": "2026-03-03",
+        "peak_price": 120.00,
+        "trough_date": "2026-03-04",
+        "trough_price": 84.00,
+        "recovered": true,
+        "recovery_date": "2026-03-06",
+        "peak_to_trough_days": 1,
+        "recovery_days": 2,
+        "peak_to_recovery_days": 3
+      }
+    },
+    {
+      "scenario_id": "GOLDEN-04-PARTIAL-RECOVERY-UNRECOVERED",
+      "title": "Large Drawdown with Incomplete / Partial Recovery",
+      "observations": [
+        {"date": "2026-04-01", "price": 500.00},
+        {"date": "2026-04-02", "price": 300.00},
+        {"date": "2026-04-03", "price": 250.00},
+        {"date": "2026-04-06", "price": 350.00},
+        {"date": "2026-04-07", "price": 420.00}
+      ],
+      "expected": {
+        "trading_days": 5,
+        "calendar_days": 6,
+        "start_price": 500.00,
+        "end_price": 420.00,
+        "cumulative_return": -0.16,
+        "cumulative_return_pct": -16.00,
+        "max_drawdown": -0.50,
+        "max_drawdown_pct": -50.00,
+        "peak_date": "2026-04-01",
+        "peak_price": 500.00,
+        "trough_date": "2026-04-03",
+        "trough_price": 250.00,
+        "recovered": false,
+        "recovery_date": null,
+        "peak_to_trough_days": 2,
+        "recovery_days": null,
+        "peak_to_recovery_days": null
+      }
+    },
+    {
+      "scenario_id": "GOLDEN-05-MULTIPLE-DRAWDOWN-PEAKS",
+      "title": "Multiple Drawdown Waves (Selects True Global MDD)",
+      "observations": [
+        {"date": "2026-05-04", "price": 100.00},
+        {"date": "2026-05-05", "price": 150.00},
+        {"date": "2026-05-06", "price": 120.00},
+        {"date": "2026-05-07", "price": 180.00},
+        {"date": "2026-05-08", "price": 90.00},
+        {"date": "2026-05-11", "price": 135.00},
+        {"date": "2026-05-12", "price": 180.00},
+        {"date": "2026-05-13", "price": 200.00}
+      ],
+      "expected": {
+        "trading_days": 8,
+        "calendar_days": 9,
+        "start_price": 100.00,
+        "end_price": 200.00,
+        "cumulative_return": 1.00,
+        "cumulative_return_pct": 100.00,
+        "max_drawdown": -0.50,
+        "max_drawdown_pct": -50.00,
+        "peak_date": "2026-05-07",
+        "peak_price": 180.00,
+        "trough_date": "2026-05-08",
+        "trough_price": 90.00,
+        "recovered": true,
+        "recovery_date": "2026-05-12",
+        "peak_to_trough_days": 1,
+        "recovery_days": 4,
+        "peak_to_recovery_days": 5
+      }
+    },
+    {
+      "scenario_id": "GOLDEN-06-FLAT-CONSTANT",
+      "title": "Flat Unchanging Price Series (Zero Return, Zero Drawdown)",
+      "observations": [
+        {"date": "2026-06-01", "price": 100.00},
+        {"date": "2026-06-02", "price": 100.00},
+        {"date": "2026-06-03", "price": 100.00},
+        {"date": "2026-06-04", "price": 100.00}
+      ],
+      "expected": {
+        "trading_days": 4,
+        "calendar_days": 3,
+        "start_price": 100.00,
+        "end_price": 100.00,
+        "cumulative_return": 0.00,
+        "cumulative_return_pct": 0.00,
+        "max_drawdown": 0.00,
+        "max_drawdown_pct": 0.00,
+        "peak_date": "2026-06-01",
+        "peak_price": 100.00,
+        "trough_date": "2026-06-01",
+        "trough_price": 100.00,
+        "recovered": true,
+        "recovery_date": "2026-06-01",
+        "peak_to_trough_days": 0,
+        "recovery_days": 0,
+        "peak_to_recovery_days": 0
+      }
+    }
+  ]
+}
