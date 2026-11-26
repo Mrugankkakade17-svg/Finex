@@ -27,7 +27,6 @@ def test_market_session_rejects_naive_clock_and_unknown_exchange() -> None:
         market_session("LSE", datetime(2026, 11, 23, tzinfo=timezone.utc))
 
 
-
 @pytest.mark.parametrize(
     ("instant", "expected"),
     [
@@ -56,3 +55,4 @@ def test_next_session_date_skips_weekends(day: date, expected: date) -> None:
 def test_next_session_date_rejects_unsupported_exchange() -> None:
     with pytest.raises(ValueError, match="Unsupported exchange"):
         next_session_date("LSE", date(2026, 11, 27))
+
