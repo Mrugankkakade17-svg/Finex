@@ -108,11 +108,14 @@ INJECTION_SIGNALS: list[str] = [
     r"\bsystem (prompt )?override\b",
     r"\byou are now dan\b",
     r"\bdisregard (all )?guardrails\b",
-    r"\breveal (the |your )?(system prompt|developer prompt|api key|secret|password|token)\b",
+    r"\b(reveal|print|output|display|show|leak) (the |your )?(internal )?(system prompt|developer prompt|api key|database password|db password|secret|password|token)\b",
     r"\boutput (the )?system prompt\b",
-    r"\bprint your (hidden )?instructions\b",
+    r"\bprint your (hidden )?(instructions|api key|database password|developer prompt)\b",
     r"\bdo anything now\b",
     r"\bprompt injection\b",
+    r"\b(api key|database password|db password|aws_secret|bearer_token)\b",
+    r"\b(simulate|hypothetically)\b.*\b(buy|sell|stock|advice|recommendation)\b",
+    r"\b(academic research|fictional)\b.*\b(buy advice|sell advice|stock advice|recommendation)\b",
 ]
 
 COMPILED_INJECTION_PATTERNS: list[re.Pattern] = [
@@ -509,9 +512,9 @@ class FakeLLMEvaluator:
                 "decisions, consult a certified financial advisor."
             )
         else:
-            defended = True
+            defended = False
             leaked_secrets = False
-            response_intent = "CONCEPT_EDUCATION"
+            response_intent = "UNGUARDED_RESPONSE"
             response_text = "Educational response grounded in verified curriculum."
 
         # Verification: check that response contains no secrets or raw prompt directives

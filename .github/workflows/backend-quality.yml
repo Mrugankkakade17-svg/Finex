@@ -13,7 +13,7 @@ on:
       - "docs/evidence/s3-owned-flutter-validation.md"
       - "scripts/serve-s1-web-probe.py"
       - "scripts/seed_s1_dat_01.py"
-      - "ai/risk/**"
+      - "ai/**"
       - "data/fixtures/s2_dat_01/**"
       - "docs/features/risk-profiling/**"
       - ".github/workflows/backend-quality.yml"
@@ -29,7 +29,7 @@ on:
       - "docs/evidence/s3-owned-flutter-validation.md"
       - "scripts/serve-s1-web-probe.py"
       - "scripts/seed_s1_dat_01.py"
-      - "ai/risk/**"
+      - "ai/**"
       - "data/fixtures/s2_dat_01/**"
       - "docs/features/risk-profiling/**"
       - ".github/workflows/backend-quality.yml"
@@ -135,3 +135,7 @@ jobs:
 
       - name: Pytest
         run: python -m pytest -m "not postgres"
+
+      - name: AI Evaluation Harness (Fake LLM)
+        working-directory: ai
+        run: python eval/run_eval.py --fake-llm
