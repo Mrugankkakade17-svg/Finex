@@ -46,4 +46,3 @@ def test_watchlists_api_alias_is_registered_alongside_local_routes(tmp_path: Pat
     assert "/api/v1/watchlists/{watchlist_id}" in specification["paths"]
     assert "/api/v1/watchlists/{watchlist_id}/items/{instrument_id}" in specification["paths"]
     assert "/api/v1/local-watchlists" in specification["paths"]
-

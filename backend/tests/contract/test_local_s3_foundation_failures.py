@@ -307,4 +307,3 @@ def test_s3_does_not_mount_order_execution_or_historical_global_authority(tmp_pa
         assert response.status_code == 404
     assert client.get("/api/v1/watchlists", headers=headers).status_code == 200
     assert client.get("/api/v1/watchlists").status_code == 401
-

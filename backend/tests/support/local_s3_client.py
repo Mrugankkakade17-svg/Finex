@@ -156,9 +156,11 @@ def application(
             local_db_path=path,
             local_session_ttl_minutes=ttl,
             app_persistence=persistence,
-            **({
-                "app_database_url": "postgresql://finex:finex@127.0.0.1/finex_test"
-            } if persistence == "postgresql" else {}),
+            **(
+                {"app_database_url": "postgresql://finex:finex@127.0.0.1/finex_test"}
+                if persistence == "postgresql"
+                else {}
+            ),
         ),
         local_clock=clock or Clock(),
         local_portfolio_catalogue=catalogue,
@@ -261,4 +263,3 @@ def uuid4(value: object) -> None:
         raise AssertionError("A canonical UUID4 is required") from None
     if parsed.version != 4 or str(parsed) != value:
         raise AssertionError("A canonical UUID4 is required")
-
