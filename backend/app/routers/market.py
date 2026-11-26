@@ -10,6 +10,7 @@ from fastapi import APIRouter, HTTPException, Query, Request
 from pydantic import BaseModel, ConfigDict, Field
 
 from app.config.database import execute_query
+from app.config.logging import logger
 from app.core.responses import APIResponse
 from app.schemas.envelope import DataStatus
 from app.services.market_calendar import market_session
@@ -148,7 +149,11 @@ async def search_instruments(
             for row in records
             if str(row.get("exchange", "")).upper() in _CURRENCY_BY_EXCHANGE
         ]
-    except Exception:
+    except Exception as exc:
+        logger.warning(
+            "Market instrument query failed; using bundled fallback catalog (error_type=%s)",
+            type(exc).__name__,
+        )
         found = [
             row.model_dump()
             for row in INSTRUMENTS
@@ -173,8 +178,6 @@ async def historical_ohlcv(
             status_code=422, detail="Date range must be ordered and at most ten years"
         )
     normalized = symbol.strip().upper()
-    if not any(item.symbol == normalized and item.exchange == exchange for item in INSTRUMENTS):
-        raise HTTPException(status_code=404, detail="Instrument not found")
     try:
         rows = execute_query(
             """SELECT p.price_date AS timestamp, p.open_price AS open,
