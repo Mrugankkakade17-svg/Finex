@@ -1,4 +1,6 @@
 import { createApiClient, DEFAULT_API_BASE_URL, getApiBaseUrl } from './apiClient';
+import { clearActiveAuthSession, getActiveAuthSession, realAuthService } from './authService';
+import { finexApiClient } from './apiClient';
 
 describe('shared API client', () => {
   test('uses the configured origin and sends bearer credentials without cookies', async () => {
@@ -47,3 +49,49 @@ describe('shared API client', () => {
     expect(fetchImpl).not.toHaveBeenCalled();
   });
 });
+
+describe('real account auth API integration', () => {
+  afterEach(() => {
+    clearActiveAuthSession();
+    jest.restoreAllMocks();
+  });
+
+  test('login posts credentials to the auth API and keeps returned tokens in memory', async () => {
+    const tokens = { access_token: 'access.token', refresh_token: 'refresh.token', token_type: 'bearer' };
+    const request = jest.spyOn(finexApiClient, 'request').mockResolvedValue({
+      ok: true, json: async () => ({ data: { ...tokens, user: { id: 12, email: 'learner@example.test', name: 'Learner' } } }),
+    } as Response);
+
+    await realAuthService.login('learner@example.test', 'safe-password');
+
+    expect(request).toHaveBeenCalledWith('/api/v1/auth/login', expect.objectContaining({
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: 'learner@example.test', password: 'safe-password' }),
+    }));
+    expect(getActiveAuthSession()).toEqual(tokens);
+    expect(localStorage.length).toBe(0);
+  });
+
+  test('registration uses the documented API fields and does not activate the returned tokens', async () => {
+    const request = jest.spyOn(finexApiClient, 'request').mockResolvedValue({
+      ok: true, json: async () => ({ data: { access_token: 'a', refresh_token: 'r', token_type: 'bearer' } }),
+    } as Response);
+
+    await realAuthService.register('Learner One', 'learner@example.test', 'safe-password');
+
+    expect(request).toHaveBeenCalledWith('/api/v1/auth/register', expect.objectContaining({
+      body: JSON.stringify({ name: 'Learner One', email: 'learner@example.test', password: 'safe-password' }),
+    }));
+    expect(getActiveAuthSession()).toBeNull();
+  });
+
+  test('shows the PostgreSQL auth contract duplicate-email error safely', async () => {
+    jest.spyOn(finexApiClient, 'request').mockResolvedValue({
+      ok: false, json: async () => ({ error: { code: 'EMAIL_EXISTS', message: 'Email already registered' } }),
+    } as Response);
+
+    await expect(realAuthService.register('Learner One', 'learner@example.test', 'safe-password'))
+      .rejects.toMatchObject({ code: 'EMAIL_EXISTS', message: 'An account with this email already exists.' });
+  });
+});
+
