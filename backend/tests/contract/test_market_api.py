@@ -62,7 +62,6 @@ def test_market_endpoints_do_not_change_existing_local_market_route() -> None:
     assert "/api/v1/market/instruments" in paths
 
 
-
 @pytest.mark.parametrize(
     ("start", "end"),
     [
@@ -143,19 +142,18 @@ def test_ohlcv_rejects_invalid_candle_values(monkeypatch, row) -> None:
 
 def test_market_api_rejects_unsupported_exchanges() -> None:
     client = TestClient(create_app())
-    assert client.get(
-        "/api/v1/market/instruments", params={"exchange": "LSE"}
-    ).status_code == 422
-    assert client.get(
-        "/api/v1/market/instruments/AAPL/ohlcv",
-        params={"exchange": "LSE", "start": "2026-11-01", "end": "2026-11-10"},
-    ).status_code == 422
+    assert client.get("/api/v1/market/instruments", params={"exchange": "LSE"}).status_code == 422
+    assert (
+        client.get(
+            "/api/v1/market/instruments/AAPL/ohlcv",
+            params={"exchange": "LSE", "start": "2026-11-01", "end": "2026-11-10"},
+        ).status_code
+        == 422
+    )
     assert client.get("/api/v1/market/calendar/LSE").status_code == 404
 
 
-def test_instrument_search_logs_safe_warning_when_warehouse_falls_back(
-    monkeypatch, caplog
-) -> None:
+def test_instrument_search_logs_safe_warning_when_warehouse_falls_back(monkeypatch, caplog) -> None:
     from app.routers import market
 
     monkeypatch.setattr(
@@ -171,3 +169,4 @@ def test_instrument_search_logs_safe_warning_when_warehouse_falls_back(
     assert response.status_code == 200
     assert "Market instrument query failed; using bundled fallback catalog" in caplog.text
     assert "secret-token-must-not-be-logged" not in caplog.text
+
