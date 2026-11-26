@@ -169,4 +169,3 @@ def test_instrument_search_logs_safe_warning_when_warehouse_falls_back(monkeypat
     assert response.status_code == 200
     assert "Market instrument query failed; using bundled fallback catalog" in caplog.text
     assert "secret-token-must-not-be-logged" not in caplog.text
-
