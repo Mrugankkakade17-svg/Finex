@@ -1,5 +1,13 @@
 import React, { useEffect, useState } from 'react';
-import { Award, CheckCircle2, ShieldCheck, FileText, ArrowRight, UserCheck, RefreshCw } from 'lucide-react';
+import {
+  Award,
+  CheckCircle2,
+  ShieldCheck,
+  FileText,
+  ArrowRight,
+  UserCheck,
+  RefreshCw,
+} from 'lucide-react';
 import { finexApiClient } from '../services/apiClient';
 
 interface UATSignoff {
@@ -12,22 +20,11 @@ interface UATSignoff {
   verified: boolean;
 }
 
-interface ReleaseData {
-  version: string;
-  release_name: string;
-  release_timestamp: string;
-  status: string;
-  git_commit: string;
-  sprints_included: string[];
-  test_metrics: Record<string, string>;
-}
-
 export const ReleasePage: React.FC = () => {
-  const [release, setRelease] = useState<ReleaseData | null>(null);
   const [signoffs, setSignoffs] = useState<UATSignoff[]>([]);
   const [loading, setLoading] = useState(true);
   const [newReviewer, setNewReviewer] = useState('');
-  const [newRole, setNewRole] = useState('Beta Pilot Tester');
+  const [newRole] = useState('Beta Pilot Tester');
   const [newComments, setNewComments] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [successMsg, setSuccessMsg] = useState('');
@@ -40,13 +37,11 @@ export const ReleasePage: React.FC = () => {
       const res = await finexApiClient.request('/api/v1/release/handover');
       if (res.ok) {
         const data = await res.json();
-        setRelease(data.release);
-        setSignoffs(data.uat_signoffs);
+        setSignoffs(data.uat_signoffs || []);
       } else {
         setErrorMsg('Release information could not be loaded. Please retry.');
       }
-    } catch (err) {
-      console.error('Failed to load handover data', err);
+    } catch {
       setErrorMsg('Release information could not be loaded. Please retry.');
     } finally {
       setLoading(false);
@@ -54,7 +49,7 @@ export const ReleasePage: React.FC = () => {
   };
 
   useEffect(() => {
-    fetchHandoverData();
+    void fetchHandoverData();
   }, []);
 
   const handleSignoff = async (e: React.FormEvent) => {
@@ -70,7 +65,8 @@ export const ReleasePage: React.FC = () => {
           stakeholder_name: newReviewer,
           role: newRole,
           decision: 'APPROVED',
-          comments: newComments || 'Verified all sprints and pages live in local environment.',
+          comments:
+            newComments || 'Verified all platform modules and pages live in local environment.',
           checklist_verified: true,
         }),
       });
@@ -79,13 +75,12 @@ export const ReleasePage: React.FC = () => {
         setSuccessMsg('Your UAT Sign-off has been registered!');
         setNewReviewer('');
         setNewComments('');
-        fetchHandoverData();
+        void fetchHandoverData();
         setTimeout(() => setSuccessMsg(''), 4000);
       } else {
         setErrorMsg('Your sign-off could not be submitted. Please retry.');
       }
-    } catch (err) {
-      console.error('Sign-off error', err);
+    } catch {
       setErrorMsg('Your sign-off could not be submitted. Please retry.');
     } finally {
       setSubmitting(false);
@@ -94,77 +89,229 @@ export const ReleasePage: React.FC = () => {
 
   return (
     <div style={{ maxWidth: '1200px', margin: '0 auto', paddingBottom: '40px' }}>
-      {errorMsg && <div role="alert" className="glass-card" style={{ marginBottom: '16px', padding: '12px', color: '#fecaca' }}>{errorMsg}</div>}
       {/* Release Header */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '24px' }}>
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: '14px',
+          marginBottom: '24px',
+        }}
+      >
         <div>
+          <p className="local-eyebrow">GOLDEN MASTER</p>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <Award size={32} color="#f59e0b" />
-            <h2 style={{ fontSize: '1.8rem', color: '#ffffff', margin: 0 }}>
-              Sprint 8: Final Release & Handover
+            <Award size={32} color="var(--color-accent-coral)" />
+            <h2 style={{ fontSize: '1.9rem', color: 'var(--color-text)', margin: 0 }}>
+              Final Release &amp; Platform Handover
             </h2>
           </div>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '0.95rem', marginTop: '6px' }}>
-            Official Golden Master v1.0.0 delivery with Anand Sharma pilot verification and operational runbooks.
+          <p style={{ color: 'var(--color-text-muted)', fontSize: '0.95rem', marginTop: '6px' }}>
+            Official Golden Master v1.0.0 delivery with pilot verification and operational runbooks.
           </p>
         </div>
         <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-          <span className="badge badge-success" style={{ fontSize: '1rem', padding: '8px 16px' }}>
+          <span className="badge badge-success" style={{ fontSize: '0.9rem', padding: '8px 16px' }}>
             v1.0.0 GA READY
           </span>
-          <button className="btn btn-secondary" onClick={fetchHandoverData} title="Refresh live status">
+          <button
+            className="btn-secondary"
+            onClick={() => void fetchHandoverData()}
+            disabled={loading}
+            aria-label="Refresh live status"
+            title="Refresh live status"
+          >
             <RefreshCw size={16} />
           </button>
         </div>
       </div>
+
+      {errorMsg && (
+        <div
+          role="alert"
+          style={{
+            padding: '12px 16px',
+            background: '#FEF3F2',
+            color: '#B42318',
+            border: '1px solid #FDA29B',
+            borderRadius: '12px',
+            marginBottom: '20px',
+            fontSize: '0.9rem',
+            fontWeight: 600,
+          }}
+        >
+          {errorMsg}
+        </div>
+      )}
 
       {/* Quality & Metrics Banner */}
       <div
         className="glass-card"
         style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(4, 1fr)',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
           gap: '16px',
-          padding: '20px',
+          padding: '22px',
           marginBottom: '24px',
           textAlign: 'center',
         }}
       >
         <div>
-          <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Scope Status</div>
-          <div style={{ fontSize: '1.4rem', fontWeight: 700, color: '#10b981', marginTop: '4px' }}>Sprints 0–8 (100%)</div>
+          <div
+            style={{
+              fontSize: '0.78rem',
+              color: 'var(--color-text-muted)',
+              textTransform: 'uppercase',
+              fontWeight: 700,
+            }}
+          >
+            Scope Status
+          </div>
+          <div
+            style={{
+              fontFamily: 'var(--font-display)',
+              fontSize: '1.45rem',
+              fontWeight: 700,
+              color: '#16654E',
+              marginTop: '4px',
+            }}
+          >
+            All Modules (100%)
+          </div>
         </div>
         <div>
-          <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Test Suite</div>
-          <div style={{ fontSize: '1.4rem', fontWeight: 700, color: '#38bdf8', marginTop: '4px' }}>52/52 Passed</div>
+          <div
+            style={{
+              fontSize: '0.78rem',
+              color: 'var(--color-text-muted)',
+              textTransform: 'uppercase',
+              fontWeight: 700,
+            }}
+          >
+            Test Suite
+          </div>
+          <div
+            style={{
+              fontFamily: 'var(--font-display)',
+              fontSize: '1.45rem',
+              fontWeight: 700,
+              color: 'var(--color-accent-violet)',
+              marginTop: '4px',
+            }}
+          >
+            100% Verified
+          </div>
         </div>
         <div>
-          <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Active Endpoints</div>
-          <div style={{ fontSize: '1.4rem', fontWeight: 700, color: '#a855f7', marginTop: '4px' }}>94+ Routes</div>
+          <div
+            style={{
+              fontSize: '0.78rem',
+              color: 'var(--color-text-muted)',
+              textTransform: 'uppercase',
+              fontWeight: 700,
+            }}
+          >
+            Active Endpoints
+          </div>
+          <div
+            style={{
+              fontFamily: 'var(--font-display)',
+              fontSize: '1.45rem',
+              fontWeight: 700,
+              color: 'var(--color-accent-coral)',
+              marginTop: '4px',
+            }}
+          >
+            94+ Routes
+          </div>
         </div>
         <div>
-          <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Disaster Recovery RTO</div>
-          <div style={{ fontSize: '1.4rem', fontWeight: 700, color: '#f59e0b', marginTop: '4px' }}>&lt; 2.5 min</div>
+          <div
+            style={{
+              fontSize: '0.78rem',
+              color: 'var(--color-text-muted)',
+              textTransform: 'uppercase',
+              fontWeight: 700,
+            }}
+          >
+            Disaster Recovery RTO
+          </div>
+          <div
+            style={{
+              fontFamily: 'var(--font-display)',
+              fontSize: '1.45rem',
+              fontWeight: 700,
+              color: 'var(--color-text)',
+              marginTop: '4px',
+            }}
+          >
+            &lt; 2.5 min
+          </div>
         </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1.1fr 0.9fr', gap: '24px', marginBottom: '24px' }}>
-        {/* Sprints Matrix */}
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
+          gap: '24px',
+          marginBottom: '24px',
+        }}
+      >
+        {/* Platform Capability Matrix */}
         <div className="glass-card" style={{ padding: '24px' }}>
-          <h3 style={{ fontSize: '1.2rem', color: '#ffffff', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <CheckCircle2 size={20} color="#10b981" /> Full Sprints Delivery Verification
+          <h3
+            style={{
+              fontSize: '1.25rem',
+              color: 'var(--color-text)',
+              marginBottom: '16px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+            }}
+          >
+            <CheckCircle2 size={20} color="#16654E" /> Full Platform Delivery Verification
           </h3>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
             {[
-              { sprint: 'Sprint 0', title: 'Platform Foundation, Docker, PostgreSQL, Alembic baseline' },
-              { sprint: 'Sprint 1', title: 'Identity & Onboarding Pilot (Anand persona, Profile, KYC)' },
-              { sprint: 'Sprint 2', title: 'Deterministic Risk Contract & Target Portfolio Allocation' },
-              { sprint: 'Sprint 3', title: 'Market Data Catalog, Watchlist & Paper Trading Account' },
-              { sprint: 'Sprint 4', title: 'Simulated Order Placement, Cash Ledger & Goal Projections' },
-              { sprint: 'Sprint 5', title: 'Privacy Resilience, Consent Audit & CSV Spending Analytics' },
-              { sprint: 'Sprint 6', title: 'Grounded AI Assistant, Grounding Citations & Smart Alerts' },
-              { sprint: 'Sprint 7', title: 'Production Hardening, Health Observability & Preflight RC' },
-              { sprint: 'Sprint 8', title: 'Final Release Cut v1.0.0, Pilot Handover & Operator Runbooks' },
+              {
+                module: 'Core Foundation',
+                title: 'Platform Architecture, PostgreSQL & Alembic baseline',
+              },
+              {
+                module: 'Identity & Onboarding',
+                title: 'Personalized Identity, Educational Consent & Profile',
+              },
+              {
+                module: 'Risk & Portfolios',
+                title: 'Deterministic Risk Contract & Portfolio Allocation',
+              },
+              {
+                module: 'Market & Watchlist',
+                title: 'Market Data Catalog, Quotes & Watchlist Tracking',
+              },
+              {
+                module: 'Paper Trading & Goals',
+                title: 'Simulated Order Placement, Cash Ledger & Goal Projections',
+              },
+              {
+                module: 'Privacy & Spending',
+                title: 'Privacy Resilience, Consent Audit & CSV Spending Analytics',
+              },
+              {
+                module: 'Grounded AI & Alerts',
+                title: 'Grounded AI Assistant, Citations & Smart Alerts',
+              },
+              {
+                module: 'Operations & Hardening',
+                title: 'Production Hardening, Health Observability & Preflight Gate',
+              },
+              {
+                module: 'Release & Handover',
+                title: 'Golden Master v1.0.0 Release Cut & Operator Runbooks',
+              },
             ].map((item, idx) => (
               <div
                 key={idx}
@@ -172,17 +319,30 @@ export const ReleasePage: React.FC = () => {
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'space-between',
+                  gap: '12px',
                   padding: '10px 14px',
-                  background: 'rgba(255, 255, 255, 0.04)',
-                  borderRadius: '6px',
-                  borderLeft: '4px solid #10b981',
+                  background: '#F6FAF7',
+                  borderRadius: '10px',
+                  borderLeft: '4px solid var(--color-accent-coral)',
                 }}
               >
                 <div>
-                  <span style={{ fontWeight: 600, color: '#ffffff', marginRight: '8px' }}>{item.sprint}:</span>
-                  <span style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>{item.title}</span>
+                  <span
+                    style={{
+                      fontWeight: 700,
+                      color: 'var(--color-text)',
+                      marginRight: '8px',
+                    }}
+                  >
+                    {item.module}:
+                  </span>
+                  <span style={{ color: 'var(--color-text-muted)', fontSize: '0.88rem' }}>
+                    {item.title}
+                  </span>
                 </div>
-                <span className="badge badge-success" style={{ fontSize: '0.75rem' }}>Delivered</span>
+                <span className="badge badge-success" style={{ fontSize: '0.7rem' }}>
+                  Delivered
+                </span>
               </div>
             ))}
           </div>
@@ -191,26 +351,61 @@ export const ReleasePage: React.FC = () => {
         {/* UAT Sign-off Log & Handover Signatures */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
           <div className="glass-card" style={{ padding: '24px' }}>
-            <h3 style={{ fontSize: '1.2rem', color: '#ffffff', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <UserCheck size={20} color="#38bdf8" /> Stakeholder UAT Sign-offs
+            <h3
+              style={{
+                fontSize: '1.25rem',
+                color: 'var(--color-text)',
+                marginBottom: '16px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+              }}
+            >
+              <UserCheck size={20} color="var(--color-accent-violet)" /> Stakeholder UAT Sign-offs
             </h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
               {signoffs.map((s) => (
                 <div
                   key={s.signoff_id}
                   style={{
-                    padding: '14px',
-                    background: 'rgba(255, 255, 255, 0.05)',
-                    borderRadius: '8px',
-                    borderLeft: '4px solid #38bdf8',
+                    padding: '14px 16px',
+                    background: '#F6FAF7',
+                    borderRadius: '12px',
+                    borderLeft: '4px solid var(--color-accent-violet)',
                   }}
                 >
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <div style={{ fontWeight: 600, color: '#ffffff' }}>{s.stakeholder_name}</div>
-                    <span className="badge badge-success" style={{ fontSize: '0.75rem' }}>{s.decision}</span>
+                  <div
+                    style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                    }}
+                  >
+                    <div style={{ fontWeight: 700, color: 'var(--color-text)' }}>
+                      {s.stakeholder_name}
+                    </div>
+                    <span className="badge badge-success" style={{ fontSize: '0.72rem' }}>
+                      {s.decision}
+                    </span>
                   </div>
-                  <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '6px' }}>{s.role}</div>
-                  <div style={{ fontSize: '0.85rem', color: '#e2e8f0', fontStyle: 'italic' }}>"{s.comments}"</div>
+                  <div
+                    style={{
+                      fontSize: '0.8rem',
+                      color: 'var(--color-text-muted)',
+                      marginBottom: '6px',
+                    }}
+                  >
+                    {s.role}
+                  </div>
+                  <div
+                    style={{
+                      fontSize: '0.86rem',
+                      color: 'var(--color-text)',
+                      fontStyle: 'italic',
+                    }}
+                  >
+                    &ldquo;{s.comments}&rdquo;
+                  </div>
                 </div>
               ))}
             </div>
@@ -218,17 +413,48 @@ export const ReleasePage: React.FC = () => {
 
           {/* Interactive User Sign-off Form */}
           <div className="glass-card" style={{ padding: '24px' }}>
-            <h3 style={{ fontSize: '1.1rem', color: '#ffffff', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <ShieldCheck size={18} color="#f59e0b" /> Submit Stakeholder Review
+            <h3
+              style={{
+                fontSize: '1.15rem',
+                color: 'var(--color-text)',
+                marginBottom: '12px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+              }}
+            >
+              <ShieldCheck size={18} color="var(--color-accent-coral)" /> Submit Stakeholder Review
             </h3>
             {successMsg && (
-              <div style={{ padding: '10px', background: 'rgba(16, 185, 129, 0.2)', color: '#10b981', borderRadius: '6px', marginBottom: '12px', fontSize: '0.85rem' }}>
+              <div
+                style={{
+                  padding: '10px 14px',
+                  background: '#ECFDF5',
+                  color: '#065F46',
+                  border: '1px solid #6EE7B7',
+                  borderRadius: '10px',
+                  marginBottom: '12px',
+                  fontSize: '0.86rem',
+                  fontWeight: 600,
+                }}
+              >
                 ✓ {successMsg}
               </div>
             )}
-            <form onSubmit={handleSignoff} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <form
+              onSubmit={handleSignoff}
+              style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}
+            >
               <div>
-                <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
+                <label
+                  style={{
+                    fontSize: '0.82rem',
+                    fontWeight: 700,
+                    color: 'var(--color-text)',
+                    display: 'block',
+                    marginBottom: '4px',
+                  }}
+                >
                   Reviewer Name
                 </label>
                 <input
@@ -237,24 +463,34 @@ export const ReleasePage: React.FC = () => {
                   placeholder="e.g. Lead Reviewer / QA Auditor"
                   value={newReviewer}
                   onChange={(e) => setNewReviewer(e.target.value)}
+                  style={{ width: '100%' }}
                   required
                 />
               </div>
               <div>
-                <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
+                <label
+                  style={{
+                    fontSize: '0.82rem',
+                    fontWeight: 700,
+                    color: 'var(--color-text)',
+                    display: 'block',
+                    marginBottom: '4px',
+                  }}
+                >
                   Comments / Sign-off Notes
                 </label>
                 <input
                   type="text"
                   className="input-field"
-                  placeholder="Verified Sprint 8 handover deliverables..."
+                  placeholder="Verified platform handover deliverables..."
                   value={newComments}
                   onChange={(e) => setNewComments(e.target.value)}
+                  style={{ width: '100%' }}
                 />
               </div>
               <button
                 type="submit"
-                className="btn btn-primary"
+                className="btn-primary"
                 disabled={submitting}
                 style={{ width: '100%', marginTop: '4px' }}
               >
@@ -266,43 +502,86 @@ export const ReleasePage: React.FC = () => {
       </div>
 
       {/* Operator Runbooks & Next Roadmap */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+          gap: '24px',
+        }}
+      >
         <div className="glass-card" style={{ padding: '24px' }}>
-          <h3 style={{ fontSize: '1.2rem', color: '#ffffff', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <FileText size={20} color="#a855f7" /> Operator Runbooks & Maintenance
+          <h3
+            style={{
+              fontSize: '1.25rem',
+              color: 'var(--color-text)',
+              marginBottom: '16px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+            }}
+          >
+            <FileText size={20} color="var(--color-accent-violet)" /> Operator Runbooks &amp;
+            Maintenance
           </h3>
-          <ul style={{ listStyle: 'none', padding: 0, display: 'flex', flexDirection: 'column', gap: '10px' }}>
-            <li style={{ padding: '8px 12px', background: 'rgba(255,255,255,0.04)', borderRadius: '6px' }}>
-              <strong>RUNBOOK-01:</strong> Daily Production Observability & Health Triage
+          <ul
+            style={{
+              listStyle: 'none',
+              padding: 0,
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '10px',
+            }}
+          >
+            <li style={{ padding: '10px 14px', background: '#F6FAF7', borderRadius: '10px' }}>
+              <strong>RUNBOOK-01:</strong> Daily Production Observability &amp; Health Triage
             </li>
-            <li style={{ padding: '8px 12px', background: 'rgba(255,255,255,0.04)', borderRadius: '6px' }}>
-              <strong>RUNBOOK-02:</strong> Zero-Downtime Rollback & Database Snapshots
+            <li style={{ padding: '10px 14px', background: '#F6FAF7', borderRadius: '10px' }}>
+              <strong>RUNBOOK-02:</strong> Zero-Downtime Rollback &amp; Database Snapshots
             </li>
-            <li style={{ padding: '8px 12px', background: 'rgba(255,255,255,0.04)', borderRadius: '6px' }}>
-              <strong>RUNBOOK-03:</strong> Emergency Kill Switch & Feature Flags
+            <li style={{ padding: '10px 14px', background: '#F6FAF7', borderRadius: '10px' }}>
+              <strong>RUNBOOK-03:</strong> Emergency Kill Switch &amp; Feature Flags
             </li>
-            <li style={{ padding: '8px 12px', background: 'rgba(255,255,255,0.04)', borderRadius: '6px' }}>
-              <strong>RUNBOOK-04:</strong> Anand Pilot Support & Feedback Ingestion
+            <li style={{ padding: '10px 14px', background: '#F6FAF7', borderRadius: '10px' }}>
+              <strong>RUNBOOK-04:</strong> Pilot Support &amp; Feedback Ingestion
             </li>
           </ul>
         </div>
 
         <div className="glass-card" style={{ padding: '24px' }}>
-          <h3 style={{ fontSize: '1.2rem', color: '#ffffff', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <ArrowRight size={20} color="#38bdf8" /> FinEx Horizon 2 (v1.1 Roadmap)
+          <h3
+            style={{
+              fontSize: '1.25rem',
+              color: 'var(--color-text)',
+              marginBottom: '16px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+            }}
+          >
+            <ArrowRight size={20} color="var(--color-accent-coral)" /> finex* Horizon 2 (v1.1
+            Roadmap)
           </h3>
-          <ul style={{ listStyle: 'none', padding: 0, display: 'flex', flexDirection: 'column', gap: '10px' }}>
-            <li style={{ padding: '8px 12px', background: 'rgba(255,255,255,0.04)', borderRadius: '6px' }}>
-              🚀 <strong>v1.1:</strong> Live Broker API connectivity (Zerodha Kite & Upstox sandboxes)
+          <ul
+            style={{
+              listStyle: 'none',
+              padding: 0,
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '10px',
+            }}
+          >
+            <li style={{ padding: '10px 14px', background: '#F6FAF7', borderRadius: '10px' }}>
+              <strong>v1.1:</strong> Live Broker API connectivity (Zerodha Kite &amp; Upstox
+              sandboxes)
             </li>
-            <li style={{ padding: '8px 12px', background: 'rgba(255,255,255,0.04)', borderRadius: '6px' }}>
-              📈 <strong>v1.1:</strong> Automated recurring SIP simulator with tax-loss harvesting
+            <li style={{ padding: '10px 14px', background: '#F6FAF7', borderRadius: '10px' }}>
+              <strong>v1.1:</strong> Automated recurring SIP simulator with tax-loss harvesting
             </li>
-            <li style={{ padding: '8px 12px', background: 'rgba(255,255,255,0.04)', borderRadius: '6px' }}>
-              🤖 <strong>v1.2:</strong> Fine-tuned local LLM via quantized Ollama integration
+            <li style={{ padding: '10px 14px', background: '#F6FAF7', borderRadius: '10px' }}>
+              <strong>v1.2:</strong> Fine-tuned local LLM via quantized Ollama integration
             </li>
-            <li style={{ padding: '8px 12px', background: 'rgba(255,255,255,0.04)', borderRadius: '6px' }}>
-              💰 <strong>v1.2:</strong> Sovereign Gold Bonds (SGB) & multi-currency ledger support
+            <li style={{ padding: '10px 14px', background: '#F6FAF7', borderRadius: '10px' }}>
+              <strong>v1.2:</strong> Sovereign Gold Bonds (SGB) &amp; multi-currency ledger support
             </li>
           </ul>
         </div>
@@ -310,4 +589,3 @@ export const ReleasePage: React.FC = () => {
     </div>
   );
 };
-

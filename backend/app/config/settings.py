@@ -91,6 +91,22 @@ class Settings(BaseSettings):
     llm_provider: str = "openai"
     openai_api_key: str = ""
 
+    # S5-MI03: LLM provider cascade configuration
+    ollama_base_url: str = "http://localhost:11434"
+    ollama_model: str = "llama3.2:1b"
+    hosted_llm_provider: str = "gemini"
+    gemini_api_key: str = ""
+    hosted_llm_model: str = "gemini-3.8-flash"
+    groq_api_key: str = ""
+    groq_model: str = "openai/gpt-oss-120b"
+    groq_base_url: str = "https://api.groq.com/openai/v1"
+    cloudflare_account_id: str = ""
+    cloudflare_api_token: str = ""
+    cloudflare_model: str = "@cf/google/gemma-3-12b-it"
+    cloudflare_base_url: str = "https://api.cloudflare.com/client/v4"
+    llm_timeout_seconds: float = Field(default=10.0, ge=1.0, le=120.0)
+    llm_cascade_enabled: bool = True
+
     market_data_provider: str = "mock"
     market_data_api_key: str = ""
 
@@ -100,6 +116,8 @@ class Settings(BaseSettings):
     analytics_risk_free_rate_source: str = "Unconfigured FinEx default"
     analytics_risk_free_rate_as_of: str = "UNCONFIGURED"
 
+    google_client_id: str = ""
+    allow_mock_google_auth: bool | None = None
     paper_trading_initial_cash: Decimal = Field(
         default=Decimal("50000.00"), gt=0, max_digits=12, decimal_places=2
     )
@@ -111,6 +129,9 @@ class Settings(BaseSettings):
         "secret_key",
         "databricks_token",
         "openai_api_key",
+        "gemini_api_key",
+        "groq_api_key",
+        "cloudflare_api_token",
         "market_data_api_key",
         "password",
         "token",
@@ -245,6 +266,10 @@ class Settings(BaseSettings):
 
         if self.is_production_like and self.fixture_mode != "disabled":
             raise ValueError("fixture_mode must be disabled in UAT and production")
+        if self.allow_mock_google_auth is None:
+            self.allow_mock_google_auth = not self.is_production_like
+        elif self.is_production_like and self.allow_mock_google_auth:
+            raise ConfigurationError("ALLOW_MOCK_GOOGLE_AUTH is forbidden in UAT and production.")
         if wildcard and self.allow_credentials:
             raise ConfigurationError(
                 "Wildcard ALLOWED_ORIGINS cannot be combined with ALLOW_CREDENTIALS=true."

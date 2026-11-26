@@ -6,13 +6,15 @@ from dotenv import load_dotenv
 from sqlalchemy.ext.asyncio import async_engine_from_config
 
 from app.repositories.onboarding_repository import onboarding_repository
+from app.repositories.postgres_user_repository import postgres_user_repository
 from app.repositories.risk_repository import risk_repository
 from app.repositories.user_repository import user_repository
+from app.services.auth_service import login_tracker
 
 
 @pytest.fixture(autouse=True)
 def reset_in_memory_repositories():
-    """Reset in-memory repositories before every test."""
+    """Reset in-memory repositories and rate-limit trackers before every test."""
 
     # Reset users
     if hasattr(user_repository, "_users"):
@@ -20,6 +22,20 @@ def reset_in_memory_repositories():
 
     if hasattr(user_repository, "_next_id"):
         user_repository._next_id = 1
+
+    if hasattr(postgres_user_repository, "_memory_users"):
+        postgres_user_repository._memory_users.clear()
+
+    if hasattr(postgres_user_repository, "_user_metadata"):
+        postgres_user_repository._user_metadata.clear()
+
+    if hasattr(postgres_user_repository, "_db_available"):
+        postgres_user_repository._db_available = None
+
+    if hasattr(postgres_user_repository, "_next_id"):
+        postgres_user_repository._next_id = 1
+
+    login_tracker.clear()
 
     # Reset onboarding
     if hasattr(onboarding_repository, "_onboarding"):
@@ -32,7 +48,21 @@ def reset_in_memory_repositories():
     if hasattr(risk_repository, "_next_assessment_id"):
         risk_repository._next_assessment_id = 1
 
+    try:
+        from app.ports.adapters.google_oauth_verifier import google_jwks_client
+
+        google_jwks_client.clear_overrides()
+    except Exception:
+        pass
+
     yield
+
+    try:
+        from app.ports.adapters.google_oauth_verifier import google_jwks_client
+
+        google_jwks_client.clear_overrides()
+    except Exception:
+        pass
 
 
 @pytest_asyncio.fixture

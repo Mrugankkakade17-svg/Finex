@@ -39,6 +39,7 @@ from app.routers.local_application import router as local_application_router
 from app.routers.local_foundation import router as local_foundation_router
 from app.routers.local_portfolio import router as local_portfolio_router
 from app.routers.local_risk import router as local_risk_router
+from app.routers.market import router as market_router
 from app.routers.onboarding import router as onboarding_router
 from app.routers.ops_hardening import router as ops_hardening_router
 from app.routers.paper import router as paper_router
@@ -103,6 +104,10 @@ def create_app(
         application.state.local_risk_store = local_risk_store
         application.state.local_portfolio_store = local_portfolio_store
         application.state.local_foundation_store = local_foundation_store
+        from app.repositories.postgres_user_repository import postgres_user_repository
+        from app.services import auth_service
+
+        auth_service.user_repository = postgres_user_repository
 
     application.add_middleware(CSVUploadRequestLimitMiddleware)
     application.add_middleware(LocalApplicationBoundaryMiddleware)
@@ -122,6 +127,7 @@ def create_app(
     application.include_router(consent_profile_router)
     application.include_router(local_application_router)
     application.include_router(local_portfolio_router)
+    application.include_router(market_router)
     application.include_router(local_risk_router)
     application.include_router(local_foundation_router)
     application.include_router(portfolio_router)
