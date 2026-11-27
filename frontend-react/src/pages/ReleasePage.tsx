@@ -321,7 +321,7 @@ export const ReleasePage: React.FC = () => {
                   justifyContent: 'space-between',
                   gap: '12px',
                   padding: '10px 14px',
-                  background: '#F6FAF7',
+                  background: 'var(--color-surface-elevated)',
                   borderRadius: '10px',
                   borderLeft: '4px solid var(--color-accent-coral)',
                 }}
@@ -369,7 +369,7 @@ export const ReleasePage: React.FC = () => {
                   key={s.signoff_id}
                   style={{
                     padding: '14px 16px',
-                    background: '#F6FAF7',
+                    background: 'var(--color-surface-elevated)',
                     borderRadius: '12px',
                     borderLeft: '4px solid var(--color-accent-violet)',
                   }}
@@ -532,16 +532,16 @@ export const ReleasePage: React.FC = () => {
               gap: '10px',
             }}
           >
-            <li style={{ padding: '10px 14px', background: '#F6FAF7', borderRadius: '10px' }}>
+            <li style={{ padding: '10px 14px', background: 'var(--color-surface-elevated)', borderRadius: '10px' }}>
               <strong>RUNBOOK-01:</strong> Daily Production Observability &amp; Health Triage
             </li>
-            <li style={{ padding: '10px 14px', background: '#F6FAF7', borderRadius: '10px' }}>
+            <li style={{ padding: '10px 14px', background: 'var(--color-surface-elevated)', borderRadius: '10px' }}>
               <strong>RUNBOOK-02:</strong> Zero-Downtime Rollback &amp; Database Snapshots
             </li>
-            <li style={{ padding: '10px 14px', background: '#F6FAF7', borderRadius: '10px' }}>
+            <li style={{ padding: '10px 14px', background: 'var(--color-surface-elevated)', borderRadius: '10px' }}>
               <strong>RUNBOOK-03:</strong> Emergency Kill Switch &amp; Feature Flags
             </li>
-            <li style={{ padding: '10px 14px', background: '#F6FAF7', borderRadius: '10px' }}>
+            <li style={{ padding: '10px 14px', background: 'var(--color-surface-elevated)', borderRadius: '10px' }}>
               <strong>RUNBOOK-04:</strong> Pilot Support &amp; Feedback Ingestion
             </li>
           </ul>
@@ -570,17 +570,17 @@ export const ReleasePage: React.FC = () => {
               gap: '10px',
             }}
           >
-            <li style={{ padding: '10px 14px', background: '#F6FAF7', borderRadius: '10px' }}>
+            <li style={{ padding: '10px 14px', background: 'var(--color-surface-elevated)', borderRadius: '10px' }}>
               <strong>v1.1:</strong> Live Broker API connectivity (Zerodha Kite &amp; Upstox
               sandboxes)
             </li>
-            <li style={{ padding: '10px 14px', background: '#F6FAF7', borderRadius: '10px' }}>
+            <li style={{ padding: '10px 14px', background: 'var(--color-surface-elevated)', borderRadius: '10px' }}>
               <strong>v1.1:</strong> Automated recurring SIP simulator with tax-loss harvesting
             </li>
-            <li style={{ padding: '10px 14px', background: '#F6FAF7', borderRadius: '10px' }}>
+            <li style={{ padding: '10px 14px', background: 'var(--color-surface-elevated)', borderRadius: '10px' }}>
               <strong>v1.2:</strong> Fine-tuned local LLM via quantized Ollama integration
             </li>
-            <li style={{ padding: '10px 14px', background: '#F6FAF7', borderRadius: '10px' }}>
+            <li style={{ padding: '10px 14px', background: 'var(--color-surface-elevated)', borderRadius: '10px' }}>
               <strong>v1.2:</strong> Sovereign Gold Bonds (SGB) &amp; multi-currency ledger support
             </li>
           </ul>
