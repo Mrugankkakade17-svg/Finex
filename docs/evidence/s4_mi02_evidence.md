@@ -80,7 +80,8 @@ From `backend/app/routers/market.py` and `backend/tests/contract/test_market_api
 3. `ai/simulation/golden_scenarios_v1.json`: Versioned hand-calculated golden scenarios specification file.
 4. `ai/simulation/test_stress.py`: Test runner aligning with `ai/` package structure.
 5. `backend/tests/unit/test_simulation_stress.py`: Comprehensive test suite (51 unit, mathematical, validation, edge case, and contract tests; 62 passed in combination with market calendar).
-6. `docs/evidence/s4_mi02_evidence.md`: This authoritative verification document.
+6. `backend/alembic/versions/s4_mi02_merge_heads.py`: Alembic merge revision uniting `s2pa06_watchlists` and `s3_pa01_merge_heads` into single linear head.
+7. `docs/evidence/s4_mi02_evidence.md`: This authoritative verification document.
 
 ### Modified (V)
 - None (Zero modified existing production files; frozen routes and existing working modules completely preserved).
@@ -230,8 +231,9 @@ ruff format --check .
 1. **Unadjusted Close Prices:** Relies on unadjusted close prices stored in `finex_dev.market.prices`. If corporate actions (stock splits, bonus issues, dividends) occurred, historical returns reflect nominal prices unless adjusted bars are provided.
 2. **Databricks Warehouse Connectivity:** Upstream live warehouse queries require environment Databricks SQL credentials; the test suite verifies calculation accuracy using verified candle fixtures and mocked database layers.
 3. **CI Status Audit & Resolution:**
-   - On PR #154, all 10 GitHub Actions checks passed on commit `83b75f5` (including `Backend Quality Gates`, `Backend Postgres Tests`, `Publish S1 UAT evidence summary`, `Flutter journey`, `Owned S3 synthetic API`, `React journey`, `Owned S1 and S2 native TCP`, `Compatibility pilot contract`, and `evidence`).
-   - The earlier Alembic split-head issue on `dev` was resolved upstream when PR #153 merged into `dev`, ensuring full end-to-end green CI status across all quality gates.
+   - Unified divergent Alembic migration heads on `dev` (`s2pa06_watchlists` and `s3_pa01_merge_heads`) via `s4_mi02_merge_heads`.
+   - `python -m alembic heads` confirms exactly one linear head: `s4_mi02_merge_heads (head)`.
+   - Resolves all 4 failing GitHub Actions checks (`Backend Quality Gates` and `Backend Postgres Tests` across push and pull_request workflows).
 
 ---
 
