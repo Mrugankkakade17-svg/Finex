@@ -177,7 +177,7 @@ All endpoints are exposed under tag `suitability` and present in `/openapi.json`
 
 ### Unit & Contract Tests
 - `python -m pytest tests/unit/test_suitability_service.py tests/contract/test_suitability_api.py`
-  - **Result**: **34 PASSED** (including 8 new regression tests for duplicate asset classes and allocation total validation)
+  - **Result**: **39 PASSED** (including boundary tolerance normalization, 6-decimal residual allocation, and exact monetary capital conservation tests)
 
 ### Full Backend Test Suite
 - `python -m pytest -m "not postgres" -q`
@@ -190,11 +190,11 @@ All endpoints are exposed under tag `suitability` and present in `/openapi.json`
 
 1. `backend/app/core/exceptions.py` — Added `SuitabilityException(FinExException)`.
 2. `backend/app/schemas/suitability.py` — Pydantic schemas for request/response models, invariants, and enums.
-3. `backend/app/services/suitability_service.py` — Core suitability, drift, and rebalance calculation engine with custom allocation total and duplicate checks.
+3. `backend/app/services/suitability_service.py` — Core suitability, drift, exact weight normalization (`_normalize_allocation_weights`), and rebalance plan generation with monetary capital conservation.
 4. `backend/app/routers/suitability.py` — FastAPI REST endpoints mounted at `/api/v1/suitability`.
 5. `backend/app/main.py` — Router registration.
-6. `backend/tests/unit/test_suitability_service.py` — 24 unit, property, invariant, tolerance, and persona tests.
-7. `backend/tests/contract/test_suitability_api.py` — 10 contract, OpenAPI, authentication, user-isolation, and allocation validation tests.
+6. `backend/tests/unit/test_suitability_service.py` — 28 unit, property, invariant, tolerance, boundary normalization, and persona tests.
+7. `backend/tests/contract/test_suitability_api.py` — 11 contract, OpenAPI, authentication, user-isolation, and boundary allocation validation tests.
 8. `docs/evidence/s3_li01_evidence.md` — Authoritative evidence document.
 
 ---
@@ -207,6 +207,7 @@ All endpoints are exposed under tag `suitability` and present in `/openapi.json`
 ---
 
 ## 9. Reviewer Finding Remediation: Allocation Validation & Zero-Sum Invariant (PR #160)
+
 
 ### 9.1 Reviewer Finding Summary
 - **Reviewer**: `@Mrugankkakade17-svg` (Comment ID: `4721224117` on `backend/app/services/suitability_service.py:494`)
@@ -255,4 +256,59 @@ In `backend/app/services/suitability_service.py`, custom allocations now pass th
 - `test_rebalance_endpoint_duplicate_asset_class_returns_400`: FastAPI contract test verifying HTTP 400 and `DUPLICATE_ASSET_CLASS` error code.
 - `test_rebalance_endpoint_incomplete_allocation_total_returns_400`: FastAPI contract test verifying HTTP 400 and `INVALID_ALLOCATION_TOTAL` error code for 80% custom allocation.
 - `test_rebalance_endpoint_excess_allocation_total_returns_400`: FastAPI contract test verifying HTTP 400 and `INVALID_ALLOCATION_TOTAL` error code for 120% custom allocation.
+
+---
+
+## 10. Second Reviewer Correction: Exact Normalization & Capital Conservation (PR #160)
+
+### 10.1 Reviewer Finding
+- **Reviewer**: `@Mrugankkakade17-svg` (Comment ID: `4721845084` on line 538)
+- **Finding**:
+  > *"The tolerance allows totals different from 100%, but these weights are only divided by 100 and stored; they are not normalized. E.g. 20%, 30%, 49.95% is accepted and remains a 0.9995 total, so `sum(adjustment_weight)` is 0.0005 and indicative amounts do not conserve the portfolio value. The fractional branch has the same issue, compounded by 6-decimal quantization. Please normalize accepted weights to an exact total (and ensure rounding leaves the total exactly 1), or tighten validation so only totals that produce the claimed invariant are accepted; add a conservation test at both tolerance boundaries."*
+
+### 10.2 Technical Root Cause & Analysis
+While the previous remediation correctly validated that input totals lay within the documented tolerance window ($\pm 0.1\%$ or $\pm 0.001$), dividing accepted weights by 100 merely converted percentage scales into fractions without normalizing them by the actual input sum. Consequently:
+- Input with total $99.95\%$ yielded stored weights summing to $0.999500 \neq 1.000000$.
+- Target allocations sum to $1.000000$, resulting in:
+  $$\sum \text{drift} = 0.999500 - 1.000000 = -0.000500 \neq 0$$
+  $$\sum \text{adjustment\_weight} = -(-0.000500) = +0.000500 \neq 0$$
+- Indicative monetary adjustments failed exact zero-sum capital conservation ($+\$0.0005 \times V_{\text{portfolio}}$).
+- Independent six-decimal quantization (`10^-6`) can further introduce a $\pm 0.000001$ rounding residual across entries.
+- Independent monetary cent rounding (`0.01`) can create a $\pm \$0.01$ discrepancy on fractional-cent portfolio values.
+
+### 10.3 Exact Mathematical Normalization & Conservation Algorithm
+1. **Validation Pre-Condition**:
+   - Fractional inputs must satisfy $| \text{raw\_total} - 1.0 | \le 0.001$.
+   - Percentage inputs must satisfy $| \text{raw\_total} - 100.0 | \le 0.1$.
+   - Inputs outside tolerance continue to be rejected with HTTP 400 `INVALID_ALLOCATION_TOTAL`.
+2. **Exact Normalization & 6-Decimal Quantization**:
+   - Each accepted raw weight is divided by the actual input sum:
+     $$\text{norm\_w}_i = \frac{w_i}{\sum_j w_j}$$
+   - Quantized to 6 decimal places: $q_i = \text{quantize}(\text{norm\_w}_i, \text{Decimal}("0.000001"), \text{ROUND\_HALF\_UP})$.
+3. **Deterministic Quantization Residual Allocation**:
+   - Compute residual: $\text{residual} = \text{Decimal}("1.000000") - \sum_i q_i$.
+   - If $\text{residual} \neq 0$, deterministically allocate the residual to the entry with the largest quantized weight, using asset class name as a stable alphabetical tie-breaker.
+   - Assert all normalized weights remain non-negative and $\sum_i w_i == \text{Decimal}("1.000000")$ exactly.
+4. **Deterministic Monetary Capital Conservation Policy**:
+   - In `generate_rebalance_plan`, indicative amounts are quantized to cents ($0.01$).
+   - Compute monetary residual: $\text{monetary\_residual} = \text{Decimal}("0.00") - \sum_i \text{indicative\_amount}_i$.
+   - If $\text{monetary\_residual} \neq 0$, deterministically assign the rounding cent to the non-zero adjustment with the largest absolute monetary amount, using asset class as stable tie-breaker.
+   - This proves $\sum \text{indicative\_amount} == \text{Decimal}("0.00")$ across all portfolio values, including irregular fractional-cent amounts ($150,000.55, $100,000.01, $99.99).
+
+### 10.4 Invariant Mathematical Proofs
+For every accepted custom allocation:
+$$\sum_i w_{i,\text{current}} = \text{Decimal}("1.000000") \quad \text{[Exact]}$$
+$$\sum_i w_{i,\text{target}} = \text{Decimal}("1.000000") \quad \text{[Exact]}$$
+$$\sum_i \text{drift}_i = \sum_i (w_{i,\text{current}} - w_{i,\text{target}}) = 1.000000 - 1.000000 = \text{Decimal}("0.000000") \quad \text{[Exact]}$$
+$$\sum_i \text{adjustment\_weight}_i = \sum_i (-\text{drift}_i) = \text{Decimal}("0.000000") \quad \text{[Exact]}$$
+$$\sum_i \text{indicative\_amount}_i = \text{Decimal}("0.00") \quad \text{[Exact to the cent]}$$
+
+### 10.5 Extended Regression Test Suite (39/39 Passing)
+5 additional tests added (suite expanded from 34 to 39 tests, 100% passing):
+- `test_custom_allocation_percentage_scale_boundary_normalization`: Asserts exact 1.000000 weight sum, 0.000000 drift sum, 0.000000 adjustment sum, and $0.00 monetary sum at 99.9%, 99.95% (reviewer case), and 100.1%.
+- `test_custom_allocation_fractional_scale_boundary_normalization`: Asserts exact conservation at 0.999 and 1.001.
+- `test_custom_allocation_quantization_residual_deterministic_allocation`: Tests 3 equal weights of 33.3% producing 6-decimal residual $+0.000001$; asserts deterministic tie-breaking to CASH, sum == 1.000000, and idempotency across repeated runs.
+- `test_custom_allocation_monetary_conservation_fractional_cents`: Asserts $\sum \text{indicative\_amount} == \$0.00$ across $150,000.55, $100,000.01, $99.99, $12,345.67, and $0.01.
+- `test_rebalance_endpoint_boundary_allocations_normalized_and_conserved`: FastAPI API contract test asserting that HTTP 200 responses return exactly normalized allocations and conserved adjustments.
+
 

@@ -12,7 +12,7 @@ STRICT COMPLIANCE:
 """
 
 from decimal import ROUND_HALF_UP, Decimal
-from typing import Any, Dict, List, Literal, Optional, Tuple, Union
+from typing import Any, Dict, List, Literal, Optional, Tuple, Union, cast
 
 from ai.risk.schemas import QuestionAnswer, RiskAssessmentRequest
 from ai.risk.scoring import RiskScoringEngine
@@ -275,6 +275,59 @@ class SuitabilityService:
             educational_disclaimer=EDUCATIONAL_DISCLAIMER,
         )
 
+    @staticmethod
+    def _normalize_allocation_weights(
+        raw_items: List[Tuple[str, Decimal]],
+    ) -> Dict[str, Decimal]:
+        """Normalize raw weights to sum exactly to Decimal('1.000000').
+
+        Applies high-precision Decimal division by raw total, quantizes each weight
+        to 6 decimal places (10^-6), and deterministically allocates any quantization
+        residual (1.000000 - sum(quantized_weights)) to the largest weight with stable
+        alphabetical tie-breaking.
+        """
+        raw_total = sum(w for _, w in raw_items)
+        if raw_total <= _ZERO:
+            raise SuitabilityException(
+                "Total allocation weight must be strictly positive for normalization.",
+                error_code="INVALID_ALLOCATION_TOTAL",
+                status_code=400,
+            )
+
+        quantized_map: Dict[str, Decimal] = {}
+        for ac, w in raw_items:
+            norm_w = w / raw_total
+            quantized_map[ac] = norm_w.quantize(Decimal("0.000001"), rounding=ROUND_HALF_UP)
+
+        residual = Decimal("1.000000") - sum(quantized_map.values())
+        if residual != _ZERO:
+            # Deterministically assign residual to the entry with the largest weight,
+            # using asset class name as stable tie-breaker.
+            best_ac = sorted(
+                quantized_map.keys(),
+                key=lambda k: (-quantized_map[k], k),
+            )[0]
+            quantized_map[best_ac] += residual
+
+        # Safety check: ensure all weights remain non-negative
+        for ac, w in quantized_map.items():
+            if w < _ZERO:
+                raise SuitabilityException(
+                    f"Normalized weight for asset class '{ac}' became negative ({w}).",
+                    error_code="NEGATIVE_WEIGHT",
+                    status_code=400,
+                )
+
+        final_sum = sum(quantized_map.values())
+        if final_sum != Decimal("1.000000"):
+            raise SuitabilityException(
+                f"Failed to normalize allocation weights to exactly 1.0 (got {final_sum}).",
+                error_code="INVALID_ALLOCATION_TOTAL",
+                status_code=400,
+            )
+
+        return quantized_map
+
     def calculate_drift(
         self,
         current_allocations: Dict[str, Decimal],
@@ -351,7 +404,37 @@ class SuitabilityService:
         """Generate deterministic, explainable rebalance recommendations from drift items.
 
         Formula: adjustment_weight = target_weight - current_weight = -drift
+        Conserves portfolio capital exactly: sum(indicative_amounts) == Decimal('0.00').
         """
+        # Pre-compute indicative monetary amounts ensuring exact zero-sum conservation
+        amounts_map: Dict[str, Optional[Decimal]] = {}
+        if portfolio_value is not None and portfolio_value > _ZERO:
+            raw_amts: Dict[str, Decimal] = {
+                item.asset_class: (
+                    (item.target_weight - item.current_weight) * portfolio_value
+                ).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+                for item in drift_items
+            }
+            monetary_residual = Decimal("0.00") - sum(raw_amts.values())
+            if monetary_residual != Decimal("0.00"):
+                candidates = [
+                    item.asset_class
+                    for item in drift_items
+                    if (item.target_weight - item.current_weight) != _ZERO
+                ]
+                if candidates:
+                    # Deterministically assign monetary rounding residual (e.g. ±$0.01)
+                    # to the non-zero adjustment with the largest absolute amount,
+                    # using asset class name as stable tie-breaker.
+                    best_ac = sorted(
+                        candidates,
+                        key=lambda k: (-abs(raw_amts[k]), k),
+                    )[0]
+                    raw_amts[best_ac] += monetary_residual
+            amounts_map = cast(Dict[str, Optional[Decimal]], raw_amts)
+        else:
+            amounts_map = {item.asset_class: None for item in drift_items}
+
         plan_items: List[RebalancePlanItem] = []
 
         for item in drift_items:
@@ -376,12 +459,8 @@ class SuitabilityService:
             benchmark_symbol = benchmark["benchmark_symbol"] if benchmark else None
             benchmark_name = benchmark["benchmark_name"] if benchmark else None
 
-            # Indicative monetary amount if portfolio value available
-            indicative_amount: Optional[Decimal] = None
-            if portfolio_value is not None and portfolio_value > _ZERO:
-                indicative_amount = (adj_weight * portfolio_value).quantize(
-                    Decimal("0.01"), rounding=ROUND_HALF_UP
-                )
+            # Indicative monetary amount from pre-computed conserved amounts map
+            indicative_amount = amounts_map.get(ac)
 
             # Educational explanation
             explanation = self._build_educational_explanation(
@@ -477,11 +556,14 @@ class SuitabilityService:
                 is_empty = True
 
             asset_allocations = getattr(portfolio_summary, "asset_allocation", []) or []
+            summary_raw_items: List[Tuple[str, Decimal]] = []
             for item in asset_allocations:
                 cat = str(getattr(item, "category", "")).strip().upper()
                 pct = Decimal(str(getattr(item, "percentage", 0)))
-                # S3-PA01 percentage is on 0-100 scale; convert to weight fraction
-                current_map[cat] = (pct / _HUNDRED).quantize(Decimal("0.000001"))
+                if cat and pct > _ZERO:
+                    summary_raw_items.append((cat, pct))
+            if summary_raw_items and not is_empty:
+                current_map = self._normalize_allocation_weights(summary_raw_items)
         elif request.current_allocation:
             # Direct client-supplied allocation: validate asset uniqueness, finite weights,
             # and verify total equals 1.0 (or 100%) within documented tolerance for zero-sum drift.
@@ -535,8 +617,6 @@ class SuitabilityService:
                         error_code="INVALID_ALLOCATION_TOTAL",
                         status_code=400,
                     )
-                for ac, w in raw_items:
-                    current_map[ac] = (w / _HUNDRED).quantize(Decimal("0.000001"))
             else:
                 diff = abs(raw_total - _ONE)
                 if diff > Decimal("0.001"):
@@ -547,8 +627,9 @@ class SuitabilityService:
                         error_code="INVALID_ALLOCATION_TOTAL",
                         status_code=400,
                     )
-                for ac, w in raw_items:
-                    current_map[ac] = w.quantize(Decimal("0.000001"))
+
+            # Exactly normalize accepted weights to sum to Decimal('1.000000')
+            current_map = self._normalize_allocation_weights(raw_items)
 
             if request.portfolio_value is not None:
                 total_val = Decimal(str(request.portfolio_value))

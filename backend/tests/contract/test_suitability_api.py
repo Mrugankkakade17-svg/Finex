@@ -189,3 +189,41 @@ def test_rebalance_endpoint_excess_allocation_total_returns_400(client: TestClie
     body = response.json()
     assert body["error_code"] == "INVALID_ALLOCATION_TOTAL"
     assert "must equal 100%" in body["message"]
+
+
+def test_rebalance_endpoint_boundary_allocations_normalized_and_conserved(
+    client: TestClient,
+) -> None:
+    token = create_access_token({"sub": "user-test", "user_id": "user-test"})
+    # Lower boundary 99.9% allocation (50% + 30% + 19.9%)
+    response = client.post(
+        "/api/v1/suitability/rebalance",
+        headers={"Authorization": f"Bearer {token}"},
+        json={
+            "risk_category": "MODERATE",
+            "current_allocation": [
+                {"asset_class": "EQUITY", "weight": 50.0},
+                {"asset_class": "FIXED_INCOME", "weight": 30.0},
+                {"asset_class": "CASH", "weight": 19.9},
+            ],
+            "portfolio_value": 150000.55,
+        },
+    )
+    assert response.status_code == 200
+    data = response.json()["data"]
+    # Check normalized current weights sum to exactly 1.000000
+    w_sum = sum(float(item["current_weight"]) for item in data["drift_summary"])
+    assert round(w_sum, 6) == 1.000000
+    # Check drift sum equals exactly zero
+    drift_sum = sum(float(item["drift"]) for item in data["drift_summary"])
+    assert round(drift_sum, 6) == 0.000000
+    # Check adjustment weight sum equals exactly zero
+    adj_sum = sum(float(item["adjustment_weight"]) for item in data["rebalance_plan"])
+    assert round(adj_sum, 6) == 0.000000
+    # Check monetary adjustments conserve portfolio value (sum == 0.00)
+    amt_sum = sum(
+        float(item["indicative_amount"])
+        for item in data["rebalance_plan"]
+        if item["indicative_amount"] is not None
+    )
+    assert round(amt_sum, 2) == 0.00

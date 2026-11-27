@@ -486,8 +486,8 @@ def test_custom_allocation_excess_total_rejected_120_percent() -> None:
 
 
 def test_custom_allocation_tolerance_boundaries() -> None:
-    """Validate 0.1% tolerance boundary: 0.9995 accepted, 0.998 rejected."""
-    # Accepted within tolerance (0.9995 on fractional scale)
+    """Validate 0.1% tolerance boundary: 0.9995 accepted and normalized, 0.998 rejected."""
+    # Accepted within tolerance (0.9995 on fractional scale) -> must be normalized to exactly 1.0
     req_ok = SuitabilityRebalanceRequest(
         risk_category="MODERATE",
         current_allocation=[
@@ -497,6 +497,9 @@ def test_custom_allocation_tolerance_boundaries() -> None:
     )
     res_ok = suitability_service.evaluate_suitability_rebalance(req_ok)
     assert res_ok.risk_category == "MODERATE"
+    assert sum(item.current_weight for item in res_ok.drift_summary) == Decimal("1.000000")
+    assert sum(item.drift for item in res_ok.drift_summary) == Decimal("0.000000")
+    assert sum(item.adjustment_weight for item in res_ok.rebalance_plan) == Decimal("0.000000")
 
     # Rejected outside tolerance (0.998 on fractional scale)
     req_bad = SuitabilityRebalanceRequest(
@@ -509,6 +512,172 @@ def test_custom_allocation_tolerance_boundaries() -> None:
     with pytest.raises(SuitabilityException) as exc_bad:
         suitability_service.evaluate_suitability_rebalance(req_bad)
     assert exc_bad.value.error_code == "INVALID_ALLOCATION_TOTAL"
+
+
+def test_custom_allocation_percentage_scale_boundary_normalization() -> None:
+    """Validate exact normalization and zero-sum conservation at percentage scale boundaries."""
+    portfolio_val = Decimal("100000.00")
+
+    # 1. Lower boundary: 99.9% (50.0% + 30.0% + 19.9%)
+    req_lower = SuitabilityRebalanceRequest(
+        risk_category="MODERATE",
+        current_allocation=[
+            CurrentAllocationItem(asset_class="EQUITY", weight=Decimal("50.0")),
+            CurrentAllocationItem(asset_class="FIXED_INCOME", weight=Decimal("30.0")),
+            CurrentAllocationItem(asset_class="CASH", weight=Decimal("19.9")),
+        ],
+        portfolio_value=portfolio_val,
+    )
+    res_lower = suitability_service.evaluate_suitability_rebalance(req_lower)
+    assert sum(item.current_weight for item in res_lower.drift_summary) == Decimal("1.000000")
+    assert sum(item.target_weight for item in res_lower.drift_summary) == Decimal("1.000000")
+    assert sum(item.drift for item in res_lower.drift_summary) == Decimal("0.000000")
+    assert sum(item.adjustment_weight for item in res_lower.rebalance_plan) == Decimal("0.000000")
+    assert sum(
+        item.indicative_amount for item in res_lower.rebalance_plan if item.indicative_amount
+    ) == Decimal("0.00")
+
+    # 2. Reviewer explicit finding case: 99.95% (20.0% + 30.0% + 49.95%)
+    req_finding = SuitabilityRebalanceRequest(
+        risk_category="MODERATE",
+        current_allocation=[
+            CurrentAllocationItem(asset_class="EQUITY", weight=Decimal("20.0")),
+            CurrentAllocationItem(asset_class="FIXED_INCOME", weight=Decimal("30.0")),
+            CurrentAllocationItem(asset_class="CASH", weight=Decimal("49.95")),
+        ],
+        portfolio_value=portfolio_val,
+    )
+    res_finding = suitability_service.evaluate_suitability_rebalance(req_finding)
+    assert sum(item.current_weight for item in res_finding.drift_summary) == Decimal("1.000000")
+    assert sum(item.target_weight for item in res_finding.drift_summary) == Decimal("1.000000")
+    assert sum(item.drift for item in res_finding.drift_summary) == Decimal("0.000000")
+    assert sum(item.adjustment_weight for item in res_finding.rebalance_plan) == Decimal("0.000000")
+    assert sum(
+        item.indicative_amount for item in res_finding.rebalance_plan if item.indicative_amount
+    ) == Decimal("0.00")
+
+    # 3. Upper boundary: 100.1% (50.0% + 30.0% + 20.1%)
+    req_upper = SuitabilityRebalanceRequest(
+        risk_category="MODERATE",
+        current_allocation=[
+            CurrentAllocationItem(asset_class="EQUITY", weight=Decimal("50.0")),
+            CurrentAllocationItem(asset_class="FIXED_INCOME", weight=Decimal("30.0")),
+            CurrentAllocationItem(asset_class="CASH", weight=Decimal("20.1")),
+        ],
+        portfolio_value=portfolio_val,
+    )
+    res_upper = suitability_service.evaluate_suitability_rebalance(req_upper)
+    assert sum(item.current_weight for item in res_upper.drift_summary) == Decimal("1.000000")
+    assert sum(item.target_weight for item in res_upper.drift_summary) == Decimal("1.000000")
+    assert sum(item.drift for item in res_upper.drift_summary) == Decimal("0.000000")
+    assert sum(item.adjustment_weight for item in res_upper.rebalance_plan) == Decimal("0.000000")
+    assert sum(
+        item.indicative_amount for item in res_upper.rebalance_plan if item.indicative_amount
+    ) == Decimal("0.00")
+
+
+def test_custom_allocation_fractional_scale_boundary_normalization() -> None:
+    """Validate exact normalization and zero-sum conservation at fractional scale boundaries."""
+    portfolio_val = Decimal("200000.00")
+
+    # 1. Lower boundary: 0.999 (0.500 + 0.300 + 0.199)
+    req_lower = SuitabilityRebalanceRequest(
+        risk_category="CONSERVATIVE",
+        current_allocation=[
+            CurrentAllocationItem(asset_class="EQUITY", weight=Decimal("0.500")),
+            CurrentAllocationItem(asset_class="FIXED_INCOME", weight=Decimal("0.300")),
+            CurrentAllocationItem(asset_class="CASH", weight=Decimal("0.199")),
+        ],
+        portfolio_value=portfolio_val,
+    )
+    res_lower = suitability_service.evaluate_suitability_rebalance(req_lower)
+    assert sum(item.current_weight for item in res_lower.drift_summary) == Decimal("1.000000")
+    assert sum(item.drift for item in res_lower.drift_summary) == Decimal("0.000000")
+    assert sum(item.adjustment_weight for item in res_lower.rebalance_plan) == Decimal("0.000000")
+    assert sum(
+        item.indicative_amount for item in res_lower.rebalance_plan if item.indicative_amount
+    ) == Decimal("0.00")
+
+    # 2. Upper boundary: 1.001 (0.500 + 0.300 + 0.201)
+    req_upper = SuitabilityRebalanceRequest(
+        risk_category="CONSERVATIVE",
+        current_allocation=[
+            CurrentAllocationItem(asset_class="EQUITY", weight=Decimal("0.500")),
+            CurrentAllocationItem(asset_class="FIXED_INCOME", weight=Decimal("0.300")),
+            CurrentAllocationItem(asset_class="CASH", weight=Decimal("0.201")),
+        ],
+        portfolio_value=portfolio_val,
+    )
+    res_upper = suitability_service.evaluate_suitability_rebalance(req_upper)
+    assert sum(item.current_weight for item in res_upper.drift_summary) == Decimal("1.000000")
+    assert sum(item.drift for item in res_upper.drift_summary) == Decimal("0.000000")
+    assert sum(item.adjustment_weight for item in res_upper.rebalance_plan) == Decimal("0.000000")
+    assert sum(
+        item.indicative_amount for item in res_upper.rebalance_plan if item.indicative_amount
+    ) == Decimal("0.00")
+
+
+def test_custom_allocation_quantization_residual_deterministic_allocation() -> None:
+    """Validate deterministic allocation of six-decimal quantization residual."""
+    # 3 equal weights of 33.3% sum to 99.9%.
+    # 33.3 / 99.9 = 1/3 = 0.333333333...
+    # Quantized independently to 6 decimals: 0.333333 * 3 = 0.999999.
+    # Residual = +0.000001.
+    # Alphabetical tie-breaker: CASH < EQUITY < FIXED_INCOME -> CASH gets +0.000001.
+    req = SuitabilityRebalanceRequest(
+        risk_category="MODERATE",
+        current_allocation=[
+            CurrentAllocationItem(asset_class="EQUITY", weight=Decimal("33.3")),
+            CurrentAllocationItem(asset_class="FIXED_INCOME", weight=Decimal("33.3")),
+            CurrentAllocationItem(asset_class="CASH", weight=Decimal("33.3")),
+        ],
+    )
+    res1 = suitability_service.evaluate_suitability_rebalance(req)
+    res2 = suitability_service.evaluate_suitability_rebalance(req)
+
+    weights1 = {item.asset_class: item.current_weight for item in res1.drift_summary}
+    weights2 = {item.asset_class: item.current_weight for item in res2.drift_summary}
+
+    # Exactly 1.000000 total
+    assert sum(weights1.values()) == Decimal("1.000000")
+    # All weights non-negative
+    for w in weights1.values():
+        assert w > Decimal("0.0")
+
+    # CASH received the residual of 0.000001
+    assert weights1["CASH"] == Decimal("0.333334")
+    assert weights1["EQUITY"] == Decimal("0.333333")
+    assert weights1["FIXED_INCOME"] == Decimal("0.333333")
+
+    # Deterministic and idempotent across repeated runs
+    assert weights1 == weights2
+
+
+def test_custom_allocation_monetary_conservation_fractional_cents() -> None:
+    """Validate exact monetary conservation (sum == 0.00) across fractional-cent values."""
+    req = SuitabilityRebalanceRequest(
+        risk_category="MODERATE",
+        current_allocation=[
+            CurrentAllocationItem(asset_class="EQUITY", weight=Decimal("20.0")),
+            CurrentAllocationItem(asset_class="FIXED_INCOME", weight=Decimal("30.0")),
+            CurrentAllocationItem(asset_class="CASH", weight=Decimal("49.95")),
+        ],
+        portfolio_value=Decimal("150000.55"),
+    )
+
+    for val in [
+        Decimal("150000.55"),
+        Decimal("100000.01"),
+        Decimal("99.99"),
+        Decimal("12345.67"),
+        Decimal("0.01"),
+    ]:
+        req.portfolio_value = val
+        res = suitability_service.evaluate_suitability_rebalance(req)
+        amt_sum = sum(
+            item.indicative_amount for item in res.rebalance_plan if item.indicative_amount
+        )
+        assert amt_sum == Decimal("0.00"), f"Monetary adjustments do not conserve capital on {val}"
 
 
 def test_custom_allocation_zero_sum_rebalancing_and_value_conservation() -> None:
@@ -525,14 +694,18 @@ def test_custom_allocation_zero_sum_rebalancing_and_value_conservation() -> None
     )
     res = suitability_service.evaluate_suitability_rebalance(req)
 
-    # 1. Sum of signed drifts must equal zero
+    # 1. Sum of current weights must equal exactly 1.000000
+    curr_sum = sum(item.current_weight for item in res.drift_summary)
+    assert curr_sum == Decimal("1.000000")
+
+    # 2. Sum of signed drifts must equal exactly zero
     drift_sum = sum(item.drift for item in res.drift_summary)
-    assert abs(drift_sum) < Decimal("0.000001")
+    assert drift_sum == Decimal("0.000000")
 
-    # 2. Sum of adjustment weights must equal zero
+    # 3. Sum of adjustment weights must equal exactly zero
     adj_sum = sum(item.adjustment_weight for item in res.rebalance_plan)
-    assert abs(adj_sum) < Decimal("0.000001")
+    assert adj_sum == Decimal("0.000000")
 
-    # 3. Sum of indicative monetary adjustments must equal zero (portfolio value conservation)
+    # 4. Sum of indicative monetary adjustments must equal zero (portfolio value conservation)
     amt_sum = sum(item.indicative_amount for item in res.rebalance_plan if item.indicative_amount)
     assert amt_sum == Decimal("0.00")
