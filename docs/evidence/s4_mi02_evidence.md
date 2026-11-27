@@ -79,7 +79,7 @@ From `backend/app/routers/market.py` and `backend/tests/contract/test_market_api
 2. `ai/simulation/stress.py`: Core analytical stress and drawdown calculation engine.
 3. `ai/simulation/golden_scenarios_v1.json`: Versioned hand-calculated golden scenarios specification file.
 4. `ai/simulation/test_stress.py`: Test runner aligning with `ai/` package structure.
-5. `backend/tests/unit/test_simulation_stress.py`: Comprehensive test suite (35 unit, mathematical, validation, edge case, and contract tests).
+5. `backend/tests/unit/test_simulation_stress.py`: Comprehensive test suite (51 unit, mathematical, validation, edge case, and contract tests; 62 passed in combination with market calendar).
 6. `docs/evidence/s4_mi02_evidence.md`: This authoritative verification document.
 
 ### Modified (V)
@@ -114,12 +114,12 @@ Let $P_t$ denote the historical close price observation at chronological index $
    *(Expressed as a negative decimal/percentage, e.g., $-0.35$ or $-35.0\%$. Zero if prices never declined below peak).*
 
 6. **Peak Date ($t_{\text{peak}}$):**
-   The date on or before the MDD trough where the preceding running peak was achieved:
-   $$t_{\text{peak}} = \max \{ s \le t_{\text{trough}} \mid P_s = M_{t_{\text{trough}}} \}$$
+   The date on or before the MDD trough where the preceding running peak was first achieved (deterministic earliest-date tie-breaking):
+   $$t_{\text{peak}} = \min \{ s \le t_{\text{trough}} \mid P_s = M_{t_{\text{trough}}} \}$$
 
 7. **Trough Date ($t_{\text{trough}}$):**
-   The date at which the maximum drawdown occurs:
-   $$t_{\text{trough}} = \arg\min_{0 \le t \le T} DD_t$$
+   The date at which the maximum drawdown first occurs (deterministic earliest-date tie-breaking):
+   $$t_{\text{trough}} = \min \{ 0 \le t \le T \mid DD_t = MDD \}$$
 
 8. **Recovery Date ($t_{\text{recovery}}$):**
    The earliest observation date strictly after the trough where price recovers to or exceeds the prior peak:
@@ -174,31 +174,37 @@ The module defines standard financial market crisis benchmark windows in `HISTOR
 
 ### 8.1 Test Suites Executed
 1. **Simulation Stress Engine & Market Calendar Unit Tests:**
-   Command: `uv run --with-requirements requirements.txt pytest -o addopts='' tests/unit/test_simulation_stress.py tests/unit/test_market_calendar.py -v`
-   Result: **46 passed in 0.97s** (35 simulation stress tests + 11 market calendar tests).
+   Command: `pytest -o addopts='' tests/unit/test_simulation_stress.py tests/unit/test_market_calendar.py -v`
+   Result: **62 passed in 0.89s** (51 simulation stress tests + 11 market calendar tests).
 
 2. **Market API Contract Tests:**
-   Command: `uv run --with-requirements requirements.txt pytest -o addopts='' tests/contract/test_market_api.py -v`
+   Command: `pytest -o addopts='' tests/contract/test_market_api.py -v`
    Result: **12 passed in 8.12s**.
 
 3. **Complete Backend Unit Test Suite:**
-   Command: `uv run --with-requirements requirements.txt pytest -o addopts='' tests/unit -q`
-   Result: **2,208 passed, 387 warnings in 220.12s (03:40)** (100% pass across all 63 unit test suites).
+   Command: `pytest -m "not postgres" -q`
+   Result: **3,125 passed, 4 skipped, 2 xfailed, 2 xpassed in 472.41s (0 failures, 81.74% test coverage exceeding 70% threshold)**.
+
+4. **Static Type Checking (mypy):**
+   Command: `python -m mypy ../ai/simulation tests/unit/test_simulation_stress.py`
+   Result: **Success: no issues found in 3 source files**.
 
 ```text
-tests/unit/test_simulation_stress.py: 35 passed
+tests/unit/test_simulation_stress.py: 51 passed
 tests/unit/test_market_calendar.py: 11 passed
+Total focused suite: 62 passed (0 failures)
 tests/contract/test_market_api.py: 12 passed
-Entire tests/unit/: 2,208 passed (0 failures)
+Entire backend tests (non-postgres): 3,125 passed (0 failures, 81.74% coverage)
+Mypy static typing: 0 errors
 ```
 
 ### 8.2 Linter & Formatter Evidence
 Executed from `backend/`:
 ```bash
-uv run --with ruff ruff check .
+ruff check .
 All checks passed!
 
-uv run --with ruff ruff format --check .
+ruff format --check .
 362 files already formatted
 ```
 
@@ -223,17 +229,9 @@ uv run --with ruff ruff format --check .
 ## 10. Operational Limitations & Upstream Repository Observations
 1. **Unadjusted Close Prices:** Relies on unadjusted close prices stored in `finex_dev.market.prices`. If corporate actions (stock splits, bonus issues, dividends) occurred, historical returns reflect nominal prices unless adjusted bars are provided.
 2. **Databricks Warehouse Connectivity:** Upstream live warehouse queries require environment Databricks SQL credentials; the test suite verifies calculation accuracy using verified candle fixtures and mocked database layers.
-3. **Upstream `dev` Alembic Split Head & PR #154 CI Audit:**
-   - In PR #154 check runs on GitHub Actions, **8 out of 10 checks passed** (including `Publish S1 UAT evidence summary`, `Flutter journey`, `Owned S3 synthetic API`, `React journey`, `Owned S1 and S2 native TCP`, `Compatibility pilot contract`, and `evidence`).
-   - Two workflows failed: `Backend Quality Gates` (`quality`) and `Backend Postgres Tests` (`Pytest Postgres`).
-   - Runner log inspection confirmed the root cause:
-     ```text
-     ERROR [alembic.util.messaging] Multiple head revisions are present for given argument 'head'; please specify a specific target revision, '<branchname>@head' to narrow to a specific head, or 'heads' for all heads
-     FAILED: Multiple head revisions are present for given argument 'head'; please specify a specific target revision, '<branchname>@head' to narrow to a specific head, or 'heads' for all heads
-     ```
-   - Commit `ff4dd15` (PR #147, `feature/s2-pa05`), merged into `origin/dev` immediately before this branch was created, added `backend/alembic/versions/s2mr02_fx007_merge_heads.py` without reconciling `s3_fx006_checkpoint`, leaving `origin/dev` with a split migration head.
-   - In `Backend Postgres Tests`, the migration failure prevented schema creation in the ephemeral postgres runner, resulting in downstream `UndefinedTableError: relation "finex.users" does not exist`.
-   - **Classification:** Upstream `dev` repository defect. S4-MI02 has zero database tables or migrations and introduces no schema changes. Per handbook instructions, database migrations are owned by database code owners and must not be modified in an AI simulation branch.
+3. **CI Status Audit & Resolution:**
+   - On PR #154, all 10 GitHub Actions checks passed on commit `83b75f5` (including `Backend Quality Gates`, `Backend Postgres Tests`, `Publish S1 UAT evidence summary`, `Flutter journey`, `Owned S3 synthetic API`, `React journey`, `Owned S1 and S2 native TCP`, `Compatibility pilot contract`, and `evidence`).
+   - The earlier Alembic split-head issue on `dev` was resolved upstream when PR #153 merged into `dev`, ensuring full end-to-end green CI status across all quality gates.
 
 ---
 
@@ -246,10 +244,11 @@ uv run --with ruff ruff format --check .
 - [x] S2-PA03 Candle contract verified and compatible
 - [x] Ruff check passes with 0 errors
 - [x] Ruff format passes with 362 files formatted
-- [x] 35/35 simulation tests passed
-- [x] 11/11 market calendar tests passed
+- [x] 51/51 simulation tests passed
+- [x] 11/11 market calendar tests passed (62 total in simulation+calendar test run)
 - [x] 12/12 market contract tests passed
-- [x] 2,208/2,208 backend unit tests passed
+- [x] 3,125/3,125 backend non-postgres unit tests passed (81.74% test coverage)
+- [x] Mypy passes with 0 issues in 3 source files
 - [x] Zero breaking changes to frozen routes or working modules
 - [x] PR #154 titled per Sprint 4 convention with secondary reviewer Payal
 
@@ -258,9 +257,9 @@ uv run --with ruff ruff format --check .
 ## 12. Final Pull Request & Commit Information
 - **Pull Request:** [#154](https://github.com/Mrugankkakade17-svg/Finex/pull/154)
 - **PR Title:** `[Sprint 4] [S4-MI02] Stress and drawdown scenarios from stored history`
-- **Head Commit SHA:** `ee9ec059d04ba4e0fec7d6a5e12ec68ef8e36706` (`ee9ec05`)
+- **Head Commit SHA:** `83b75f5305845e279afa17464f22f6ca366029e7` (`83b75f5`) (Follow-up commit pending)
 - **Author:** Mitali (`@mitali2701`)
 - **Assigned Reviewer:** Payal (`@payalmude14-star`)
 - **Branch:** `feature/s4-mi02`
 - **Target:** `dev`
-- **Status:** Open, Ready for Review (Do Not Merge per instructions)
+- **Status:** Open, Ready for Independent Review by Payal (Do Not Merge per instructions)

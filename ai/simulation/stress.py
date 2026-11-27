@@ -26,12 +26,12 @@ Financial & Mathematical Conventions:
 6. Maximum Drawdown (MDD):
    MDD = min_{0 <= t <= T} (DD_t)  (expressed as negative fraction, e.g. -0.35)
    MDD_pct = MDD * 100             (expressed as negative percentage, e.g. -35.0%)
-7. Peak Date:
-   The date on or before the MDD trough where the running peak was established:
-   t_peak = max { s <= t_trough | P_s = M_{t_trough} }
-8. Trough Date:
-   The date at which the maximum drawdown occurs:
-   t_trough = argmin_{0 <= t <= T} (DD_t)
+7. Peak Date (with deterministic earliest-date tie-breaking):
+   The date on or before the MDD trough where the running peak was first established:
+   t_peak = min { s <= t_trough | P_s = M_{t_trough} }
+8. Trough Date (with deterministic earliest-date tie-breaking):
+   The date at which the maximum drawdown first occurs:
+   t_trough = min { 0 <= t <= T | DD_t = MDD }
 9. Recovery Date:
    The earliest date strictly following t_trough where price reaches or exceeds P_peak:
    t_recovery = min { s > t_trough | P_s >= P_peak }

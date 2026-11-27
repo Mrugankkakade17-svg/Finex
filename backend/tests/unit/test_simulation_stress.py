@@ -513,3 +513,216 @@ def test_to_summary_dict_is_fully_json_serializable() -> None:
     assert loaded["max_drawdown"] == -0.2
     assert loaded["peak_date"] == "2026-01-01"
     assert loaded["trough_date"] == "2026-01-02"
+
+
+# ==============================================================================
+# H. Additional Comprehensive Edge Cases & Boundary Tests
+# ==============================================================================
+
+
+def test_two_observations_minimal_valid_series() -> None:
+    """Minimal valid series of length 2 correctly handles gain, loss, and flat price pairs."""
+    # 1. Gain pair
+    gain_data = [(date(2026, 1, 1), 100), (date(2026, 1, 2), 120)]
+    gain_res = calculate_stress_metrics(normalize_observations(gain_data))
+    assert gain_res.trading_days == 2
+    assert gain_res.cumulative_return == Decimal("0.20")
+    assert gain_res.max_drawdown == Decimal("0.0")
+    assert gain_res.recovered is True
+    assert gain_res.peak_date == date(2026, 1, 2)
+    assert gain_res.trough_date == date(2026, 1, 2)
+    assert gain_res.peak_to_trough_days == 0
+    assert gain_res.recovery_days == 0
+
+    # 2. Loss pair
+    loss_data = [(date(2026, 1, 1), 100), (date(2026, 1, 2), 85)]
+    loss_res = calculate_stress_metrics(normalize_observations(loss_data))
+    assert loss_res.trading_days == 2
+    assert loss_res.cumulative_return == Decimal("-0.15")
+    assert loss_res.max_drawdown == Decimal("-0.15")
+    assert loss_res.recovered is False
+    assert loss_res.recovery_date is None
+    assert loss_res.peak_date == date(2026, 1, 1)
+    assert loss_res.trough_date == date(2026, 1, 2)
+    assert loss_res.peak_to_trough_days == 1
+
+    # 3. Flat pair
+    flat_data = [(date(2026, 1, 1), 100), (date(2026, 1, 2), 100)]
+    flat_res = calculate_stress_metrics(normalize_observations(flat_data))
+    assert flat_res.trading_days == 2
+    assert flat_res.cumulative_return == Decimal("0.0")
+    assert flat_res.max_drawdown == Decimal("0.0")
+    assert flat_res.recovered is True
+    assert flat_res.peak_date == date(2026, 1, 1)
+    assert flat_res.trough_date == date(2026, 1, 1)
+    assert flat_res.peak_to_trough_days == 0
+
+
+def test_immediate_drawdown_after_peak() -> None:
+    """Peak established on day 2 immediately followed by drop on day 3."""
+    data = [
+        (date(2026, 2, 1), 100),
+        (date(2026, 2, 2), 120),
+        (date(2026, 2, 3), 84),
+        (date(2026, 2, 4), 90),
+    ]
+    res = calculate_stress_metrics(normalize_observations(data))
+    assert res.peak_date == date(2026, 2, 2)
+    assert res.peak_price == Decimal("120")
+    assert res.trough_date == date(2026, 2, 3)
+    assert res.trough_price == Decimal("84")
+    assert res.max_drawdown == Decimal("-0.30")
+    assert res.max_drawdown_pct == Decimal("-30.0")
+    assert res.peak_to_trough_days == 1
+    assert res.recovered is False
+
+
+def test_multiple_equal_peaks_deterministic_earliest_tie_break() -> None:
+    """Equal peaks at 100 on Day 1 and Day 3, then drop on Day 4 selects Day 1 as peak."""
+    data = [
+        (date(2026, 3, 1), 100),
+        (date(2026, 3, 2), 90),
+        (date(2026, 3, 3), 100),
+        (date(2026, 3, 4), 50),
+    ]
+    res = calculate_stress_metrics(normalize_observations(data))
+    assert res.peak_date == date(2026, 3, 1)
+    assert res.peak_price == Decimal("100")
+    assert res.trough_date == date(2026, 3, 4)
+    assert res.trough_price == Decimal("50")
+    assert res.max_drawdown == Decimal("-0.50")
+    assert res.peak_to_trough_days == 3
+
+
+def test_multiple_equal_troughs_deterministic_earliest_tie_break() -> None:
+    """Equal troughs on Day 2 and Day 4 select Day 2, and recovery evaluates after Day 2."""
+    data = [
+        (date(2026, 4, 1), 100),
+        (date(2026, 4, 2), 50),
+        (date(2026, 4, 3), 70),
+        (date(2026, 4, 4), 50),
+        (date(2026, 4, 5), 110),
+    ]
+    res = calculate_stress_metrics(normalize_observations(data))
+    assert res.peak_date == date(2026, 4, 1)
+    assert res.trough_date == date(2026, 4, 2)
+    assert res.trough_price == Decimal("50")
+    assert res.max_drawdown == Decimal("-0.50")
+    assert res.recovered is True
+    assert res.recovery_date == date(2026, 4, 5)
+    assert res.peak_to_trough_days == 1
+    assert res.recovery_days == 3  # April 2 to April 5
+
+
+def test_recovery_exactly_to_previous_peak() -> None:
+    """Recovery where terminal price reaches exactly the previous peak price."""
+    data = [
+        (date(2026, 5, 1), 100),
+        (date(2026, 5, 2), 60),
+        (date(2026, 5, 3), 80),
+        (date(2026, 5, 4), 100.0),
+    ]
+    res = calculate_stress_metrics(normalize_observations(data))
+    assert res.recovered is True
+    assert res.recovery_date == date(2026, 5, 4)
+    assert res.peak_price == Decimal("100")
+    assert res.recovery_days == 2
+
+
+def test_recovery_above_previous_peak() -> None:
+    """Recovery where terminal price jumps strictly above previous peak price."""
+    data = [
+        (date(2026, 6, 1), 100),
+        (date(2026, 6, 2), 60),
+        (date(2026, 6, 3), 125.0),
+    ]
+    res = calculate_stress_metrics(normalize_observations(data))
+    assert res.recovered is True
+    assert res.recovery_date == date(2026, 6, 3)
+    assert res.peak_price == Decimal("100")
+    assert res.recovery_days == 1
+
+
+def test_benchmark_window_missing_dates_rejection() -> None:
+    """allow_partial_window=False rejects > 7-day gaps at start or end boundaries."""
+    window = ScenarioWindow(
+        name="Strict Window",
+        start_date=date(2026, 7, 1),
+        end_date=date(2026, 7, 31),
+    )
+
+    # 1. Starts too late (> 7 days after window start)
+    gapped_start = [(date(2026, 7, 15), 100), (date(2026, 7, 30), 110)]
+    with pytest.raises(InsufficientDataError, match="starts on"):
+        evaluate_scenario_window(gapped_start, scenario=window, allow_partial_window=False)
+
+    # 2. Ends too early (> 7 days before window end)
+    gapped_end = [(date(2026, 7, 2), 100), (date(2026, 7, 10), 110)]
+    with pytest.raises(InsufficientDataError, match="ends on"):
+        evaluate_scenario_window(gapped_end, scenario=window, allow_partial_window=False)
+
+
+def test_benchmark_window_with_mismatched_dates() -> None:
+    """Observations that do not overlap with the requested window raise InsufficientDataError."""
+    data = [(date(2025, 1, 1), 100), (date(2025, 1, 2), 110)]
+    window = ScenarioWindow(
+        name="Disjoint Window",
+        start_date=date(2026, 1, 1),
+        end_date=date(2026, 1, 31),
+    )
+    with pytest.raises(InsufficientDataError, match="contains only 0 observation"):
+        evaluate_scenario_window(data, scenario=window)
+
+
+def test_benchmark_window_with_empty_data() -> None:
+    """Empty observations passed to evaluate_scenario_window raise InsufficientDataError."""
+    with pytest.raises(InsufficientDataError, match="empty"):
+        evaluate_scenario_window([], scenario="COVID_CRASH_2020")
+
+
+def test_caller_input_data_immutability() -> None:
+    """Verify that caller's input sequence and inner dictionaries are never mutated."""
+    raw_input = [
+        {"date": "2026-08-05", "close": 150.0, "volume": 1000},
+        {"date": "2026-08-01", "close": 100.0, "volume": 2000},
+    ]
+    raw_copy = [
+        {"date": "2026-08-05", "close": 150.0, "volume": 1000},
+        {"date": "2026-08-01", "close": 100.0, "volume": 2000},
+    ]
+
+    obs = normalize_observations(raw_input, sort_chronological=True)
+    calculate_stress_metrics(obs)
+
+    assert raw_input == raw_copy
+    assert raw_input[0]["date"] == "2026-08-05"
+
+
+@pytest.mark.parametrize("scenario_key", list(HISTORICAL_SCENARIOS.keys()))
+def test_all_canonical_benchmark_windows_evaluate_with_synthetic_daily_series(
+    scenario_key: str,
+) -> None:
+    """Verify all defined benchmark crisis windows execute accurately with synthetic data."""
+    scn_window = HISTORICAL_SCENARIOS[scenario_key]
+    total_days = (scn_window.end_date - scn_window.start_date).days
+
+    # Generate synthetic daily data for the scenario window
+    daily_data = [
+        (
+            date.fromordinal(scn_window.start_date.toordinal() + i),
+            100.0 + (i % 10) * 2.0 - (5.0 if i > (total_days // 2) else 0.0),
+        )
+        for i in range(total_days + 1)
+    ]
+
+    result = evaluate_scenario_window(daily_data, scenario=scenario_key)
+
+    assert result.trading_days == total_days + 1
+    assert result.calendar_days == total_days
+    assert result.scenario_name == scn_window.name
+    assert result.start_date == scn_window.start_date
+    assert result.end_date == scn_window.end_date
+    assert result.max_drawdown <= Decimal("0.0")
+    summary = result.to_summary_dict()
+    assert summary["scenario_name"] == scn_window.name
+    assert "max_drawdown" in summary
