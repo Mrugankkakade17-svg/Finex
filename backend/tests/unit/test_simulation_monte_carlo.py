@@ -22,10 +22,12 @@ from __future__ import annotations
 
 import math
 import random
+from typing import Any
 
 import numpy as np
 import pytest
 from ai.simulation.monte_carlo import (
+    MAX_SIMULATION_ELEMENTS,
     PERCENTILE_KEYS,
     CompoundingConvention,
     InvalidSimulationInputError,
@@ -119,10 +121,55 @@ class TestMonteCarloDeterministicContracts:
         result1 = run_monte_carlo(config1)
         result2 = run_monte_carlo(config2)
 
-        assert result1.actual_seed != result2.actual_seed
-        assert result1.mean_final_value != result2.mean_final_value
+        # Seeds differ
+        assert result1.actual_seed == 101
+        assert result2.actual_seed == 202
+
+        # Stochastic terminal value vectors must not be identical
         assert result1.final_values != result2.final_values
+        assert not np.array_equal(result1.final_values, result2.final_values)
+
+        # Sample trajectories and percentiles must not be identical
+        assert result1.sample_paths != result2.sample_paths
         assert result1.percentile_trajectories != result2.percentile_trajectories
+
+        # Confirm that 100% of individual path terminal values differ between the runs
+        differences = [v1 != v2 for v1, v2 in zip(result1.final_values, result2.final_values)]
+        assert all(differences), "Generated stochastic values collided across different seeds"
+
+    def test_different_seeds_with_zero_volatility_remain_identical(self) -> None:
+        """When sigma = 0, output is purely deterministic and identical regardless of seed."""
+        config1 = MonteCarloConfig(
+            initial_value=10000.0,
+            annualized_return=0.08,
+            annualized_volatility=0.0,
+            time_horizon_years=3.0,
+            num_paths=100,
+            seed=101,
+        )
+        config2 = MonteCarloConfig(
+            initial_value=10000.0,
+            annualized_return=0.08,
+            annualized_volatility=0.0,
+            time_horizon_years=3.0,
+            num_paths=100,
+            seed=202,
+        )
+        res1 = run_monte_carlo(config1)
+        res2 = run_monte_carlo(config2)
+
+        # Actual seeds differ
+        assert res1.actual_seed == 101
+        assert res2.actual_seed == 202
+
+        # But all statistical outputs and trajectories are bitwise identical
+        assert res1.mean_final_value == res2.mean_final_value
+        assert res1.median_final_value == res2.median_final_value
+        assert res1.std_final_value == res2.std_final_value == 0.0
+        assert res1.final_values == res2.final_values
+        assert res1.percentiles == res2.percentiles
+        assert res1.percentile_trajectories == res2.percentile_trajectories
+        assert res1.sample_paths == res2.sample_paths
 
     def test_ac1_omitted_seed_generates_valid_seed_and_results(self) -> None:
         """When seed is None, engine auto-generates a valid positive seed."""
@@ -366,6 +413,93 @@ class TestMonteCarloInputValidation:
                 annualized_volatility=0.15,
                 time_horizon_years=1.0,
                 unauthorized_extra_param=123,
+            )
+
+    def test_rejects_excessive_combined_workload(self) -> None:
+        """Parameters that collectively exceed MAX_SIMULATION_ELEMENTS must be rejected."""
+        # 50,000 paths x 100 years x 1,000 steps/yr = 5,000,050,000 elements (~40 GB RAM)
+        with pytest.raises(
+            InvalidSimulationInputError,
+            match="Simulation workload exceeds maximum resource capacity",
+        ):
+            MonteCarloConfig(
+                initial_value=10000.0,
+                annualized_return=0.08,
+                annualized_volatility=0.15,
+                time_horizon_years=100.0,
+                num_paths=50000,
+                steps_per_year=1000,
+            )
+
+        # 50,000 paths x 1 year x 252 steps/yr = 12,650,000 elements > 10,000,000 limit
+        with pytest.raises(
+            InvalidSimulationInputError,
+            match="Simulation workload exceeds maximum resource capacity",
+        ):
+            MonteCarloConfig(
+                initial_value=10000.0,
+                annualized_return=0.08,
+                annualized_volatility=0.15,
+                time_horizon_years=1.0,
+                num_paths=50000,
+                steps_per_year=252,
+            )
+
+    def test_accepts_simulation_workload_exactly_at_boundary(self) -> None:
+        """Workload exactly equal to MAX_SIMULATION_ELEMENTS (10M elements) must be accepted."""
+        # 10,000 paths x 999 steps + 1 = 10,000 x 1,000 = 10,000,000 elements
+        config = MonteCarloConfig(
+            initial_value=10000.0,
+            annualized_return=0.08,
+            annualized_volatility=0.0,
+            time_horizon_years=1.0,
+            num_paths=10000,
+            steps_per_year=999,
+            seed=42,
+        )
+        total_steps = round(config.time_horizon_years * config.steps_per_year)
+        total_elements = config.num_paths * (total_steps + 1)
+        assert total_elements == MAX_SIMULATION_ELEMENTS
+
+    def test_accepts_simulation_workload_just_below_boundary(self) -> None:
+        """Workload just below MAX_SIMULATION_ELEMENTS must be accepted."""
+        # 10,000 paths x 998 steps + 1 = 10,000 x 999 = 9,990,000 elements
+        config = MonteCarloConfig(
+            initial_value=10000.0,
+            annualized_return=0.08,
+            annualized_volatility=0.0,
+            time_horizon_years=1.0,
+            num_paths=10000,
+            steps_per_year=998,
+            seed=42,
+        )
+        total_steps = round(config.time_horizon_years * config.steps_per_year)
+        total_elements = config.num_paths * (total_steps + 1)
+        assert total_elements < MAX_SIMULATION_ELEMENTS
+        assert total_elements == 9_990_000
+
+    def test_workload_validation_occurs_before_allocation(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Validation must occur during config initialization before any matrix is allocated."""
+
+        def mock_empty(*args: Any, **kwargs: Any) -> Any:
+            raise AssertionError("np.empty was called for an invalid workload!")
+
+        monkeypatch.setattr(np, "empty", mock_empty)
+
+        # Config creation must fail during validation without ever reaching simulate / np.empty
+        with pytest.raises(
+            InvalidSimulationInputError,
+            match="Simulation workload exceeds maximum resource capacity",
+        ):
+            MonteCarloConfig(
+                initial_value=10000.0,
+                annualized_return=0.08,
+                annualized_volatility=0.15,
+                time_horizon_years=10.0,
+                num_paths=50000,
+                steps_per_year=252,
             )
 
 

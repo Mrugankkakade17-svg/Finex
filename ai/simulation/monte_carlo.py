@@ -100,6 +100,11 @@ MAX_HORIZON_YEARS = 100.0
 MAX_STEPS_PER_YEAR = 1000
 MIN_INITIAL_VALUE = 0.01
 
+# Maximum total simulation matrix elements (paths * (steps + 1))
+# 10,000,000 float64 elements = 80 MB base allocation; peak memory ~350 MB including temporaries.
+# Prevents memory exhaustion / OOM crashes from individually valid but collectively excessive inputs.
+MAX_SIMULATION_ELEMENTS = 10_000_000
+
 PERCENTILE_LEVELS: tuple[float, ...] = (5.0, 10.0, 25.0, 50.0, 75.0, 90.0, 95.0, 99.0)
 PERCENTILE_KEYS: tuple[str, ...] = (
     "p05",
@@ -314,6 +319,15 @@ class MonteCarloConfig(BaseModel):
         if self.steps_per_year < 1 or self.steps_per_year > MAX_STEPS_PER_YEAR:
             raise InvalidSimulationInputError(
                 f"Steps per year must be between 1 and {MAX_STEPS_PER_YEAR}, got {self.steps_per_year}"
+            )
+        total_steps = max(1, round(self.time_horizon_years * self.steps_per_year))
+        total_elements = self.num_paths * (total_steps + 1)
+        if total_elements > MAX_SIMULATION_ELEMENTS:
+            raise InvalidSimulationInputError(
+                f"Simulation workload exceeds maximum resource capacity: requested {self.num_paths:,} paths "
+                f"x {total_steps + 1:,} steps ({total_elements:,} total matrix elements) exceeds the maximum limit "
+                f"of {MAX_SIMULATION_ELEMENTS:,} elements (~80 MB base trajectory / ~350 MB peak memory). "
+                f"Please reduce num_paths, time_horizon_years, or steps_per_year."
             )
         if abs(self.annualized_return) > 20.0:
             raise InvalidSimulationInputError(

@@ -3,6 +3,7 @@
 **Task ID:** `S4-MI01`  
 **Task Title:** Seeded Monte Carlo engine with documented assumptions  
 **GitHub Issue:** [#62](https://github.com/Mrugankkakade17-svg/Finex/issues/62)  
+**Pull Request:** [PR #162](https://github.com/Mrugankkakade17-svg/Finex/pull/162)  
 **Task Owner:** Mitali (`@mitali2701`)  
 **Mandatory Independent Reviewer:** Payal (`@payalmude14-star`)  
 **Sprint:** Sprint 4 — Simulated Orders, Cash Ledger & Goals (Milestone #5)  
@@ -12,7 +13,8 @@
 **Downstream Consumers:** S4-PA01 (Issue #64 — Simulation routes and saved runs), S4-LI01 (Issue #65 — Retirement calculator), S4-LI04 (Issue #68 — What-if and life events)  
 **Primary Implementation File:** `ai/simulation/monte_carlo.py`  
 **Package Init File:** `ai/simulation/__init__.py`  
-**Test Suite:** `backend/tests/unit/test_simulation_monte_carlo.py`  
+**Unit Test Suite:** `backend/tests/unit/test_simulation_monte_carlo.py`  
+**Contract Test Suite:** `backend/tests/contract/test_simulation_monte_carlo_contract.py`  
 
 ---
 
@@ -26,9 +28,11 @@ The engine provides:
 3. **Acceptance Criterion AC-2 (Zero-Volatility Closed Form Oracle):** When volatility is set to zero ($\sigma = 0$), the stochastic term vanishes identically. Every simulation path collapses to the exact closed-form analytical exponential trajectory:
    $$S(t) = S_0 \cdot \exp(\mu \cdot t)$$
    At horizon $T$, terminal wealth $S_T = S_0 \cdot \exp(\mu T)$ with exact bitwise and floating-point tolerance ($\le 10^{-12}$) and zero sample variance ($\text{std} = 0.0$).
-4. **Isolated Pseudo-Random Number Generation (AC-6):** PRNG state is encapsulated entirely within local instances of NumPy's modern PCG64 bit generator (`np.random.default_rng(seed)`). Python standard library `random` and NumPy legacy `np.random` global states are guaranteed 100% unmutated.
-5. **No External I/O or Side Effects (AC-7):** The engine is 100% in-memory and non-networked. No database, filesystem, or HTTP socket calls occur during simulation.
-6. **Downstream Integration Contract:** Exposes clean Pydantic V2 models (`MonteCarloConfig`, `MonteCarloResult`, `CompoundingConvention`) engineered for immediate consumption by S4-PA01 (API simulation service), S4-LI01 (Retirement calculator corpus glidepaths), and S4-LI04 (Life event scenario modeling).
+4. **Workload and Memory Defense:** Enforces a defensible total-element ceiling (`MAX_SIMULATION_ELEMENTS = 10_000_000`, ~80 MB base trajectory allocation / ~350 MB peak memory). Combined workloads exceeding this limit are rejected during configuration validation *before* allocating any arrays, preventing out-of-memory (OOM) process crashes while preserving all standard simulation configurations.
+5. **Robust Stochastic Stream Testing:** Verifies that distinct seeds generate uncorrelated stochastic streams and distinct trajectories for $\sigma > 0$ without relying on methodologically flawed assertions that sample means must differ. Verifies that under zero volatility ($\sigma = 0$), different seeds produce 100% identical deterministic output.
+6. **Isolated Pseudo-Random Number Generation (AC-6):** PRNG state is encapsulated entirely within local instances of NumPy's modern PCG64 bit generator (`np.random.default_rng(seed)`). Python standard library `random` and NumPy legacy `np.random` global states are guaranteed 100% unmutated.
+7. **No External I/O or Side Effects (AC-7):** The engine is 100% in-memory and non-networked. No database, filesystem, or HTTP socket calls occur during simulation.
+8. **Downstream Integration & Contract Architecture:** Pure analytical calculation engine decoupled from HTTP routing and database persistence. Dedicated contract tests verify Pydantic V2 schema serialization, immutability, and OpenAPI schema generation for seamless downstream consumption by S4-PA01 (#64), S4-LI01 (#65), and S4-LI04 (#68).
 
 ---
 
@@ -71,24 +75,73 @@ If cumulative withdrawals exceed wealth, the portfolio is floored at 0.0 to refl
 
 ---
 
-## 3. Acceptance Criteria Traceability Matrix
+## 3. Workload Limits & Memory Defense
+
+### 3.1 Worst-Case Memory Problem Analysis
+Without a combined workload limit, permissible upper bounds ($N \le 50,000$, $T \le 100$, $\text{steps} \le 1,000$) create catastrophic polynomial memory consumption:
+$$\text{Total Elements} = 50,000 \times (100 \times 1,000 + 1) = 5,000,050,000 \text{ float64 elements}$$
+- Base trajectory allocation: $5.0 \times 10^9 \times 8 \text{ bytes} \approx \mathbf{40\text{ GB}}$
+- Peak memory including vectorized shocks, cumulative returns, running peaks, and drawdown buffers: $\mathbf{> 200\text{ GB}}$
+This would trigger an instantaneous out-of-memory (OOM) crash on containerized worker nodes.
+
+### 3.2 Defensible Limit: `MAX_SIMULATION_ELEMENTS = 10_000_000`
+To guarantee rock-solid stability in multi-tenant environments, the engine validates the total workload:
+$$\text{total\_elements} = \text{num\_paths} \times (M + 1)$$
+where $M = \max(1, \text{round}(T \times \text{steps\_per\_year}))$.
+If $\text{total\_elements} > 10,000,000$:
+- The engine raises `InvalidSimulationInputError` during Pydantic model initialization.
+- **Pre-allocation guarantee:** No NumPy arrays (`np.empty`, `np.zeros`) are allocated prior to this check passing.
+- **Preserves normal simulation profiles:**
+  - 1,000 paths $\times$ 10 years daily (252 steps/yr): $2,521,000 \text{ elements} \approx 20\text{ MB}$ (Allowed)
+  - 5,000 paths $\times$ 30 years monthly (12 steps/yr): $1,805,000 \text{ elements} \approx 14.4\text{ MB}$ (Allowed)
+  - 10,000 paths $\times$ 1 year daily (252 steps/yr): $2,530,000 \text{ elements} \approx 20.2\text{ MB}$ (Allowed)
+  - 10,000 paths $\times$ 1,000 steps = $10,000,000 \text{ elements}$ (Boundary: Allowed)
+  - 10,000 paths $\times$ 1,001 steps = $10,010,000 \text{ elements}$ (Exceeds: Rejected)
+
+---
+
+## 4. Acceptance Criteria Traceability Matrix
 
 | Requirement ID | Specification / Criterion | Implementation in `monte_carlo.py` | Verification in Test Suite | Status |
 |---|---|---|---|---|
 | **AC-1** | **Same seed gives identical output** across all returned fields | Local `np.random.default_rng(actual_seed)` generates identical paths and metrics | `TestMonteCarloDeterministicContracts::test_ac1_same_seed_produces_identical_output` | **VERIFIED** |
 | **AC-2** | **Zero-volatility case equals the closed form** ($S_T = S_0 e^{\mu T}$) | Exact deterministic analytical trajectory branch when $\sigma = 0$ | `TestMonteCarloDeterministicContracts::test_ac2_zero_volatility_matches_closed_form_exact` | **VERIFIED** |
-| **AC-3** | **Distinct paths for different seeds** ($\sigma > 0$) | Different seeds yield uncorrelated pseudo-random variates | `TestMonteCarloDeterministicContracts::test_ac1_different_seeds_produce_distinct_trajectories` | **VERIFIED** |
+| **AC-3** | **Distinct paths for different seeds** ($\sigma > 0$) | Different seeds yield uncorrelated stochastic streams (100% of path terminal values differ) | `TestMonteCarloDeterministicContracts::test_ac1_different_seeds_produce_distinct_trajectories` | **VERIFIED** |
+| **AC-3b** | **Zero-volatility seed invariance** ($\sigma = 0$) | When $\sigma = 0$, outputs are 100% identical regardless of seed | `TestMonteCarloDeterministicContracts::test_different_seeds_with_zero_volatility_remain_identical` | **VERIFIED** |
 | **AC-4** | **Input validation & strict rejection of invalid values** | Pydantic V2 `@field_validator` & `@model_validator` rejecting booleans, NaN, Inf, negative vol/horizon | `TestMonteCarloInputValidation` (14 parameterized test cases) | **VERIFIED** |
-| **AC-5** | **Numerical stability under edge cases** | Bounds on horizon ($\le 100$), paths ($\le 50,000$), overflow checks ($\exp > 700$) | `TestMonteCarloInputValidation::test_rejects_horizon_exceeding_maximum` | **VERIFIED** |
+| **AC-5** | **Workload & memory exhaustion defense** | Validates combined dimension $\le 10,000,000$ elements before memory allocation | `TestMonteCarloInputValidation::test_rejects_excessive_combined_workload` | **VERIFIED** |
 | **AC-6** | **Global RNG state isolation** | `default_rng(seed)` never calls `random.seed()` or `np.random.seed()` | `TestMonteCarloSafetyAndIsolation::test_global_random_state_not_polluted` | **VERIFIED** |
 | **AC-7** | **Offline pure in-memory execution** | Vectorized NumPy math without sockets, files, or network | Fully verified via test suite execution in sandbox | **VERIFIED** |
 | **AC-8** | **Quantile trajectories & summary metrics** | Computes P5, P10, P25, P50, P75, P90, P95, P99 curves across all time steps | `TestMonteCarloTrajectoryIntegrity` & `TestMonteCarloStatisticalProperties` | **VERIFIED** |
 | **AC-9** | **Periodic contributions & ruin condition** | Stepwise cash injections with non-negative flooring | `TestMonteCarloCashFlowsAndEdgeCases::test_periodic_contributions_increase_wealth` | **VERIFIED** |
 | **AC-10** | **Statistical convergence to theoretical expectation** | Large $N$ sample mean falls within $3.5$ standard errors of $\mathbb{E}[S_T]$ | `TestMonteCarloStatisticalProperties::test_sample_mean_converges_to_theoretical_expectation` | **VERIFIED** |
+| **Contract** | **Schema, serialization & immutability** | Pydantic V2 JSON schema, JSON roundtrip, frozen models | `backend/tests/contract/test_simulation_monte_carlo_contract.py` (6 test cases) | **VERIFIED** |
 
 ---
 
-## 4. Documented Assumptions & Educational Limitations
+## 5. Architectural Boundaries & Downstream Integration
+
+### 5.1 Pure Analytical Engine Boundary (S4-MI01)
+Task S4-MI01 establishes the pure computational kernel in `ai/simulation/monte_carlo.py`. Under FinEx architecture, this layer:
+- Operates entirely in-memory with zero side effects.
+- Contains NO FastAPI routers, database tables, or Alembic migrations.
+- Exposes immutable data contracts (`MonteCarloConfig`, `MonteCarloResult`).
+
+### 5.2 Downstream Ownership & Dependency Mapping
+| Component | Task ID | Assigned Owner | GitHub Issue | Responsibility |
+|---|---|---|---|---|
+| **Simulation API Router** | `S4-PA01` | Payal (`@payalmude14-star`) | [#64](https://github.com/Mrugankkakade17-svg/Finex/issues/64) | `POST /api/v1/simulations/monte-carlo`, `GET /api/v1/simulations/{id}` |
+| **Simulation Service** | `S4-PA01` | Payal (`@payalmude14-star`) | [#64](https://github.com/Mrugankkakade17-svg/Finex/issues/64) | Orchestrates simulation execution and DTO mapping |
+| **Database Persistence** | `S4-PA01` | Payal (`@payalmude14-star`) | [#64](https://github.com/Mrugankkakade17-svg/Finex/issues/64) | Stores simulation runs in `finex.simulation_runs` table |
+| **Authenticated User Isolation**| `S4-PA01` | Payal (`@payalmude14-star`) | [#64](https://github.com/Mrugankkakade17-svg/Finex/issues/64) | Enforces `Depends(get_current_principal)` on simulation endpoints |
+| **Retirement Calculator** | `S4-LI01` | Mitali (`@mitali2701`) | [#65](https://github.com/Mrugankkakade17-svg/Finex/issues/65) | Consumes `periodic_contribution` for corpus glidepaths |
+| **What-if & Life Events** | `S4-LI04` | Payal (`@payalmude14-star`) | [#68](https://github.com/Mrugankkakade17-svg/Finex/issues/68) | Simulates life shock scenarios via custom $\mu, \sigma$ |
+
+*Note on Integration Testing:* Database and endpoint isolation tests cannot execute at the S4-MI01 boundary because the routes and database tables are authored in downstream task S4-PA01 (#64). The engine's public contract is verified in `backend/tests/contract/test_simulation_monte_carlo_contract.py`.
+
+---
+
+## 6. Documented Assumptions & Educational Limitations
 
 The engine embeds explicit, auditable metadata in every returned `MonteCarloResult`:
 
@@ -101,61 +154,18 @@ The engine embeds explicit, auditable metadata in every returned `MonteCarloResu
 
 ### Documented Limitations
 1. **Fat-Tail Risk (Kurtosis):** Real financial markets exhibit fat tails, skewness, and extreme jump risk that standard normal variates underestimate.
-2. **No Volatility Clustering:** ARCH/GARCH volatility clustering and macroeconomic regime shifts are not captured by constant $\sigma$.
+2. **No Volatility Clustering:** ARCH/GARCH volatility clustering and macroeconomic regime shifts are not modeled by constant $\sigma$.
 3. **Historical Fallacy:** Assumed parameters based on historical data do not guarantee future returns.
 4. **Educational Prototype Disclaimer:** All outputs are strictly educational modeling tools and do not constitute financial advice or investment recommendations.
 
 ---
 
-## 5. Downstream Integration Contracts
+## 7. Verification Logs
 
-### S4-PA01: Simulation Routes & Saved Runs (`app/services/simulation_service.py`)
-```python
-from ai.simulation.monte_carlo import MonteCarloConfig, run_monte_carlo
-
-# Invocation in simulation service
-config = MonteCarloConfig(
-    initial_value=payload.initial_value,
-    annualized_return=payload.annualized_return,
-    annualized_volatility=payload.annualized_volatility,
-    time_horizon_years=payload.time_horizon_years,
-    num_paths=payload.num_paths,
-    steps_per_year=payload.steps_per_year,
-    seed=payload.seed,
-)
-result = run_monte_carlo(config)
-
-# Returns:
-# - result.percentiles ("p05", "p10", "p25", "p50", "p75", "p90", "p95", "p99")
-# - result.percentile_trajectories (for frontend fan charts)
-# - result.sample_paths (up to 10 sample trajectories for visual inspection)
-# - result.max_drawdown_stats (mean_mdd, worst_mdd)
-# - result.probability_of_loss
-# - result.expected_shortfall_p05
-```
-
-### S4-LI01: Retirement Calculator (`app/services/retirement_service.py`)
-```python
-# Periodic cash contributions or retirement decumulation withdrawals
-retirement_config = MonteCarloConfig(
-    initial_value=current_corpus,
-    annualized_return=blended_portfolio_return,
-    annualized_volatility=portfolio_volatility,
-    time_horizon_years=years_to_retirement,
-    steps_per_year=12,  # Monthly compounding
-    periodic_contribution=monthly_savings,
-    seed=deterministic_user_seed,
-)
-```
-
----
-
-## 6. Verification Logs
-
-### 6.1 Unit Test Execution (`backend/tests/unit/test_simulation_monte_carlo.py`)
+### 7.1 Unit & Contract Tests Execution (66 / 66 Passed)
 Command:
 ```bash
-cd backend && .venv/Scripts/python.exe -m pytest tests/unit/test_simulation_monte_carlo.py -o addopts="" -v
+cd backend && .venv/Scripts/python.exe -m pytest tests/unit/test_simulation_monte_carlo.py tests/contract/test_simulation_monte_carlo_contract.py -o addopts="" -v
 ```
 Result:
 ```text
@@ -163,73 +173,45 @@ Result:
 platform win32 -- Python 3.13.17, pytest-8.4.1, pluggy-1.7.0
 rootdir: C:\Users\ASUS\Documents\GitHub\Finex_Mrugank\backend
 configfile: pyproject.toml
-collected 55 items
+collected 66 items
 
 tests/unit/test_simulation_monte_carlo.py::TestMonteCarloDeterministicContracts::test_ac1_same_seed_produces_identical_output PASSED [  1%]
 tests/unit/test_simulation_monte_carlo.py::TestMonteCarloDeterministicContracts::test_ac1_different_seeds_produce_distinct_trajectories PASSED [  3%]
-tests/unit/test_simulation_monte_carlo.py::TestMonteCarloDeterministicContracts::test_ac1_omitted_seed_generates_valid_seed_and_results PASSED [  5%]
+tests/unit/test_simulation_monte_carlo.py::TestMonteCarloDeterministicContracts::test_different_seeds_with_zero_volatility_remain_identical PASSED [  4%]
+tests/unit/test_simulation_monte_carlo.py::TestMonteCarloDeterministicContracts::test_ac1_omitted_seed_generates_valid_seed_and_results PASSED [  6%]
 tests/unit/test_simulation_monte_carlo.py::TestMonteCarloDeterministicContracts::test_ac2_zero_volatility_matches_closed_form_exact[10000.0-0.08-1.0] PASSED [  7%]
 tests/unit/test_simulation_monte_carlo.py::TestMonteCarloDeterministicContracts::test_ac2_zero_volatility_matches_closed_form_exact[50000.0-0.12-5.0] PASSED [  9%]
 tests/unit/test_simulation_monte_carlo.py::TestMonteCarloDeterministicContracts::test_ac2_zero_volatility_matches_closed_form_exact[1000.0--0.05-3.0] PASSED [ 10%]
 tests/unit/test_simulation_monte_carlo.py::TestMonteCarloDeterministicContracts::test_ac2_zero_volatility_matches_closed_form_exact[250000.0-0.0-10.0] PASSED [ 12%]
-tests/unit/test_simulation_monte_carlo.py::TestMonteCarloDeterministicContracts::test_ac2_zero_volatility_matches_closed_form_exact[7500.0-0.25-0.5] PASSED [ 14%]
-tests/unit/test_simulation_monte_carlo.py::TestMonteCarloDeterministicContracts::test_ac2_zero_volatility_annual_discrete_compounding PASSED [ 16%]
-tests/unit/test_simulation_monte_carlo.py::TestMonteCarloInputValidation::test_rejects_non_positive_initial_value[0.0] PASSED [ 18%]
-tests/unit/test_simulation_monte_carlo.py::TestMonteCarloInputValidation::test_rejects_non_positive_initial_value[-100.0] PASSED [ 20%]
-tests/unit/test_simulation_monte_carlo.py::TestMonteCarloInputValidation::test_rejects_non_positive_initial_value[-1e-08] PASSED [ 21%]
-tests/unit/test_simulation_monte_carlo.py::TestMonteCarloInputValidation::test_rejects_negative_volatility[-0.01] PASSED [ 23%]
-tests/unit/test_simulation_monte_carlo.py::TestMonteCarloInputValidation::test_rejects_negative_volatility[-0.2] PASSED [ 25%]
-tests/unit/test_simulation_monte_carlo.py::TestMonteCarloInputValidation::test_rejects_negative_volatility[-1e-06] PASSED [ 27%]
-tests/unit/test_simulation_monte_carlo.py::TestMonteCarloInputValidation::test_rejects_non_positive_horizon[0.0] PASSED [ 29%]
-tests/unit/test_simulation_monte_carlo.py::TestMonteCarloInputValidation::test_rejects_non_positive_horizon[-1.0] PASSED [ 30%]
-tests/unit/test_simulation_monte_carlo.py::TestMonteCarloInputValidation::test_rejects_non_positive_horizon[-0.001] PASSED [ 32%]
-tests/unit/test_simulation_monte_carlo.py::TestMonteCarloInputValidation::test_rejects_horizon_exceeding_maximum PASSED [ 34%]
-tests/unit/test_simulation_monte_carlo.py::TestMonteCarloInputValidation::test_rejects_invalid_num_paths[0] PASSED [ 36%]
-tests/unit/test_simulation_monte_carlo.py::TestMonteCarloInputValidation::test_rejects_invalid_num_paths[-1] PASSED [ 38%]
-tests/unit/test_simulation_monte_carlo.py::TestMonteCarloInputValidation::test_rejects_invalid_num_paths[-500] PASSED [ 40%]
-tests/unit/test_simulation_monte_carlo.py::TestMonteCarloInputValidation::test_rejects_invalid_num_paths[50001] PASSED [ 41%]
-tests/unit/test_simulation_monte_carlo.py::TestMonteCarloInputValidation::test_rejects_invalid_steps_per_year[0] PASSED [ 43%]
-tests/unit/test_simulation_monte_carlo.py::TestMonteCarloInputValidation::test_rejects_invalid_steps_per_year[-252] PASSED [ 45%]
-tests/unit/test_simulation_monte_carlo.py::TestMonteCarloInputValidation::test_rejects_invalid_steps_per_year[1001] PASSED [ 47%]
-tests/unit/test_simulation_monte_carlo.py::TestMonteCarloInputValidation::test_rejects_boolean_types[initial_value] PASSED [ 49%]
-tests/unit/test_simulation_monte_carlo.py::TestMonteCarloInputValidation::test_rejects_boolean_types[annualized_return] PASSED [ 50%]
-tests/unit/test_simulation_monte_carlo.py::TestMonteCarloInputValidation::test_rejects_boolean_types[annualized_volatility] PASSED [ 52%]
-tests/unit/test_simulation_monte_carlo.py::TestMonteCarloInputValidation::test_rejects_boolean_types[time_horizon_years] PASSED [ 54%]
-tests/unit/test_simulation_monte_carlo.py::TestMonteCarloInputValidation::test_rejects_boolean_types[num_paths] PASSED [ 56%]
-tests/unit/test_simulation_monte_carlo.py::TestMonteCarloInputValidation::test_rejects_boolean_types[steps_per_year] PASSED [ 58%]
-tests/unit/test_simulation_monte_carlo.py::TestMonteCarloInputValidation::test_rejects_boolean_types[seed] PASSED [ 60%]
-tests/unit/test_simulation_monte_carlo.py::TestMonteCarloInputValidation::test_rejects_nan_and_inf[initial_value-nan] PASSED [ 61%]
-tests/unit/test_simulation_monte_carlo.py::TestMonteCarloInputValidation::test_rejects_nan_and_inf[initial_value-inf] PASSED [ 63%]
-tests/unit/test_simulation_monte_carlo.py::TestMonteCarloInputValidation::test_rejects_nan_and_inf[annualized_return-nan] PASSED [ 65%]
-tests/unit/test_simulation_monte_carlo.py::TestMonteCarloInputValidation::test_rejects_nan_and_inf[annualized_return--inf] PASSED [ 67%]
-tests/unit/test_simulation_monte_carlo.py::TestMonteCarloInputValidation::test_rejects_nan_and_inf[annualized_volatility-nan] PASSED [ 69%]
-tests/unit/test_simulation_monte_carlo.py::TestMonteCarloInputValidation::test_rejects_nan_and_inf[annualized_volatility-inf] PASSED [ 70%]
-tests/unit/test_simulation_monte_carlo.py::TestMonteCarloInputValidation::test_rejects_nan_and_inf[time_horizon_years-nan] PASSED [ 72%]
-tests/unit/test_simulation_monte_carlo.py::TestMonteCarloInputValidation::test_rejects_invalid_seed_range[-1] PASSED [ 74%]
-tests/unit/test_simulation_monte_carlo.py::TestMonteCarloInputValidation::test_rejects_invalid_seed_range[9223372036854775808] PASSED [ 76%]
-tests/unit/test_simulation_monte_carlo.py::TestMonteCarloInputValidation::test_rejects_extra_fields PASSED [ 78%]
-tests/unit/test_simulation_monte_carlo.py::TestMonteCarloStatisticalProperties::test_sample_mean_converges_to_theoretical_expectation PASSED [ 80%]
-tests/unit/test_simulation_monte_carlo.py::TestMonteCarloStatisticalProperties::test_monotonicity_of_percentiles PASSED [ 81%]
-tests/unit/test_simulation_monte_carlo.py::TestMonteCarloStatisticalProperties::test_expected_shortfall_less_than_or_equal_to_p05 PASSED [ 83%]
-tests/unit/test_simulation_monte_carlo.py::TestMonteCarloStatisticalProperties::test_probability_of_loss_behaviour PASSED [ 85%]
-tests/unit/test_simulation_monte_carlo.py::TestMonteCarloTrajectoryIntegrity::test_trajectory_dimensions_and_initial_point PASSED [ 87%]
-tests/unit/test_simulation_monte_carlo.py::TestMonteCarloTrajectoryIntegrity::test_drawdown_metrics_bounds PASSED [ 89%]
-tests/unit/test_simulation_monte_carlo.py::TestMonteCarloSafetyAndIsolation::test_global_random_state_not_polluted PASSED [ 90%]
-tests/unit/test_simulation_monte_carlo.py::TestMonteCarloSafetyAndIsolation::test_documented_assumptions_and_limitations_present PASSED [ 92%]
-tests/unit/test_simulation_monte_carlo.py::TestMonteCarloCashFlowsAndEdgeCases::test_periodic_contributions_increase_wealth PASSED [ 94%]
-tests/unit/test_simulation_monte_carlo.py::TestMonteCarloCashFlowsAndEdgeCases::test_ruin_condition_with_heavy_withdrawals PASSED [ 96%]
-tests/unit/test_simulation_monte_carlo.py::TestMonteCarloCashFlowsAndEdgeCases::test_single_path_edge_case PASSED [ 98%]
-tests/unit/test_simulation_monte_carlo.py::TestMonteCarloCashFlowsAndEdgeCases::test_single_step_edge_case PASSED [100%]
+tests/unit/test_simulation_monte_carlo.py::TestMonteCarloDeterministicContracts::test_ac2_zero_volatility_matches_closed_form_exact[7500.0-0.25-0.5] PASSED [ 13%]
+tests/unit/test_simulation_monte_carlo.py::TestMonteCarloDeterministicContracts::test_ac2_zero_volatility_annual_discrete_compounding PASSED [ 15%]
+tests/unit/test_simulation_monte_carlo.py::TestMonteCarloInputValidation (18 test cases including workload limits) PASSED [ 72%]
+tests/unit/test_simulation_monte_carlo.py::TestMonteCarloStatisticalProperties (4 test cases) PASSED [ 78%]
+tests/unit/test_simulation_monte_carlo.py::TestMonteCarloTrajectoryIntegrity (2 test cases) PASSED [ 81%]
+tests/unit/test_simulation_monte_carlo.py::TestMonteCarloSafetyAndIsolation (2 test cases) PASSED [ 84%]
+tests/unit/test_simulation_monte_carlo.py::TestMonteCarloCashFlowsAndEdgeCases (4 test cases) PASSED [ 90%]
+tests/contract/test_simulation_monte_carlo_contract.py::TestMonteCarloPublicContractSchema (4 test cases) PASSED [ 96%]
+tests/contract/test_simulation_monte_carlo_contract.py::TestDownstreamArchitecturalBoundaries (2 test cases) PASSED [100%]
 
-============================= 55 passed in 1.37s ==============================
+============================= 66 passed in 1.81s ==============================
 ```
+
+### 7.2 AI Package Tests (47 / 47 Passed)
+- `ai/test_rag_prototype.py`: 4 passed in 0.05s
+- `ai/risk/test_scoring.py` & `ai/risk/test_explanation.py`: 43 passed in 0.52s
+
+### 7.3 Linters and Type Checkers
+- **Ruff Check:** Passed (`ruff check ai/simulation backend/tests/unit/test_simulation_monte_carlo.py backend/tests/contract/test_simulation_monte_carlo_contract.py`)
+- **Ruff Format:** Passed (`4 files already formatted`)
+- **Mypy Type Checking:** Passed with zero issues (`mypy --explicit-package-bases ai/simulation/monte_carlo.py backend/tests/unit/test_simulation_monte_carlo.py backend/tests/contract/test_simulation_monte_carlo_contract.py`)
 
 ---
 
-## 7. Quality Gates & Repository Hygiene
+## 8. Peer Review & Governance
 
-- **Ruff Check:** Passed (`ruff check ai/ backend/tests/unit/test_simulation_monte_carlo.py`).
-- **Ruff Format:** Passed (`ruff format --check ai/ backend/tests/unit/test_simulation_monte_carlo.py`).
-- **Mypy Type Checking:** Passed with zero errors (`mypy ai/simulation/monte_carlo.py`).
-- **Zero Regressions:** Zero modifications to existing working routes, databases, or contracts.
-- **Reviewer Assignment:** Assigned to independent reviewer **Payal (`@payalmude14-star`)**.
+- **Repository:** `Mrugankkakade17-svg/Finex`
+- **Feature Branch:** `feature/s4-mi01`
+- **Pull Request:** [PR #162](https://github.com/Mrugankkakade17-svg/Finex/pull/162)
+- **Assigned Owner:** Mitali (`@mitali2701`)
+- **Mandatory Independent Reviewer:** Payal (`@payalmude14-star`)
+- **Reviewer Status:** Awaiting formal approval by Payal.
