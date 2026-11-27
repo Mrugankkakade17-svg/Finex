@@ -311,4 +311,59 @@ $$\sum_i \text{indicative\_amount}_i = \text{Decimal}("0.00") \quad \text{[Exact
 - `test_custom_allocation_monetary_conservation_fractional_cents`: Asserts $\sum \text{indicative\_amount} == \$0.00$ across $150,000.55, $100,000.01, $99.99, $12,345.67, and $0.01.
 - `test_rebalance_endpoint_boundary_allocations_normalized_and_conserved`: FastAPI API contract test asserting that HTTP 200 responses return exactly normalized allocations and conserved adjustments.
 
+---
+
+## 11. Third Reviewer Correction: Consistent Drift Threshold Action Classification & Conservation Policy
+
+### 11.1 Reviewer Finding (PR #160 Comment ID: 4722216769)
+- **Reviewer**: `@Mrugankkakade17-svg`
+- **Location**: `backend/app/services/suitability_service.py:451`
+- **Finding**:
+  > "This derives plan direction from a fixed 0.000001 epsilon instead of the drift classification. `calculate_drift` marks any absolute drift <= `request.drift_threshold` (default 0.01) as BALANCED/HOLD, but `generate_rebalance_plan` still emits INCREASE/REDUCE for that same position and assigns a non-zero indicative amount. For example, a 0.5% overweight position is BALANCED in `drift_summary` but REDUCE in the plan, contradicting the documented ±1% HOLD behavior. Please use the classified action/status (or pass the threshold) consistently, zero out held adjustments/amounts, and add a test for a nonzero drift within threshold."
+
+### 11.2 Root Cause Analysis
+- `calculate_drift()` correctly classified positions with $|\text{drift}| \le \text{drift\_threshold}$ (default $0.01$) as `status = "BALANCED"` and `action = "HOLD"`.
+- However, `generate_rebalance_plan()` independently evaluated `direction` using a fixed threshold `Decimal("0.000001")` against raw `adj_weight`.
+- Consequently, positions with small non-zero drift within the threshold window (e.g., $+0.5\%$) were classified as `BALANCED / HOLD` in `drift_summary`, yet received actionable `REDUCE / INCREASE` trade recommendations with non-zero indicative monetary amounts in `rebalance_plan`.
+- This created an internal contradiction between the drift summary and the rebalance plan, violating the documented $\pm 1\%$ threshold contract.
+
+### 11.3 Remediation Architecture & Mathematical Conservation Policy
+1. **Unified Classification & Trade Direction**:
+   - `generate_rebalance_plan()` directly respects `item.action` established by `calculate_drift()` against `drift_threshold`.
+   - Independent fixed-epsilon direction evaluation has been completely removed.
+2. **Strict Zeroing of Held Adjustments & Amounts**:
+   - Every position classified as `HOLD` (`item.action == "HOLD"`):
+     $$\text{direction} = \text{"HOLD"}$$
+     $$\text{adjustment\_weight} = \text{Decimal}("0.000000")$$
+     $$\text{indicative\_amount} = \text{Decimal}("0.00") \quad (\text{when } V_{\text{portfolio}} > 0)$$
+     $$\text{explanation} = \text{"\{asset\_class\} is at \{current\_pct\}\%, within tolerance of target (\{target\_pct\}\%); no adjustment recommended."}$$
+   - No non-zero adjustment or amount is ever assigned to a `HOLD` position.
+3. **Actionable Positions Target-Restoring Policy**:
+   - Positions outside threshold (`item.action == "INCREASE"` or `item.action == "REDUCE"`):
+     $$\text{direction} = \text{item.action}$$
+     $$\text{adjustment\_weight} = w_{\text{target}} - w_{\text{current}} = -\text{drift}$$
+     $$\text{indicative\_amount} = (\text{adjustment\_weight} \times V_{\text{portfolio}}).\text{quantize}(\text{Decimal}("0.01"), \text{ROUND\_HALF\_UP})$$
+4. **Financial Capital Conservation Under Threshold Suppression**:
+   - When all positions with non-zero drift are actionable (or all drifts are zero), continuous adjustments sum to zero ($\sum \text{adjustment\_weight} = 0.000000$). Cent rounding residuals ($\pm \$0.01$) are deterministically reconciled among actionable candidates with largest absolute amounts, strictly guaranteeing $\sum \text{indicative\_amounts} == \text{Decimal}("0.00")$.
+   - When one or more non-zero drift positions are held within threshold ($|\text{drift}_i| \le \tau$), their drift is intentionally excluded from trading. In this case, capital conservation is not falsely claimed across actionable trades, held positions strictly receive $\$0.00$, and actionable positions receive honest target-restoring adjustments without residual contamination.
+
+### 11.4 Extended Regression Test Suite (47/47 Passing)
+8 new regression tests added across unit and contract test suites (suite expanded from 39 to 47 tests, 100% passing):
+- `test_drift_threshold_nonzero_drift_within_threshold_is_hold_and_zero_adjustment`: Verifies that a 0.5% drift within default 1% threshold yields `rebalance_required = False`, direction `HOLD`, adjustment weight `0.000000`, and amount `$0.00`.
+- `test_drift_threshold_inclusive_boundary_exactly_one_percent`: Verifies that drift exactly at boundary ($\pm 1.000000\%$) is inclusively classified as `BALANCED / HOLD` with zero adjustments.
+- `test_drift_threshold_just_above_and_just_below_boundary`: Verifies asymmetric boundary behavior (0.99% drift is `HOLD` with $0.00; 1.01% drift is `REDUCE` with non-zero amount).
+- `test_drift_threshold_mixed_held_and_actionable_positions`: Verifies mixed portfolio where Cash (+0.5% drift) is strictly `HOLD` ($0.00) while Equity (+15%) and Fixed Income (-15.5%) receive actionable rebalance trades.
+- `test_drift_threshold_custom_configurable_threshold`: Verifies that custom `drift_threshold = Decimal("0.002")` (0.2%) turns 0.5% drift into actionable `REDUCE`.
+- `test_drift_threshold_zero_threshold_enforces_exact_zero_sum_rebalancing`: Verifies that `drift_threshold = 0.0` trades all non-zero drifts with exact zero-sum weight and dollar conservation.
+- `test_rebalance_endpoint_nonzero_drift_within_threshold_held`: API contract test confirming HTTP 200 response reflects `direction: "HOLD"`, `adjustment_weight: 0.0`, `indicative_amount: 0.0`.
+- `test_rebalance_endpoint_custom_drift_threshold_actionable`: API contract test confirming custom `drift_threshold: 0.002` produces actionable recommendations via FastAPI.
+
+### 11.5 Quality Gates Verification
+- **Unit & Contract Tests**: 47 passed in 5.34s (`backend/.venv/Scripts/pytest.exe`)
+- **Scoring Tests**: 43 passed in 0.68s (`ai/risk/test_scoring.py`, `ai/risk/test_explanation.py`)
+- **Linter**: `ruff check` passed with zero errors across all affected files.
+- **Formatter**: `ruff format --check` passed (all files formatted).
+- **Type Check**: `mypy --config-file mypy.ini` passed with zero errors.
+- **Alembic Graph**: Exactly one linear migration head confirmed: `s3pa03_daily_snapshots (head)`.
+
 

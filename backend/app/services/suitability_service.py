@@ -403,34 +403,51 @@ class SuitabilityService:
     ) -> List[RebalancePlanItem]:
         """Generate deterministic, explainable rebalance recommendations from drift items.
 
-        Formula: adjustment_weight = target_weight - current_weight = -drift
-        Conserves portfolio capital exactly: sum(indicative_amounts) == Decimal('0.00').
+        Threshold and Action Policy:
+        - Positions classified as action 'HOLD' (absolute drift <= drift_threshold) are held:
+          direction = 'HOLD', adjustment_weight = Decimal('0.000000'), and
+          indicative_amount = Decimal('0.00') (or None if portfolio_value is None or <= 0).
+        - Actionable positions (OVERWEIGHT / UNDERWEIGHT) receive target-restoring adjustments:
+          direction = item.action ('REDUCE' or 'INCREASE').
+          adjustment_weight = target_weight - current_weight = -drift.
+        - Capital Conservation:
+          When all positions with non-zero drift are actionable (no non-zero drift is held),
+          sum(adjustment_weight) == Decimal('0.000000') and indicative monetary adjustments
+          conserve capital exactly: sum(indicative_amounts) == Decimal('0.00').
+          When non-zero drift positions are held, zero-sum conservation is not claimed across
+          actionable trades because the held asset's drift is intentionally excluded from trading.
         """
-        # Pre-compute indicative monetary amounts ensuring exact zero-sum conservation
+        has_held_nonzero_drift = any(
+            item.action == "HOLD" and item.drift != _ZERO for item in drift_items
+        )
+
         amounts_map: Dict[str, Optional[Decimal]] = {}
         if portfolio_value is not None and portfolio_value > _ZERO:
-            raw_amts: Dict[str, Decimal] = {
-                item.asset_class: (
-                    (item.target_weight - item.current_weight) * portfolio_value
-                ).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
-                for item in drift_items
-            }
-            monetary_residual = Decimal("0.00") - sum(raw_amts.values())
-            if monetary_residual != Decimal("0.00"):
-                candidates = [
-                    item.asset_class
-                    for item in drift_items
-                    if (item.target_weight - item.current_weight) != _ZERO
+            raw_amts: Dict[str, Decimal] = {}
+            for item in drift_items:
+                if item.action == "HOLD":
+                    raw_amts[item.asset_class] = Decimal("0.00")
+                else:
+                    adj_weight = item.target_weight - item.current_weight
+                    raw_amts[item.asset_class] = (adj_weight * portfolio_value).quantize(
+                        Decimal("0.01"), rounding=ROUND_HALF_UP
+                    )
+
+            # Conserve exact zero-sum monetary adjustments when mathematically valid
+            # (i.e. when no held position carries un-traded non-zero drift)
+            if not has_held_nonzero_drift:
+                actionable_candidates = [
+                    item.asset_class for item in drift_items if item.action != "HOLD"
                 ]
-                if candidates:
-                    # Deterministically assign monetary rounding residual (e.g. ±$0.01)
-                    # to the non-zero adjustment with the largest absolute amount,
-                    # using asset class name as stable tie-breaker.
-                    best_ac = sorted(
-                        candidates,
-                        key=lambda k: (-abs(raw_amts[k]), k),
-                    )[0]
-                    raw_amts[best_ac] += monetary_residual
+                if actionable_candidates:
+                    monetary_residual = Decimal("0.00") - sum(raw_amts.values())
+                    if monetary_residual != Decimal("0.00"):
+                        best_ac = sorted(
+                            actionable_candidates,
+                            key=lambda k: (-abs(raw_amts[k]), k),
+                        )[0]
+                        raw_amts[best_ac] += monetary_residual
+
             amounts_map = cast(Dict[str, Optional[Decimal]], raw_amts)
         else:
             amounts_map = {item.asset_class: None for item in drift_items}
@@ -443,23 +460,22 @@ class SuitabilityService:
             w_target = item.target_weight
             drift = item.drift
 
-            # Required adjustment fraction is -drift = target - current
-            adj_weight = w_target - w_curr
-
-            direction: Literal["INCREASE", "REDUCE", "HOLD"]
-            if adj_weight > Decimal("0.000001"):
+            if item.action == "HOLD":
+                direction: Literal["INCREASE", "REDUCE", "HOLD"] = "HOLD"
+                adj_weight = Decimal("0.000000")
+            elif item.action == "INCREASE":
                 direction = "INCREASE"
-            elif adj_weight < Decimal("-0.000001"):
-                direction = "REDUCE"
+                adj_weight = w_target - w_curr
             else:
-                direction = "HOLD"
+                direction = "REDUCE"
+                adj_weight = w_target - w_curr
 
             # Benchmark proxy info
             benchmark = BENCHMARK_PROXIES.get(ac)
             benchmark_symbol = benchmark["benchmark_symbol"] if benchmark else None
             benchmark_name = benchmark["benchmark_name"] if benchmark else None
 
-            # Indicative monetary amount from pre-computed conserved amounts map
+            # Indicative monetary amount from pre-computed amounts map
             indicative_amount = amounts_map.get(ac)
 
             # Educational explanation

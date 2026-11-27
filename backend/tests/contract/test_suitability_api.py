@@ -195,7 +195,7 @@ def test_rebalance_endpoint_boundary_allocations_normalized_and_conserved(
     client: TestClient,
 ) -> None:
     token = create_access_token({"sub": "user-test", "user_id": "user-test"})
-    # Lower boundary 99.9% allocation (50% + 30% + 19.9%)
+    # Lower boundary 99.9% allocation (50% + 30% + 19.9%) with drift_threshold=0.0
     response = client.post(
         "/api/v1/suitability/rebalance",
         headers={"Authorization": f"Bearer {token}"},
@@ -207,6 +207,7 @@ def test_rebalance_endpoint_boundary_allocations_normalized_and_conserved(
                 {"asset_class": "CASH", "weight": 19.9},
             ],
             "portfolio_value": 150000.55,
+            "drift_threshold": 0.0,
         },
     )
     assert response.status_code == 200
@@ -227,3 +228,64 @@ def test_rebalance_endpoint_boundary_allocations_normalized_and_conserved(
         if item["indicative_amount"] is not None
     )
     assert round(amt_sum, 2) == 0.00
+
+
+def test_rebalance_endpoint_nonzero_drift_within_threshold_held(
+    client: TestClient,
+) -> None:
+    """Non-zero drift within default 1% threshold is classified as HOLD with 0.0 adjustment."""
+    token = create_access_token({"sub": "user-test", "user_id": "user-test"})
+    response = client.post(
+        "/api/v1/suitability/rebalance",
+        headers={"Authorization": f"Bearer {token}"},
+        json={
+            "risk_category": "MODERATE",
+            "current_allocation": [
+                {"asset_class": "EQUITY", "weight": 0.505},
+                {"asset_class": "FIXED_INCOME", "weight": 0.395},
+                {"asset_class": "CASH", "weight": 0.100},
+            ],
+            "portfolio_value": 100000.0,
+        },
+    )
+    assert response.status_code == 200
+    data = response.json()["data"]
+    assert data["rebalance_required"] is False
+    for item in data["drift_summary"]:
+        assert item["status"] == "BALANCED"
+        assert item["action"] == "HOLD"
+    for item in data["rebalance_plan"]:
+        assert item["direction"] == "HOLD"
+        assert float(item["adjustment_weight"]) == 0.0
+        assert float(item["indicative_amount"]) == 0.0
+
+
+def test_rebalance_endpoint_custom_drift_threshold_actionable(
+    client: TestClient,
+) -> None:
+    """Configuring custom drift_threshold=0.002 turns 0.5% drift into actionable REDUCE."""
+    token = create_access_token({"sub": "user-test", "user_id": "user-test"})
+    response = client.post(
+        "/api/v1/suitability/rebalance",
+        headers={"Authorization": f"Bearer {token}"},
+        json={
+            "risk_category": "MODERATE",
+            "current_allocation": [
+                {"asset_class": "EQUITY", "weight": 0.505},
+                {"asset_class": "FIXED_INCOME", "weight": 0.395},
+                {"asset_class": "CASH", "weight": 0.100},
+            ],
+            "portfolio_value": 100000.0,
+            "drift_threshold": 0.002,
+        },
+    )
+    assert response.status_code == 200
+    data = response.json()["data"]
+    assert data["rebalance_required"] is True
+    plan_by_ac = {item["asset_class"]: item for item in data["rebalance_plan"]}
+    assert plan_by_ac["EQUITY"]["direction"] == "REDUCE"
+    assert round(float(plan_by_ac["EQUITY"]["adjustment_weight"]), 6) == -0.005000
+    assert round(float(plan_by_ac["EQUITY"]["indicative_amount"]), 2) == -500.00
+    assert plan_by_ac["FIXED_INCOME"]["direction"] == "INCREASE"
+    assert round(float(plan_by_ac["FIXED_INCOME"]["adjustment_weight"]), 6) == 0.005000
+    assert round(float(plan_by_ac["FIXED_INCOME"]["indicative_amount"]), 2) == 500.00

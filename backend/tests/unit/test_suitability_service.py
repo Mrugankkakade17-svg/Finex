@@ -498,8 +498,27 @@ def test_custom_allocation_tolerance_boundaries() -> None:
     res_ok = suitability_service.evaluate_suitability_rebalance(req_ok)
     assert res_ok.risk_category == "MODERATE"
     assert sum(item.current_weight for item in res_ok.drift_summary) == Decimal("1.000000")
+    assert sum(item.target_weight for item in res_ok.drift_summary) == Decimal("1.000000")
     assert sum(item.drift for item in res_ok.drift_summary) == Decimal("0.000000")
-    assert sum(item.adjustment_weight for item in res_ok.rebalance_plan) == Decimal("0.000000")
+
+    # Default threshold (0.01): EQUITY drift (-0.025%) within threshold -> HOLD with 0.0 adj
+    plan_by_ac = {item.asset_class: item for item in res_ok.rebalance_plan}
+    assert plan_by_ac["EQUITY"].direction == "HOLD"
+    assert plan_by_ac["EQUITY"].adjustment_weight == Decimal("0.000000")
+
+    # With drift_threshold=0.0: all positions actionable and sum(adj_weight) == 0.000000
+    req_all_trades = SuitabilityRebalanceRequest(
+        risk_category="MODERATE",
+        current_allocation=[
+            CurrentAllocationItem(asset_class="EQUITY", weight=Decimal("0.4995")),
+            CurrentAllocationItem(asset_class="FIXED_INCOME", weight=Decimal("0.5000")),
+        ],
+        drift_threshold=Decimal("0.000000"),
+    )
+    res_all_trades = suitability_service.evaluate_suitability_rebalance(req_all_trades)
+    assert sum(item.adjustment_weight for item in res_all_trades.rebalance_plan) == Decimal(
+        "0.000000"
+    )
 
     # Rejected outside tolerance (0.998 on fractional scale)
     req_bad = SuitabilityRebalanceRequest(
@@ -527,6 +546,7 @@ def test_custom_allocation_percentage_scale_boundary_normalization() -> None:
             CurrentAllocationItem(asset_class="CASH", weight=Decimal("19.9")),
         ],
         portfolio_value=portfolio_val,
+        drift_threshold=Decimal("0.000000"),  # All non-zero drift actionable
     )
     res_lower = suitability_service.evaluate_suitability_rebalance(req_lower)
     assert sum(item.current_weight for item in res_lower.drift_summary) == Decimal("1.000000")
@@ -537,7 +557,25 @@ def test_custom_allocation_percentage_scale_boundary_normalization() -> None:
         item.indicative_amount for item in res_lower.rebalance_plan if item.indicative_amount
     ) == Decimal("0.00")
 
+    # Under default threshold (0.01), verify EQUITY (+0.05% drift) is HOLD with 0.0 adj
+    req_lower_default_thresh = SuitabilityRebalanceRequest(
+        risk_category="MODERATE",
+        current_allocation=[
+            CurrentAllocationItem(asset_class="EQUITY", weight=Decimal("50.0")),
+            CurrentAllocationItem(asset_class="FIXED_INCOME", weight=Decimal("30.0")),
+            CurrentAllocationItem(asset_class="CASH", weight=Decimal("19.9")),
+        ],
+        portfolio_value=portfolio_val,
+    )
+    res_lower_default = suitability_service.evaluate_suitability_rebalance(req_lower_default_thresh)
+    plan_by_ac = {item.asset_class: item for item in res_lower_default.rebalance_plan}
+    assert plan_by_ac["EQUITY"].direction == "HOLD"
+    assert plan_by_ac["EQUITY"].adjustment_weight == Decimal("0.000000")
+    assert plan_by_ac["EQUITY"].indicative_amount == Decimal("0.00")
+
     # 2. Reviewer explicit finding case: 99.95% (20.0% + 30.0% + 49.95%)
+    # Target Moderate: 50% Equity, 40% Fixed Income, 10% Cash
+    # All drifts exceed default 1% threshold: Equity -30%, Fixed Income -10%, Cash +40%
     req_finding = SuitabilityRebalanceRequest(
         risk_category="MODERATE",
         current_allocation=[
@@ -565,6 +603,7 @@ def test_custom_allocation_percentage_scale_boundary_normalization() -> None:
             CurrentAllocationItem(asset_class="CASH", weight=Decimal("20.1")),
         ],
         portfolio_value=portfolio_val,
+        drift_threshold=Decimal("0.000000"),  # All non-zero drift actionable
     )
     res_upper = suitability_service.evaluate_suitability_rebalance(req_upper)
     assert sum(item.current_weight for item in res_upper.drift_summary) == Decimal("1.000000")
@@ -581,6 +620,8 @@ def test_custom_allocation_fractional_scale_boundary_normalization() -> None:
     portfolio_val = Decimal("200000.00")
 
     # 1. Lower boundary: 0.999 (0.500 + 0.300 + 0.199)
+    # Target Conservative: Equity 20%, Fixed Income 70%, Cash 10%
+    # Drifts: Equity +30%, Fixed Income -40%, Cash +10% -> all exceed 1% threshold
     req_lower = SuitabilityRebalanceRequest(
         risk_category="CONSERVATIVE",
         current_allocation=[
@@ -709,3 +750,211 @@ def test_custom_allocation_zero_sum_rebalancing_and_value_conservation() -> None
     # 4. Sum of indicative monetary adjustments must equal zero (portfolio value conservation)
     amt_sum = sum(item.indicative_amount for item in res.rebalance_plan if item.indicative_amount)
     assert amt_sum == Decimal("0.00")
+
+
+# ==============================================================================
+# D. Drift Threshold & Action Classification Consistency Tests (Reviewer Finding PR #160)
+# ==============================================================================
+
+
+def test_drift_threshold_nonzero_drift_within_threshold_is_hold_and_zero_adjustment() -> None:
+    """Non-zero 0.5% drift within default 1% threshold is BALANCED/HOLD with 0.0 adjustment."""
+    # Target Moderate: Equity 50%, Fixed Income 40%, Cash 10%
+    # Current: Equity 50.5% (+0.5% drift), Fixed Income 39.5% (-0.5% drift), Cash 10.0% (0.0% drift)
+    req = SuitabilityRebalanceRequest(
+        risk_category="MODERATE",
+        current_allocation=[
+            CurrentAllocationItem(asset_class="EQUITY", weight=Decimal("0.505")),
+            CurrentAllocationItem(asset_class="FIXED_INCOME", weight=Decimal("0.395")),
+            CurrentAllocationItem(asset_class="CASH", weight=Decimal("0.100")),
+        ],
+        portfolio_value=Decimal("100000.00"),
+    )
+    res = suitability_service.evaluate_suitability_rebalance(req)
+
+    # Rebalance is NOT required because all drifts are within 1% threshold
+    assert res.rebalance_required is False
+    assert res.max_drift == Decimal("0.005000")
+
+    # Drift summary: all items must be BALANCED and HOLD
+    for drift_item in res.drift_summary:
+        assert drift_item.status == "BALANCED"
+        assert drift_item.action == "HOLD"
+
+    # Plan: all items must have direction HOLD, adjustment 0.000000, amount 0.00
+    for plan_item in res.rebalance_plan:
+        assert plan_item.direction == "HOLD"
+        assert plan_item.adjustment_weight == Decimal("0.000000")
+        assert plan_item.indicative_amount == Decimal("0.00")
+        assert "within tolerance of target" in plan_item.explanation
+        assert "no adjustment recommended" in plan_item.explanation
+
+    # Mathematical sums
+    assert sum(p.adjustment_weight for p in res.rebalance_plan) == Decimal("0.000000")
+    assert sum(p.indicative_amount for p in res.rebalance_plan if p.indicative_amount) == Decimal(
+        "0.00"
+    )
+
+
+def test_drift_threshold_inclusive_boundary_exactly_one_percent() -> None:
+    """Drift exactly at threshold boundary (abs(drift) == 0.010000) is BALANCED/HOLD."""
+    # Target Moderate: Equity 50%, Fixed Income 40%, Cash 10%
+    # Current: Equity 51.0% (+1.0%), Fixed Income 39.0% (-1.0%), Cash 10.0% (0.0%)
+    req = SuitabilityRebalanceRequest(
+        risk_category="MODERATE",
+        current_allocation=[
+            CurrentAllocationItem(asset_class="EQUITY", weight=Decimal("0.510000")),
+            CurrentAllocationItem(asset_class="FIXED_INCOME", weight=Decimal("0.390000")),
+            CurrentAllocationItem(asset_class="CASH", weight=Decimal("0.100000")),
+        ],
+        portfolio_value=Decimal("100000.00"),
+        drift_threshold=Decimal("0.01"),
+    )
+    res = suitability_service.evaluate_suitability_rebalance(req)
+
+    # abs(0.010000) <= 0.01 is inclusive -> BALANCED / HOLD
+    assert res.rebalance_required is False
+    for drift_item in res.drift_summary:
+        assert drift_item.status == "BALANCED"
+        assert drift_item.action == "HOLD"
+
+    for plan_item in res.rebalance_plan:
+        assert plan_item.direction == "HOLD"
+        assert plan_item.adjustment_weight == Decimal("0.000000")
+        assert plan_item.indicative_amount == Decimal("0.00")
+
+
+def test_drift_threshold_just_above_and_just_below_boundary() -> None:
+    """Drift just below threshold (0.99%) is HOLD; just above (1.01%) is actionable."""
+    portfolio_val = Decimal("100000.00")
+
+    # 1. Just below threshold (0.99% drift)
+    req_below = SuitabilityRebalanceRequest(
+        risk_category="MODERATE",
+        current_allocation=[
+            CurrentAllocationItem(asset_class="EQUITY", weight=Decimal("0.509900")),
+            CurrentAllocationItem(asset_class="FIXED_INCOME", weight=Decimal("0.390100")),
+            CurrentAllocationItem(asset_class="CASH", weight=Decimal("0.100000")),
+        ],
+        portfolio_value=portfolio_val,
+        drift_threshold=Decimal("0.01"),
+    )
+    res_below = suitability_service.evaluate_suitability_rebalance(req_below)
+    assert res_below.rebalance_required is False
+    for p in res_below.rebalance_plan:
+        assert p.direction == "HOLD"
+        assert p.adjustment_weight == Decimal("0.000000")
+        assert p.indicative_amount == Decimal("0.00")
+
+    # 2. Just above threshold (1.01% drift)
+    req_above = SuitabilityRebalanceRequest(
+        risk_category="MODERATE",
+        current_allocation=[
+            CurrentAllocationItem(asset_class="EQUITY", weight=Decimal("0.510100")),
+            CurrentAllocationItem(asset_class="FIXED_INCOME", weight=Decimal("0.389900")),
+            CurrentAllocationItem(asset_class="CASH", weight=Decimal("0.100000")),
+        ],
+        portfolio_value=portfolio_val,
+        drift_threshold=Decimal("0.01"),
+    )
+    res_above = suitability_service.evaluate_suitability_rebalance(req_above)
+    assert res_above.rebalance_required is True
+
+    plan_map = {p.asset_class: p for p in res_above.rebalance_plan}
+    assert plan_map["EQUITY"].direction == "REDUCE"
+    assert plan_map["EQUITY"].adjustment_weight == Decimal("-0.010100")
+    assert plan_map["EQUITY"].indicative_amount == Decimal("-1010.00")
+
+    assert plan_map["FIXED_INCOME"].direction == "INCREASE"
+    assert plan_map["FIXED_INCOME"].adjustment_weight == Decimal("0.010100")
+    assert plan_map["FIXED_INCOME"].indicative_amount == Decimal("1010.00")
+
+    assert plan_map["CASH"].direction == "HOLD"
+    assert plan_map["CASH"].adjustment_weight == Decimal("0.000000")
+    assert plan_map["CASH"].indicative_amount == Decimal("0.00")
+
+
+def test_drift_threshold_mixed_held_and_actionable_positions() -> None:
+    """Verify that held positions receive exactly 0.00 while actionable positions receive trades."""
+    # Target Moderate: Equity 50%, Fixed Income 40%, Cash 10%
+    # Current: Equity 65% (REDUCE), Fixed Income 24.5% (INCREASE), Cash 10.5% (HOLD)
+    req = SuitabilityRebalanceRequest(
+        risk_category="MODERATE",
+        current_allocation=[
+            CurrentAllocationItem(asset_class="EQUITY", weight=Decimal("0.650")),
+            CurrentAllocationItem(asset_class="FIXED_INCOME", weight=Decimal("0.245")),
+            CurrentAllocationItem(asset_class="CASH", weight=Decimal("0.105")),
+        ],
+        portfolio_value=Decimal("100000.00"),
+        drift_threshold=Decimal("0.01"),
+    )
+    res = suitability_service.evaluate_suitability_rebalance(req)
+    assert res.rebalance_required is True
+
+    plan_by_ac = {p.asset_class: p for p in res.rebalance_plan}
+
+    # Actionable: Equity reduces by 15% ($15,000)
+    assert plan_by_ac["EQUITY"].direction == "REDUCE"
+    assert plan_by_ac["EQUITY"].adjustment_weight == Decimal("-0.150000")
+    assert plan_by_ac["EQUITY"].indicative_amount == Decimal("-15000.00")
+
+    # Actionable: Fixed Income increases by 15.5% ($15,500)
+    assert plan_by_ac["FIXED_INCOME"].direction == "INCREASE"
+    assert plan_by_ac["FIXED_INCOME"].adjustment_weight == Decimal("0.155000")
+    assert plan_by_ac["FIXED_INCOME"].indicative_amount == Decimal("15500.00")
+
+    # Held: Cash (+0.5% drift) within 1% threshold -> strictly HOLD, 0.000000 weight, $0.00 amount
+    assert plan_by_ac["CASH"].direction == "HOLD"
+    assert plan_by_ac["CASH"].adjustment_weight == Decimal("0.000000")
+    assert plan_by_ac["CASH"].indicative_amount == Decimal("0.00")
+
+
+def test_drift_threshold_custom_configurable_threshold() -> None:
+    """Custom drift threshold (0.2%) makes 0.5% drift actionable."""
+    req = SuitabilityRebalanceRequest(
+        risk_category="MODERATE",
+        current_allocation=[
+            CurrentAllocationItem(asset_class="EQUITY", weight=Decimal("0.505")),
+            CurrentAllocationItem(asset_class="FIXED_INCOME", weight=Decimal("0.395")),
+            CurrentAllocationItem(asset_class="CASH", weight=Decimal("0.100")),
+        ],
+        portfolio_value=Decimal("100000.00"),
+        drift_threshold=Decimal("0.002"),  # 0.2% threshold
+    )
+    res = suitability_service.evaluate_suitability_rebalance(req)
+    assert res.rebalance_required is True
+
+    plan_by_ac = {p.asset_class: p for p in res.rebalance_plan}
+    assert plan_by_ac["EQUITY"].direction == "REDUCE"
+    assert plan_by_ac["EQUITY"].adjustment_weight == Decimal("-0.005000")
+    assert plan_by_ac["EQUITY"].indicative_amount == Decimal("-500.00")
+
+    assert plan_by_ac["FIXED_INCOME"].direction == "INCREASE"
+    assert plan_by_ac["FIXED_INCOME"].adjustment_weight == Decimal("0.005000")
+    assert plan_by_ac["FIXED_INCOME"].indicative_amount == Decimal("500.00")
+
+    assert plan_by_ac["CASH"].direction == "HOLD"
+    assert plan_by_ac["CASH"].adjustment_weight == Decimal("0.000000")
+    assert plan_by_ac["CASH"].indicative_amount == Decimal("0.00")
+
+
+def test_drift_threshold_zero_threshold_enforces_exact_zero_sum_rebalancing() -> None:
+    """Setting drift_threshold=0.0 guarantees all non-zero drifts are traded with exact zero-sum."""
+    req = SuitabilityRebalanceRequest(
+        risk_category="MODERATE",
+        current_allocation=[
+            CurrentAllocationItem(asset_class="EQUITY", weight=Decimal("0.505")),
+            CurrentAllocationItem(asset_class="FIXED_INCOME", weight=Decimal("0.395")),
+            CurrentAllocationItem(asset_class="CASH", weight=Decimal("0.100")),
+        ],
+        portfolio_value=Decimal("100000.00"),
+        drift_threshold=Decimal("0.000000"),
+    )
+    res = suitability_service.evaluate_suitability_rebalance(req)
+    assert res.rebalance_required is True
+
+    # When all non-zero drift is actionable, sum of adjustments is exactly 0.000000 and $0.00
+    assert sum(p.adjustment_weight for p in res.rebalance_plan) == Decimal("0.000000")
+    assert sum(p.indicative_amount for p in res.rebalance_plan if p.indicative_amount) == Decimal(
+        "0.00"
+    )
