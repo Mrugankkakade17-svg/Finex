@@ -40,15 +40,12 @@ jobs:
           cache-dependency-path: frontend-react/package-lock.json
 
       - name: Install dependencies
-        run: npm ci
-        working-directory: frontend-react
+        run: cd frontend-react && npm ci
 
       - name: Run tests
-        run: npm test -- --watchAll=false
-        working-directory: frontend-react
+        run: cd frontend-react && npm test -- --watchAll=false
         env:
           CI: "true"
 
       - name: Build production bundle
-        run: npm run build
-        working-directory: frontend-react
+        run: cd frontend-react && npm run build
