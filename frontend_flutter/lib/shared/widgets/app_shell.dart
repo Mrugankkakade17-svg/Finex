@@ -16,17 +16,28 @@ class AppShell extends StatelessWidget {
     required this.location,
   });
 
-  static const _destinations = [
-    ('Saved onboarding', '/onboarding', Icons.person_outline),
-    ('S1 dashboard', '/dashboard', Icons.dashboard_outlined),
-    ('Saved S2 risk', '/risk', Icons.shield_outlined),
-    ('Manual S2 portfolios', '/portfolio', Icons.pie_chart_outline),
-    ('S3 synthetic market', '/market', Icons.search_outlined),
-    ('S3 owned watchlists', '/watchlist', Icons.star_outline),
-    ('S3 simulated account', '/account', Icons.settings_outlined),
-    ('S4 paper ledger (pending)', '/paper-trading', Icons.trending_up),
-    ('S4 goals (pending)', '/goals', Icons.flag_outlined),
-  ];
+  static List<(String, String, IconData)> destinations(LocalSession session) =>
+      [
+        ('Saved onboarding', '/onboarding', Icons.person_outline),
+        ('S1 dashboard', '/dashboard', Icons.dashboard_outlined),
+        ('Saved S2 risk', '/risk', Icons.shield_outlined),
+        ('Manual S2 portfolios', '/portfolio', Icons.pie_chart_outline),
+        ('S3 synthetic market', '/market', Icons.search_outlined),
+        ('S3 owned watchlists', '/watchlist', Icons.star_outline),
+        ('S3 simulated account', '/account', Icons.settings_outlined),
+        (
+          session.isPendingSprint(4)
+              ? 'S4 paper ledger (pending)'
+              : 'Paper trading',
+          '/paper-trading',
+          Icons.trending_up,
+        ),
+        (
+          session.isPendingSprint(4) ? 'S4 goals (pending)' : 'Financial goals',
+          '/goals',
+          Icons.flag_outlined,
+        ),
+      ];
 
   @override
   Widget build(BuildContext context) {
@@ -85,7 +96,7 @@ class AppShell extends StatelessWidget {
                             Icons.shield_outlined,
                           ),
                         ] else if (session.isAuthenticated)
-                          for (final item in _destinations)
+                          for (final item in destinations(session))
                             _tile(context, location, item.$1, item.$2, item.$3),
                         _tile(
                           context,
