@@ -81,7 +81,7 @@ export const AlertsPage: React.FC = () => {
                 style={{
                   padding: '12px',
                   borderRadius: '14px',
-                  background: a.read ? '#F4F8F5' : 'rgba(255, 114, 94, 0.14)',
+                  background: a.read ? 'var(--color-surface-elevated)' : 'rgba(237, 121, 93, 0.16)',
                 }}
               >
                 {a.type === 'PRICE_MOVE' ? (

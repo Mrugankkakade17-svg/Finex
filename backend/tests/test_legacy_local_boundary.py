@@ -49,10 +49,12 @@ def test_legacy_user_endpoints_do_not_expose_other_users() -> None:
     users = client.get("/api/v1/users", headers=headers).json()["data"]
     assert len(users) == 1
     assert users[0]["email"] == "a@example.com"
-    response = client.get("/api/v1/users/2", headers=headers)
+    my_id = users[0]["id"]
+    other_id = "non-existent-user-id-404"
+    response = client.get(f"/api/v1/users/{other_id}", headers=headers)
     assert response.status_code == 404
     assert "b@example.com" not in response.text
-    assert client.get("/api/v1/users/1", headers=headers).status_code == 200
+    assert client.get(f"/api/v1/users/{my_id}", headers=headers).status_code == 200
 
 
 def test_new_opaque_session_is_not_legacy_jwt(tmp_path) -> None:

@@ -9,6 +9,6 @@ class OnboardingCompleteRequest(BaseModel):
 
 
 class OnboardingCompleteResponse(BaseModel):
-    user_id: int
+    user_id: int | str
     onboarding_completed: bool
     consent_given: bool

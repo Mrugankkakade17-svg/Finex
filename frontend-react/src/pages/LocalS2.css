@@ -42,10 +42,10 @@
   font-size: 0.85rem;
   overflow-wrap: anywhere;
   margin: 12px 0;
-  background: #F6FAF7;
+  background: var(--color-surface-elevated);
   padding: 14px;
   border-radius: 10px;
-  border: 1px solid var(--color-surface-divider);
+  border: 1px solid var(--color-border);
 }
 .local-s2-digest {
   word-break: break-all;
@@ -87,8 +87,8 @@
   margin-top: 28px;
 }
 .local-s2-row {
-  border: 1.5px solid var(--color-surface-divider);
-  background: #F9FCFA;
+  border: 1.5px solid var(--color-border);
+  background: var(--color-surface-elevated);
   border-radius: 14px;
   padding: 18px;
   margin: 14px 0;

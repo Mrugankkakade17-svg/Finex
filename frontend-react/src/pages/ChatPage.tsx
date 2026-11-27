@@ -148,7 +148,7 @@ export const ChatPage: React.FC = () => {
                     ? 'var(--color-accent-coral)'
                     : msg.isRefusal
                       ? '#FEF3F2'
-                      : '#F6FAF7',
+                      : 'var(--color-surface-elevated)',
                 border:
                   msg.role === 'user'
                     ? 'none'

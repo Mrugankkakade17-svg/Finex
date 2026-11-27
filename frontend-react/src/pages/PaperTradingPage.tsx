@@ -200,7 +200,7 @@ export const PaperTradingPage: React.FC = () => {
             style={{
               padding: '22px',
               borderRadius: '16px',
-              background: '#F6FAF7',
+              background: 'var(--color-surface-elevated)',
               border: '1px solid var(--color-surface-divider)',
               marginBottom: '20px',
             }}

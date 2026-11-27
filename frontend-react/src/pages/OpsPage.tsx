@@ -122,7 +122,7 @@ export const OpsPage: React.FC = () => {
                   alignItems: 'center',
                   justifyContent: 'space-between',
                   padding: '14px 16px',
-                  background: '#F6FAF7',
+                  background: 'var(--color-surface-elevated)',
                   border: '1px solid var(--color-surface-divider)',
                   borderRadius: '14px',
                 }}

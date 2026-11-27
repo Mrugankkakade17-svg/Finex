@@ -110,6 +110,12 @@ class Settings(BaseSettings):
     market_data_provider: str = "mock"
     market_data_api_key: str = ""
 
+    # Annual effective rate used by deterministic portfolio analytics. The
+    # default is explicitly unconfigured and must not be presented as a quote.
+    analytics_risk_free_rate: float = 0.0
+    analytics_risk_free_rate_source: str = "Unconfigured FinEx default"
+    analytics_risk_free_rate_as_of: str = "UNCONFIGURED"
+
     google_client_id: str = ""
     allow_mock_google_auth: bool | None = None
     paper_trading_initial_cash: Decimal = Field(
