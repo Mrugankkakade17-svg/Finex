@@ -14,7 +14,7 @@ on:
       - "frontend-react/**"
       - "docs/evidence/s2-full-acceptance.md"
       - "docs/evidence/s3-api-validation.md"
-      - "docs/evidence/s3-owned-flutter-validation.yml"
+      - "docs/evidence/s3-owned-flutter-validation.md"
       - ".nvmrc"
       - ".github/workflows/frontend-react-quality.yml"
 
