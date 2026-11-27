@@ -165,13 +165,15 @@ All endpoints are exposed under tag `suitability` and present in `/openapi.json`
 
 ## 6. Verification and Test Execution Log
 
-### Linters & Type Checking
-- `python -m ruff check app/core/exceptions.py app/schemas/suitability.py app/services/suitability_service.py app/routers/suitability.py tests/unit/test_suitability_service.py tests/contract/test_suitability_api.py`
-  - **Result**: PASSED (0 errors)
-- `python -m ruff format --check app/core/exceptions.py app/schemas/suitability.py app/services/suitability_service.py app/routers/suitability.py tests/unit/test_suitability_service.py tests/contract/test_suitability_api.py`
-  - **Result**: PASSED (6 files inspected, 6 formatted)
-- `python -m mypy app/core/exceptions.py app/schemas/suitability.py app/services/suitability_service.py app/routers/suitability.py tests/unit/test_suitability_service.py tests/contract/test_suitability_api.py`
-  - **Result**: PASSED (`Success: no issues found in 6 source files`)
+### Linters, Type Checking & Migrations
+- `python -m alembic heads`
+  - **Result**: PASSED (`s3_li01_merge_heads (head)` — exactly one linear head)
+- `python -m ruff check .`
+  - **Result**: PASSED (All checks passed!)
+- `python -m ruff format --check .`
+  - **Result**: PASSED (377 files already formatted)
+- `python -m mypy app alembic/versions/s3_li01_merge_heads.py`
+  - **Result**: PASSED (`Success: no issues found in 190 source files`)
 
 ### Unit & Contract Tests
 - `python -m pytest tests/unit/test_suitability_service.py tests/contract/test_suitability_api.py`
@@ -194,7 +196,8 @@ All endpoints are exposed under tag `suitability` and present in `/openapi.json`
 5. `backend/app/main.py` — Router registration.
 6. `backend/tests/unit/test_suitability_service.py` — 19 comprehensive unit, property, invariant, and persona tests.
 7. `backend/tests/contract/test_suitability_api.py` — 7 contract, OpenAPI, authentication, and user-isolation tests.
-8. `docs/evidence/s3_li01_evidence.md` — Authoritative evidence document.
+8. `backend/alembic/versions/s3_li01_merge_heads.py` — Alembic merge revision unifying parallel heads `s2pa06_watchlists` and `s3_pa01_merge_heads`.
+9. `docs/evidence/s3_li01_evidence.md` — Authoritative evidence document.
 
 ---
 
