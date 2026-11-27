@@ -19,11 +19,19 @@ export interface ApiClient {
 
 export class ApiClientError extends Error {
   readonly code: string;
+  readonly status?: number;
+  readonly fieldErrors?: Record<string, string>;
 
-  constructor(message: string, code = 'API_REQUEST_FAILED') {
+  constructor(
+    message: string,
+    code = 'API_REQUEST_FAILED',
+    options?: { status?: number; fieldErrors?: Record<string, string> },
+  ) {
     super(message);
     this.name = 'ApiClientError';
     this.code = code;
+    this.status = options?.status;
+    this.fieldErrors = options?.fieldErrors;
   }
 }
 
