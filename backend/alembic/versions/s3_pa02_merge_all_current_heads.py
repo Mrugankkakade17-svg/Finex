@@ -6,7 +6,6 @@ revision: str = "s3pa02_all_heads"
 down_revision: Union[str, Sequence[str], None] = (
     "s2pa06_watchlists",
     "s3_pa01_merge_heads",
-    "s3pa02_merge_heads",
 )
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None

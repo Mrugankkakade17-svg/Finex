@@ -7,6 +7,16 @@ from datetime import date, datetime
 from decimal import Decimal, InvalidOperation
 from typing import Iterable
 
+from app.schemas.market import DataFreshness
+
+_ALLOWED_FRESHNESS = {
+    DataFreshness.END_OF_DAY.value,
+    DataFreshness.DELAYED.value,
+    DataFreshness.CACHED.value,
+    DataFreshness.STALE.value,
+    DataFreshness.UNAVAILABLE.value,
+}
+
 
 def _currency(value: str) -> str:
     code = value.strip().upper()
@@ -38,19 +48,25 @@ class FxRate:
     freshness: str = "END_OF_DAY"
 
     def __post_init__(self) -> None:
-        if not self.rate_id.strip() or not self.source.strip():
+        rate_id, source = self.rate_id.strip(), self.source.strip()
+        if not rate_id or not source:
             raise ValueError("FX rate requires a rate ID and source label.")
         base, quote = _currency(self.base_currency), _currency(self.quote_currency)
         if base == quote:
             raise ValueError("Base and quote currencies must differ.")
         if not isinstance(self.as_of, date) or isinstance(self.as_of, datetime):
             raise ValueError("FX as_of must be a date-only value.")
-        if not self.freshness.strip():
-            raise ValueError("FX freshness label cannot be empty.")
+        if not isinstance(self.freshness, str):
+            raise ValueError("FX freshness must be a valid non-live data freshness label.")
+        freshness = self.freshness.strip().upper()
+        if freshness not in _ALLOWED_FRESHNESS:
+            raise ValueError("FX freshness must be a valid non-live data freshness label.")
+        object.__setattr__(self, "rate_id", rate_id)
+        object.__setattr__(self, "source", source)
         object.__setattr__(self, "base_currency", base)
         object.__setattr__(self, "quote_currency", quote)
         object.__setattr__(self, "rate", _positive_rate(self.rate))
-        object.__setattr__(self, "freshness", self.freshness.strip().upper())
+        object.__setattr__(self, "freshness", freshness)
 
 
 @dataclass(frozen=True, slots=True)
@@ -121,21 +137,32 @@ class FxSeries:
             return FxConversion(
                 value, source, target, Decimal("1"), "identity", "identity", on, "IDENTITY"
             )
-        inverted = False
+
         try:
-            rate_record = self.get_rate(source, target, on)
-            conversion_rate = rate_record.rate
+            direct_rate = self.get_rate(source, target, on)
         except LookupError:
-            try:
-                rate_record = self.get_rate(target, source, on)
-            except LookupError as inverse_error:
-                raise LookupError(
-                    f"No {source}/{target} FX rate is available on or before {on}."
-                ) from inverse_error
+            direct_rate = None
+        try:
+            inverse_rate = self.get_rate(target, source, on)
+        except LookupError:
+            inverse_rate = None
+
+        if direct_rate is None and inverse_rate is None:
+            raise LookupError(f"No {source}/{target} FX rate is available on or before {on}.")
+        inverted = inverse_rate is not None and (
+            direct_rate is None or inverse_rate.as_of > direct_rate.as_of
+        )
+        if inverted:
+            rate_record = inverse_rate
             conversion_rate = Decimal("1") / rate_record.rate
-            inverted = True
+            converted_amount = value / rate_record.rate
+        else:
+            rate_record = direct_rate
+            conversion_rate = rate_record.rate
+            converted_amount = value * rate_record.rate
+
         return FxConversion(
-            amount=value * conversion_rate,
+            amount=converted_amount,
             source_currency=source,
             target_currency=target,
             rate=conversion_rate,
