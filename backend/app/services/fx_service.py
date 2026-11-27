@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import date
+from datetime import date, datetime
 from decimal import Decimal, InvalidOperation
 from typing import Iterable
 
@@ -43,8 +43,8 @@ class FxRate:
         base, quote = _currency(self.base_currency), _currency(self.quote_currency)
         if base == quote:
             raise ValueError("Base and quote currencies must differ.")
-        if not isinstance(self.as_of, date):
-            raise ValueError("FX as_of must be a date.")
+        if not isinstance(self.as_of, date) or isinstance(self.as_of, datetime):
+            raise ValueError("FX as_of must be a date-only value.")
         if not self.freshness.strip():
             raise ValueError("FX freshness label cannot be empty.")
         object.__setattr__(self, "base_currency", base)
@@ -87,8 +87,8 @@ class FxSeries:
     def get_rate(self, base_currency: str, quote_currency: str, on: date) -> FxRate:
         """Return the latest direct rate on or before the requested valuation date."""
         base, quote = _currency(base_currency), _currency(quote_currency)
-        if not isinstance(on, date):
-            raise ValueError("Valuation date must be a date.")
+        if not isinstance(on, date) or isinstance(on, datetime):
+            raise ValueError("Valuation date must be a date-only value.")
         if base == quote:
             raise ValueError("Identical currencies do not have a stored FX rate.")
         candidates = [r for r in self._rates.get((base, quote), ()) if r.as_of <= on]
@@ -109,6 +109,8 @@ class FxSeries:
     ) -> FxConversion:
         """Convert using direct rate, or its mathematical inverse, preserving labels."""
         source, target = _currency(source_currency), _currency(target_currency)
+        if not isinstance(on, date) or isinstance(on, datetime):
+            raise ValueError("Valuation date must be a date-only value.")
         try:
             value = amount if isinstance(amount, Decimal) else Decimal(str(amount))
         except (InvalidOperation, ValueError) as exc:

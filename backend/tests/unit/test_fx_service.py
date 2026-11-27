@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, datetime
 from decimal import Decimal
 
 import pytest
@@ -65,3 +65,20 @@ def test_duplicate_ids_and_malformed_currency_are_rejected():
         FxSeries([make_rate(), make_rate()])
     with pytest.raises(ValueError, match="three-letter"):
         make_rate(pair=("US", "INR"))
+
+
+def test_rate_rejects_datetime_as_as_of_date():
+    with pytest.raises(ValueError, match="date-only"):
+        make_rate(day=datetime(2026, 1, 1))
+
+
+def test_conversion_rejects_datetime_valuation_date():
+    service = FxService(FxSeries([make_rate()]))
+    with pytest.raises(ValueError, match="date-only"):
+        service.convert("1", "USD", "INR", datetime(2026, 1, 1))
+
+
+def test_identity_conversion_rejects_datetime_valuation_date():
+    service = FxService(FxSeries())
+    with pytest.raises(ValueError, match="date-only"):
+        service.convert("1", "USD", "USD", datetime(2026, 1, 1))

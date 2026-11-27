@@ -6,11 +6,10 @@
 
 ## Verification
 
-Unit coverage is in `backend/tests/unit/test_fx_service.py`: direct USD→INR valuation, inverse INR→USD valuation, dated selection, identity conversion, missing/future rates, duplicate IDs, malformed currencies, and invalid/non-finite rates.
+Unit coverage is in `backend/tests/unit/test_fx_service.py`: direct USD→INR valuation, inverse INR→USD valuation, dated selection, identity conversion, missing/future rates, duplicate IDs, malformed currencies, invalid/non-finite rates, and rejection of `datetime` values for rate and valuation dates (including identity conversions).
 
-- `python -m ruff check .` (from `backend`): passed.
-- `python -m pytest -q` (from `backend`): 3,105 passed, 25 skipped, 2 xfailed, 2 xpassed, 2 failed. Both failures are pre-existing SQLite concurrent schema-upgrade cases in `tests/unit/test_local_s3_schema.py` for prior schema versions `[1]` and `[2]`; the FX tests pass after fixes.
-- `python -m pytest backend/tests/unit/test_fx_service.py -q -o addopts=''`: 10 passed.
-- `python -m ruff check backend`: passed.
+- `.venv\\Scripts\\python -m ruff check .` (from `backend`): passed (`All checks passed!`).
+- `.venv\\Scripts\\python -m pytest tests/unit/test_fx_service.py -q -o addopts=''` (from `backend`): 13 passed.
+- `.venv\\Scripts\\python -m pytest -q` (from `backend`): 3,057 passed, 25 skipped, 2 xfailed, 2 xpassed, 43 failed; coverage 81.74%. The failures are in unrelated existing tests in `test_owned_s2_acceptance_launcher.py` (32), `test_s1_acceptance_launcher.py` (2), `test_s2_evidence_pair_validation.py` (4), and `test_verify_s3_foundation.py` (5). The FX tests passed in this run.
 
-The first full run exposed two assertions in the new FX tests; the inverse precision expectation and missing inverse-rate error were corrected, and the focused suite now passes. The full suite was not rerun after those corrections; the SQLite concurrency failures remain the only unrelated failures observed in the full run.
+The complete backend suite was rerun after adding the date-only validation and regression tests. Its 43 failures are in launcher/evidence tests listed above; no FX test failed. The focused FX suite and Ruff both pass.
