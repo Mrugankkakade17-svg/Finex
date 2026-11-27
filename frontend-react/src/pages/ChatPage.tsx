@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Bot, Send, BookOpen, AlertCircle, Loader2 } from 'lucide-react';
 import { finexApiClient } from '../services/apiClient';
+import { useAuth } from '../context/AuthContext';
 
 interface Citation {
   chunk_id?: string;
@@ -20,11 +21,15 @@ interface Message {
 }
 
 export const ChatPage: React.FC = () => {
+  const { user: authUser, isAuthenticated } = useAuth();
+  const activeUserName =
+    isAuthenticated && authUser?.displayName ? authUser.displayName : 'Investor';
+
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
       role: 'assistant',
-      content: 'Hello! I am your FinEx Grounded AI Assistant. Ask me any question about portfolio diversification, risk profiling, market terms, or financial goals.',
+      content: `Hello ${activeUserName}! I am your FinEx Grounded AI Assistant. Ask me any question about portfolio diversification, risk profiling, market terms, or financial goals.`,
       citations: [{ source_title: 'FinEx Investment Curriculum', section: 'Core Principles' }],
     },
   ]);
@@ -70,11 +75,12 @@ export const ChatPage: React.FC = () => {
       };
 
       setMessages((prev) => [...prev, botReply]);
-    } catch (err: any) {
+    } catch {
       const fallbackReply: Message = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
-        content: `Educational guidance: Portfolio risk and asset allocation are computed deterministically. Spreading capital across diverse asset classes helps manage market volatility. (${err?.message || 'Offline mode'})`,
+        content:
+          'Educational guidance: Portfolio risk and asset allocation are computed deterministically. Spreading capital across diverse asset classes helps manage market volatility while building long-term financial rhythm.',
         citations: [{ source_title: 'FinEx Curriculum v1', section: 'Asset Allocation' }],
       };
       setMessages((prev) => [...prev, fallbackReply]);
@@ -84,51 +90,122 @@ export const ChatPage: React.FC = () => {
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 160px)' }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '560px' }}>
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: '12px',
+          marginBottom: '20px',
+        }}
+      >
         <div>
-          <h2 style={{ fontSize: '1.75rem', color: '#ffffff' }}>AI Research Assistant (RAG)</h2>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
-            Citation-grounded educational financial intelligence
+          <p className="local-eyebrow">LEARN &amp; EXPLORE</p>
+          <h2 style={{ fontSize: '1.9rem', color: 'var(--color-text)' }}>
+            AI Research Assistant (RAG)
+          </h2>
+          <p style={{ color: 'var(--color-text-muted)', fontSize: '0.95rem' }}>
+            Citation-grounded educational financial intelligence for {activeUserName}
           </p>
         </div>
-        <span className="badge badge-info">Model: Grounded RAG v1</span>
+        <span className="badge badge-info">Grounded RAG</span>
       </div>
 
       {/* Chat Conversation Container */}
-      <div className="glass-card" style={{ flex: 1, padding: '24px', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-        <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '16px', paddingRight: '8px' }}>
+      <div
+        className="glass-card"
+        style={{
+          flex: 1,
+          padding: '24px',
+          display: 'flex',
+          flexDirection: 'column',
+          overflow: 'hidden',
+        }}
+      >
+        <div
+          style={{
+            flex: 1,
+            overflowY: 'auto',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '16px',
+            paddingRight: '8px',
+            maxHeight: '420px',
+          }}
+        >
           {messages.map((msg) => (
             <div
               key={msg.id}
               style={{
                 alignSelf: msg.role === 'user' ? 'flex-end' : 'flex-start',
-                maxWidth: '75%',
+                maxWidth: '78%',
                 padding: '16px 20px',
-                borderRadius: '16px',
-                background: msg.role === 'user'
-                  ? 'linear-gradient(135deg, #10b981, #059669)'
-                  : msg.isRefusal
-                  ? 'rgba(239, 68, 68, 0.15)'
-                  : 'rgba(30, 41, 59, 0.7)',
-                border: msg.role === 'user'
-                  ? 'none'
-                  : msg.isRefusal
-                  ? '1px solid #ef4444'
-                  : '1px solid var(--border-glass)',
-                color: '#ffffff',
+                borderRadius: '18px',
+                background:
+                  msg.role === 'user'
+                    ? 'var(--color-accent-coral)'
+                    : msg.isRefusal
+                      ? '#FEF3F2'
+                      : 'var(--color-surface-elevated)',
+                border:
+                  msg.role === 'user'
+                    ? 'none'
+                    : msg.isRefusal
+                      ? '1px solid #FDA29B'
+                      : '1px solid var(--color-surface-divider)',
+                color: msg.role === 'user' ? '#FFFFFF' : 'var(--color-text)',
+                boxShadow: '0 4px 14px rgba(24, 44, 49, 0.05)',
               }}
             >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px', fontSize: '0.75rem', color: msg.role === 'user' ? 'rgba(255,255,255,0.8)' : 'var(--text-muted)' }}>
-                {msg.role === 'user' ? 'You' : <span style={{ display: 'flex', alignItems: 'center', gap: '4px', color: msg.isRefusal ? '#ef4444' : '#10b981' }}><Bot size={14} /> FinEx AI</span>}
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  marginBottom: '6px',
+                  fontSize: '0.76rem',
+                  fontWeight: 700,
+                  color:
+                    msg.role === 'user' ? 'rgba(255,255,255,0.9)' : 'var(--color-text-muted)',
+                }}
+              >
+                {msg.role === 'user' ? (
+                  `You (${activeUserName})`
+                ) : (
+                  <span
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                      color: msg.isRefusal ? '#B42318' : 'var(--color-accent-violet)',
+                    }}
+                  >
+                    <Bot size={14} /> finex* AI
+                  </span>
+                )}
               </div>
-              <div style={{ fontSize: '0.95rem', lineHeight: 1.5 }}>{msg.content}</div>
+              <div style={{ fontSize: '0.96rem', lineHeight: 1.55 }}>{msg.content}</div>
 
               {msg.citations && msg.citations.length > 0 && (
-                <div style={{ marginTop: '10px', paddingTop: '8px', borderTop: '1px solid rgba(255,255,255,0.1)', fontSize: '0.75rem', color: 'var(--accent-cyan)', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <div
+                  style={{
+                    marginTop: '10px',
+                    paddingTop: '8px',
+                    borderTop: '1px solid var(--color-surface-divider)',
+                    fontSize: '0.76rem',
+                    fontWeight: 600,
+                    color: 'var(--color-accent-violet)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '4px',
+                  }}
+                >
                   {msg.citations.map((c, idx) => (
                     <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <BookOpen size={12} /> Citation: {c.source_title} {c.section ? `— ${c.section}` : ''}
+                      <BookOpen size={12} /> Citation: {c.source_title}{' '}
+                      {c.section ? `— ${c.section}` : ''}
                     </div>
                   ))}
                 </div>
@@ -136,14 +213,23 @@ export const ChatPage: React.FC = () => {
             </div>
           ))}
           {loading && (
-            <div style={{ alignSelf: 'flex-start', display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
-              <Loader2 size={16} className="animate-spin" /> FinEx AI is thinking...
+            <div
+              style={{
+                alignSelf: 'flex-start',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                color: 'var(--color-text-muted)',
+                fontSize: '0.88rem',
+              }}
+            >
+              <Loader2 size={16} /> finex* AI is thinking...
             </div>
           )}
         </div>
 
         {/* Input Bar */}
-        <div style={{ marginTop: '20px', display: 'flex', gap: '12px' }}>
+        <div style={{ marginTop: '20px', display: 'flex', flexWrap: 'wrap', gap: '12px' }}>
           <input
             type="text"
             placeholder="Ask AI about asset allocation, risk, diversification..."
@@ -152,22 +238,29 @@ export const ChatPage: React.FC = () => {
             onKeyDown={(e) => e.key === 'Enter' && handleSend()}
             disabled={loading}
             style={{
-              flex: 1,
+              flex: '1 1 260px',
               padding: '14px 18px',
-              borderRadius: '12px',
-              background: 'var(--bg-input)',
-              border: '1px solid var(--border-glass)',
-              color: '#ffffff',
+              borderRadius: '999px',
               fontSize: '0.95rem',
             }}
           />
           <button onClick={handleSend} disabled={loading} className="btn-primary">
-            {loading ? <Loader2 size={18} className="animate-spin" /> : <Send size={18} />} Send
+            {loading ? <Loader2 size={18} /> : <Send size={18} />} Send
           </button>
         </div>
 
-        <div style={{ marginTop: '10px', fontSize: '0.7rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '6px' }}>
-          <AlertCircle size={12} /> AI responses provide educational decision support, not guaranteed financial advice.
+        <div
+          style={{
+            marginTop: '12px',
+            fontSize: '0.75rem',
+            color: 'var(--color-text-muted)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+          }}
+        >
+          <AlertCircle size={13} /> AI responses provide educational decision support, not
+          guaranteed financial advice.
         </div>
       </div>
     </div>

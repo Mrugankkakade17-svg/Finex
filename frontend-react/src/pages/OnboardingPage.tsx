@@ -43,7 +43,7 @@ export const OnboardingPage: React.FC<{ basePath?: string }> = ({ basePath = '' 
     return (
       <section className="s1-journey" aria-labelledby="profile-heading">
         <div className="glass-card s1-journey__card">
-          <p className="s1-journey__eyebrow">Sprint 1 onboarding</p>
+          <p className="s1-journey__eyebrow">Onboarding</p>
           <h2 id="profile-heading">Consent is required first</h2>
           <p className="s1-journey__lede">
             The profile step is intentionally unavailable until you make an explicit
@@ -65,7 +65,7 @@ export const OnboardingPage: React.FC<{ basePath?: string }> = ({ basePath = '' 
           <p className="s1-journey__eyebrow">Onboarding complete</p>
           <h2 id="complete-heading">Your local completion state is saved</h2>
           <p className="s1-journey__lede">
-            This browser remembers that the Sprint 1 onboarding journey completed. No
+            This browser remembers that your onboarding journey completed. No
             financial-account data or credentials were stored by this journey.
           </p>
           {journey.completedAt && (
