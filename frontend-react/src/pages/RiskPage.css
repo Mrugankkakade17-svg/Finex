@@ -1,49 +1,68 @@
 .risk-scores {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 12px;
+  gap: 14px;
   margin: 20px 0;
 }
 .risk-scores div {
-  border: 1px solid var(--border-glass);
-  padding: 16px;
+  border: 1.5px solid var(--color-border);
+  background: var(--color-surface-elevated);
+  padding: 18px;
   border-radius: var(--radius-md);
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+}
+.risk-scores div:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 20px rgba(24, 44, 49, 0.07);
+}
+.risk-scores dt {
+  color: var(--color-text-muted);
+  font-size: 0.85rem;
+  font-weight: 600;
 }
 .risk-scores dd {
-  font-size: 1.5rem;
-  color: var(--primary-emerald);
+  font-family: var(--font-display);
+  font-size: 1.65rem;
+  font-weight: 800;
+  color: var(--color-accent-violet);
   margin-top: 6px;
 }
 .risk-preset {
   margin: 20px 0;
-  padding: 16px;
-  border: 1px solid var(--border-glass);
+  padding: 18px;
+  border: 1.5px solid var(--color-border);
+  background: var(--color-surface-elevated);
   border-radius: var(--radius-md);
 }
 .risk-preset label {
   display: block;
   margin-bottom: 8px;
-  font-weight: 600;
+  font-weight: 700;
+  color: var(--color-text);
 }
 .risk-preset select {
   width: 100%;
-  padding: 10px;
-  background: var(--bg-input);
-  color: var(--text-primary);
-  border: 1px solid var(--border-glass);
+  padding: 10px 14px;
+  background: var(--color-surface);
+  color: var(--color-text);
+  border: 1.5px solid var(--color-surface-divider);
+  border-radius: var(--radius-sm);
 }
 .risk-preset select:focus-visible {
-  outline: 3px solid #06b6d4;
+  outline: 3px solid var(--color-accent-violet);
   outline-offset: 2px;
 }
 .risk-preset p {
   font-size: 0.85rem;
+  color: var(--color-text-muted);
   margin-top: 10px;
 }
 .s1-journey progress {
   width: 100%;
-  accent-color: var(--primary-emerald);
+  accent-color: var(--color-accent-coral);
   margin: 12px 0;
+  height: 10px;
+  border-radius: 999px;
 }
 @media (max-width: 600px) {
   .risk-scores {

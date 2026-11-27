@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import os
+from decimal import Decimal
 from enum import Enum
 from functools import lru_cache
 from ipaddress import ip_address
@@ -79,6 +80,10 @@ class Settings(BaseSettings):
     local_session_ttl_minutes: int = Field(default=30, ge=1, le=60, strict=True)
     app_persistence: Literal["sqlite", "postgresql"] = "sqlite"
     app_database_url: str = ""
+    rate_limit_requests_per_window: int = Field(default=1000, ge=1, le=100_000)
+    rate_limit_window_seconds: float = Field(default=60.0, gt=0, le=86_400)
+    auth_rate_limit_requests_per_window: int = Field(default=100, ge=1, le=10_000)
+    auth_rate_limit_window_seconds: float = Field(default=60.0, gt=0, le=86_400)
 
     databricks_host: str = ""
     databricks_token: str = ""
@@ -90,8 +95,37 @@ class Settings(BaseSettings):
     llm_provider: str = "openai"
     openai_api_key: str = ""
 
+    # S5-MI03: LLM provider cascade configuration
+    ollama_base_url: str = "http://localhost:11434"
+    ollama_model: str = "llama3.2:1b"
+    hosted_llm_provider: str = "gemini"
+    gemini_api_key: str = ""
+    hosted_llm_model: str = "gemini-3.8-flash"
+    groq_api_key: str = ""
+    groq_model: str = "openai/gpt-oss-120b"
+    groq_base_url: str = "https://api.groq.com/openai/v1"
+    cloudflare_account_id: str = ""
+    cloudflare_api_token: str = ""
+    cloudflare_model: str = "@cf/google/gemma-3-12b-it"
+    cloudflare_base_url: str = "https://api.cloudflare.com/client/v4"
+    llm_timeout_seconds: float = Field(default=10.0, ge=1.0, le=120.0)
+    llm_cascade_enabled: bool = True
+
     market_data_provider: str = "mock"
     market_data_api_key: str = ""
+
+    # Annual effective rate used by deterministic portfolio analytics. The
+    # default is explicitly unconfigured and must not be presented as a quote.
+    analytics_risk_free_rate: float = 0.0
+    analytics_risk_free_rate_source: str = "Unconfigured FinEx default"
+    analytics_risk_free_rate_as_of: str = "UNCONFIGURED"
+
+    google_client_id: str = ""
+    allow_mock_google_auth: bool | None = None
+    paper_trading_initial_cash: Decimal = Field(
+        default=Decimal("50000.00"), gt=0, max_digits=12, decimal_places=2
+    )
+    paper_trading_fee_bps: int = Field(default=10, ge=0, le=1000)
 
     log_level: str = "INFO"
 
@@ -99,6 +133,9 @@ class Settings(BaseSettings):
         "secret_key",
         "databricks_token",
         "openai_api_key",
+        "gemini_api_key",
+        "groq_api_key",
+        "cloudflare_api_token",
         "market_data_api_key",
         "password",
         "token",
@@ -233,6 +270,10 @@ class Settings(BaseSettings):
 
         if self.is_production_like and self.fixture_mode != "disabled":
             raise ValueError("fixture_mode must be disabled in UAT and production")
+        if self.allow_mock_google_auth is None:
+            self.allow_mock_google_auth = not self.is_production_like
+        elif self.is_production_like and self.allow_mock_google_auth:
+            raise ConfigurationError("ALLOW_MOCK_GOOGLE_AUTH is forbidden in UAT and production.")
         if wildcard and self.allow_credentials:
             raise ConfigurationError(
                 "Wildcard ALLOWED_ORIGINS cannot be combined with ALLOW_CREDENTIALS=true."

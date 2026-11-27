@@ -17,6 +17,7 @@ from app.core.handlers import (
     validation_exception_handler,
 )
 from app.core.middleware import CorrelationIdMiddleware, LocalApplicationBoundaryMiddleware
+from app.core.rate_limit import RateLimitMiddleware
 from app.domain.local_application import Clock
 from app.ports.adapters.postgres_local_application import PostgresLocalApplicationStore
 from app.ports.adapters.postgres_local_foundation import PostgresLocalFoundationStore
@@ -39,8 +40,10 @@ from app.routers.local_application import router as local_application_router
 from app.routers.local_foundation import router as local_foundation_router
 from app.routers.local_portfolio import router as local_portfolio_router
 from app.routers.local_risk import router as local_risk_router
+from app.routers.market import router as market_router
 from app.routers.onboarding import router as onboarding_router
 from app.routers.ops_hardening import router as ops_hardening_router
+from app.routers.paper import router as paper_router
 from app.routers.portfolio import router as portfolio_router
 from app.routers.privacy import router as privacy_router
 from app.routers.profile import router as profile_router
@@ -49,6 +52,8 @@ from app.routers.risk import router as risk_router
 from app.routers.risk_contract import router as risk_contract_router
 from app.routers.spending import router as spending_router
 from app.routers.users import router as users_router
+from app.routers.watchlists import router as watchlists_router
+from app.services.csv_import_service import CSVUploadRequestLimitMiddleware
 
 
 def create_app(
@@ -101,7 +106,19 @@ def create_app(
         application.state.local_risk_store = local_risk_store
         application.state.local_portfolio_store = local_portfolio_store
         application.state.local_foundation_store = local_foundation_store
+        from app.repositories.postgres_user_repository import postgres_user_repository
+        from app.services import auth_service
 
+        auth_service.user_repository = postgres_user_repository
+
+    application.add_middleware(CSVUploadRequestLimitMiddleware)
+    application.add_middleware(
+        RateLimitMiddleware,
+        requests_per_window=active_settings.rate_limit_requests_per_window,
+        window_seconds=active_settings.rate_limit_window_seconds,
+        auth_requests_per_window=active_settings.auth_rate_limit_requests_per_window,
+        auth_window_seconds=active_settings.auth_rate_limit_window_seconds,
+    )
     application.add_middleware(LocalApplicationBoundaryMiddleware)
     application.add_middleware(CorrelationIdMiddleware)
     application.add_middleware(CORSMiddleware, **get_cors_middleware_kwargs(active_settings))
@@ -119,9 +136,12 @@ def create_app(
     application.include_router(consent_profile_router)
     application.include_router(local_application_router)
     application.include_router(local_portfolio_router)
+    application.include_router(market_router)
+    application.include_router(watchlists_router)
     application.include_router(local_risk_router)
     application.include_router(local_foundation_router)
     application.include_router(portfolio_router)
+    application.include_router(paper_router)
     application.include_router(goals_router)
     application.include_router(privacy_router)
     application.include_router(spending_router)

@@ -92,7 +92,7 @@ export function LocalRiskPage() {
     void tasks.run((signal) => domain.riskDetail(id, { signal }), (r) => setResult(r.data));
   };
   return <section className="local-card local-s2">
- <p className="local-eyebrow">Sprint 2 · Owned, saved educational answers</p><h1 tabIndex={-1}>Your saved risk profile</h1>
+ <p className="local-eyebrow">Owned, saved educational answers</p><h1 tabIndex={-1}>Your saved risk profile</h1>
  <p className="local-lede">Ten server-supplied questions, a resumable draft and immutable assessments. This is self-reported education, not advice or a suitability decision.</p>
  {tasks.busy && <p role="status">Confirming the risk operation on the local backend…</p>}
  {tasks.error && <div className="local-error" role="alert" tabIndex={-1} ref={tasks.errorRef}>{tasks.error.message}</div>}
