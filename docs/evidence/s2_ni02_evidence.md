@@ -16,31 +16,22 @@
 
 ## Verification status
 
-The implementation and test source are present, but the prescribed React test and build commands could not be completed in this environment. The checkout had no installed `frontend-react/node_modules`, and the package registry could not be resolved (`ENOTFOUND registry.npmjs.org`) while installing Recharts. The pre-existing `Downloads\FinEx-Git` dependencies could not be linked into this writable checkout by Windows.
+All checks below completed in GitHub Actions on the PR head after the lockfile was corrected and the ES5 iterator compatibility issue was fixed.
 
 Commands and results:
 
 ```text
-npm install recharts@2.15.4 --save --verbose (initial registry probe)
-  Failed: ENOTFOUND registry.npmjs.org
+cd "$GITHUB_WORKSPACE/frontend-react" && npm ci --package-lock=true
+  PASS: dependencies installed from the committed lockfile.
 
-npm install --package-lock-only --ignore-scripts --offline
-  Failed: ENOTCACHED; registry metadata for recharts is not available in the local cache
+cd "$GITHUB_WORKSPACE/frontend-react" && npm test -- --watchAll=false
+  PASS: 31 suites, 810 tests, including all 5 PriceChart tests.
 
-npm test -- --watchAll=false --runInBand --modulePaths=<existing Downloads checkout node_modules>
-  PASS: 31 suites, 810 tests. Recharts components are mocked in the focused component tests.
-
-PriceChart focused tests with the same external test dependencies
-  PASS: 1 suite, 5 tests.
-
-npm run build with the existing Downloads checkout on PATH/NODE_PATH
-  Failed: Module not found: Can't resolve `react-router-dom` in this writable checkout.
-
-Custom lock graph check against the lockfile's package versions and dependency ranges
-  PASS: all new Recharts dependency ranges resolve; app direct dependencies match the lockfile.
+cd "$GITHUB_WORKSPACE/frontend-react" && npm run build
+  PASS: optimized production build completed.
 ```
 
-The Recharts 2 install command was an initial registry probe; the committed manifest and lockfile use Recharts 3.10.1 and React 18-matched `react-is`. The build still needs to run from a fully installed checkout with the actual Recharts package. No passing production build is claimed here.
+The committed manifest and lockfile use Recharts 3.10.1 and React 18-matched `react-is`. The React quality workflow uses the fully installed package tree, so the production build also validates the actual chart dependency.
 
 ## Contracts and scope
 
