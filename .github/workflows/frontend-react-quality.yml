@@ -14,7 +14,7 @@ on:
       - "frontend-react/**"
       - "docs/evidence/s2-full-acceptance.md"
       - "docs/evidence/s3-api-validation.md"
-      - "docs/evidence/s3-owned-flutter-validation.md"
+      - "docs/evidence/s3-owned-flutter-validation.yml"
       - ".nvmrc"
       - ".github/workflows/frontend-react-quality.yml"
 
@@ -40,12 +40,15 @@ jobs:
           cache-dependency-path: frontend-react/package-lock.json
 
       - name: Install dependencies
-        run: cd frontend-react && npm ci
+        run: npm ci
+        working-directory: ${{ github.workspace }}/frontend-react
 
       - name: Run tests
-        run: cd frontend-react && npm test -- --watchAll=false
+        run: npm test -- --watchAll=false
+        working-directory: ${{ github.workspace }}/frontend-react
         env:
           CI: "true"
 
       - name: Build production bundle
-        run: cd frontend-react && npm run build
+        run: npm run build
+        working-directory: ${{ github.workspace }}/frontend-react
