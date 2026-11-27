@@ -53,10 +53,11 @@ async def test_daily_snapshot_upsert_is_idempotent_per_portfolio_and_day(postgre
                 "WHERE snapshot_date=%s AND portfolio_id IN (%s,%s) ORDER BY portfolio_id",
                 (day, portfolio_a, portfolio_b),
             ).fetchall()
-            assert rows == [
+            expected_rows = [
                 (owner_a, portfolio_a, Decimal("130")),
                 (owner_b, portfolio_b, Decimal("240")),
             ]
+            assert rows == sorted(expected_rows, key=lambda row: row[1])
     finally:
         with psycopg.connect(postgres_dsn(database_url)) as connection:
             connection.execute(
