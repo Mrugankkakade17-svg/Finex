@@ -1,12 +1,14 @@
 import React from 'react';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { AlertsPage } from './AlertsPage';
+import { clearActiveAuthSession, realAuthService } from '../services/authService';
 import {
   AlertRule,
   AlertRuleCreateInput,
   NotificationItem,
   PlatformApiClient,
   PlatformApiError,
+  setActiveLocalSessionToken,
 } from '../services/platformApi';
 
 function makeApi(overrides: Partial<PlatformApiClient> = {}): PlatformApiClient {
@@ -143,5 +145,68 @@ describe('AlertsPage', () => {
     expect(await screen.findByText('NVDA Drop')).toBeInTheDocument();
     expect(screen.getByTestId('alerts-unread-count')).toHaveTextContent('0 unread');
     expect(screen.queryByText('AAPL > 200')).not.toBeInTheDocument();
+  });
+
+  describe('default platformApi path with authenticated session', () => {
+    const originalFetch = globalThis.fetch;
+
+    afterEach(() => {
+      globalThis.fetch = originalFetch;
+      clearActiveAuthSession();
+      setActiveLocalSessionToken(null);
+    });
+
+    test('default AlertsPage sends Authorization Bearer header on notifications and rules requests', async () => {
+      const fetchMock = jest.fn(async (url: RequestInfo | URL, _init?: RequestInit) => {
+        const target = String(url);
+        if (target.endsWith('/api/v1/auth/login')) {
+          return {
+            ok: true,
+            status: 200,
+            json: async () => ({
+              success: true,
+              data: { access_token: 'alerts.jwt.token', refresh_token: 'alerts.refresh.token', token_type: 'bearer' },
+            }),
+          } as Response;
+        }
+        if (target.endsWith('/api/v1/capabilities')) {
+          return {
+            ok: true,
+            status: 200,
+            json: async () => ({ success: true, data: { capabilities: { alerts: true } } }),
+          } as Response;
+        }
+        if (target.endsWith('/api/v1/alerts/notifications')) {
+          return {
+            ok: true,
+            status: 200,
+            json: async () => ({ success: true, data: { unread_count: 0, notifications: [] } }),
+          } as Response;
+        }
+        return {
+          ok: true,
+          status: 200,
+          json: async () => ({ success: true, data: [] }),
+        } as Response;
+      });
+      globalThis.fetch = fetchMock as unknown as typeof fetch;
+
+      await realAuthService.login('nilisha@finex.app', 'Password123!');
+      render(<AlertsPage />);
+
+      expect(await screen.findByTestId('alerts-notifications-empty')).toBeInTheDocument();
+      const notifCall = fetchMock.mock.calls.find(([url]) =>
+        String(url).endsWith('/api/v1/alerts/notifications')
+      );
+      const rulesCall = fetchMock.mock.calls.find(([url]) =>
+        String(url).endsWith('/api/v1/alerts/rules')
+      );
+      expect((notifCall?.[1] as RequestInit).headers).toEqual(
+        expect.objectContaining({ Authorization: 'Bearer alerts.jwt.token' })
+      );
+      expect((rulesCall?.[1] as RequestInit).headers).toEqual(
+        expect.objectContaining({ Authorization: 'Bearer alerts.jwt.token' })
+      );
+    });
   });
 });

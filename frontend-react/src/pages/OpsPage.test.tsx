@@ -1,12 +1,14 @@
 import React from 'react';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { OpsPage } from './OpsPage';
+import { clearActiveAuthSession, realAuthService } from '../services/authService';
 import {
   FeatureFlagStatus,
   PlatformApiClient,
   PlatformApiError,
   ReleasePreflightCheck,
   SystemObservabilityReport,
+  setActiveLocalSessionToken,
 } from '../services/platformApi';
 
 function makeObservability(flags: FeatureFlagStatus[] = []): SystemObservabilityReport {
@@ -140,5 +142,70 @@ describe('OpsPage', () => {
     expect(screen.getByRole('button', { name: 'Toggle FEATURE_AI_ASSISTANT' })).toHaveTextContent(
       'DISABLED'
     );
+  });
+
+  describe('default platformApi path with authenticated session', () => {
+    const originalFetch = globalThis.fetch;
+
+    afterEach(() => {
+      globalThis.fetch = originalFetch;
+      clearActiveAuthSession();
+      setActiveLocalSessionToken(null);
+    });
+
+    test('default OpsPage sends Authorization Bearer header on observability, flags, and preflight requests', async () => {
+      const fetchMock = jest.fn(async (url: RequestInfo | URL, _init?: RequestInit) => {
+        const target = String(url);
+        if (target.endsWith('/api/v1/auth/login')) {
+          return {
+            ok: true,
+            status: 200,
+            json: async () => ({
+              success: true,
+              data: { access_token: 'ops.jwt.token', refresh_token: 'ops.refresh.token', token_type: 'bearer' },
+            }),
+          } as Response;
+        }
+        if (target.endsWith('/api/v1/capabilities')) {
+          return {
+            ok: true,
+            status: 200,
+            json: async () => ({ success: true, data: { capabilities: { operations: true } } }),
+          } as Response;
+        }
+        if (target.endsWith('/api/v1/ops/observability')) {
+          return {
+            ok: true,
+            status: 200,
+            json: async () => ({ success: true, data: makeObservability([]) }),
+          } as Response;
+        }
+        if (target.endsWith('/api/v1/ops/preflight')) {
+          return {
+            ok: true,
+            status: 200,
+            json: async () => ({ success: true, data: PREFLIGHT }),
+          } as Response;
+        }
+        return {
+          ok: true,
+          status: 200,
+          json: async () => ({ success: true, data: [] }),
+        } as Response;
+      });
+      globalThis.fetch = fetchMock as unknown as typeof fetch;
+
+      await realAuthService.login('admin@finex.app', 'Password123!');
+      render(<OpsPage />);
+
+      expect(await screen.findByTestId('ops-flags-empty')).toBeInTheDocument();
+      for (const path of ['/api/v1/ops/observability', '/api/v1/ops/flags', '/api/v1/ops/preflight']) {
+        const call = fetchMock.mock.calls.find(([url]) => String(url).endsWith(path));
+        expect(call).toBeDefined();
+        expect((call?.[1] as RequestInit).headers).toEqual(
+          expect.objectContaining({ Authorization: 'Bearer ops.jwt.token' })
+        );
+      }
+    });
   });
 });

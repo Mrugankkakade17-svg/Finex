@@ -1,5 +1,10 @@
 import { createApiClient } from './apiClient';
-import { createPlatformApiClient } from './platformApi';
+import { clearActiveAuthSession, realAuthService } from './authService';
+import {
+  createPlatformApiClient,
+  platformApi,
+  setActiveLocalSessionToken,
+} from './platformApi';
 
 function jsonResponse(body: unknown, status = 200): Response {
   return {
@@ -97,6 +102,87 @@ describe('platformApi', () => {
     });
     await expect(offlineApi.listGoals()).rejects.toMatchObject({
       code: 'API_UNAVAILABLE',
+    });
+  });
+
+  describe('default platformApi bearer wiring', () => {
+    const originalFetch = globalThis.fetch;
+
+    afterEach(() => {
+      globalThis.fetch = originalFetch;
+      clearActiveAuthSession();
+      setActiveLocalSessionToken(null);
+    });
+
+    test('attaches bearer token from realAuthService active session and clears on logout', async () => {
+      const fetchMock = jest
+        .fn()
+        .mockResolvedValueOnce(
+          jsonResponse({
+            success: true,
+            data: {
+              access_token: 'header.payload.sig',
+              refresh_token: 'refresh.token.val',
+              token_type: 'bearer',
+            },
+          })
+        )
+        .mockResolvedValueOnce(
+          jsonResponse({
+            success: true,
+            data: [],
+            meta: { correlationId: 'cid-2', apiVersion: 'v1', dataStatus: 'LIVE', dataAsOf: null },
+          })
+        )
+        .mockResolvedValueOnce(
+          jsonResponse({
+            success: true,
+            data: [],
+            meta: { correlationId: 'cid-3', apiVersion: 'v1', dataStatus: 'LIVE', dataAsOf: null },
+          })
+        );
+      globalThis.fetch = fetchMock as unknown as typeof fetch;
+
+      await realAuthService.login('user@finex.app', 'Password123!');
+      await platformApi.listGoals();
+
+      expect(fetchMock).toHaveBeenNthCalledWith(
+        2,
+        'http://127.0.0.1:8000/api/v1/goals',
+        expect.objectContaining({
+          headers: expect.objectContaining({
+            Authorization: 'Bearer header.payload.sig',
+          }),
+        })
+      );
+
+      clearActiveAuthSession();
+      await platformApi.listGoals();
+      const thirdCallInit = fetchMock.mock.calls[2][1] as RequestInit;
+      expect((thirdCallInit.headers as Record<string, string>).Authorization).toBeUndefined();
+    });
+
+    test('attaches bearer token from active local persona session when no real JWT is active', async () => {
+      const fetchMock = jest.fn().mockResolvedValue(
+        jsonResponse({
+          success: true,
+          data: [],
+          meta: { correlationId: 'cid-4', apiVersion: 'v1', dataStatus: 'CACHED', dataAsOf: null },
+        })
+      );
+      globalThis.fetch = fetchMock as unknown as typeof fetch;
+
+      setActiveLocalSessionToken('local_persona_token_0000000000000000000000000');
+      await platformApi.listAlertRules();
+
+      expect(fetchMock).toHaveBeenCalledWith(
+        'http://127.0.0.1:8000/api/v1/alerts/rules',
+        expect.objectContaining({
+          headers: expect.objectContaining({
+            Authorization: 'Bearer local_persona_token_0000000000000000000000000',
+          }),
+        })
+      );
     });
   });
 });

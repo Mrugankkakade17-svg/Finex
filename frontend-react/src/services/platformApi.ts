@@ -1,4 +1,16 @@
 import { ApiClient, ApiClientError, finexApiClient } from './apiClient';
+import { getActiveAuthSession } from './authService';
+
+// Kept in memory only for the active local persona session; never persisted to browser storage.
+let activeLocalSessionToken: string | null = null;
+
+export function setActiveLocalSessionToken(token: string | null): void {
+  activeLocalSessionToken = token;
+}
+
+export function getActivePlatformBearerToken(): string | null {
+  return getActiveAuthSession()?.access_token ?? activeLocalSessionToken;
+}
 
 export interface GoalProjection {
   year: number;
@@ -335,4 +347,6 @@ export function createPlatformApiClient(config: PlatformApiConfig = {}): Platfor
   };
 }
 
-export const platformApi: PlatformApiClient = createPlatformApiClient();
+export const platformApi: PlatformApiClient = createPlatformApiClient({
+  getAuthToken: getActivePlatformBearerToken,
+});

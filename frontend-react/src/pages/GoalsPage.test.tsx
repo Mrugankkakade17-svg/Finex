@@ -1,12 +1,16 @@
 import React from 'react';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { GoalsPage } from './GoalsPage';
+import { LocalSessionProvider } from '../context/LocalSessionContext';
+import { clearActiveAuthSession, realAuthService } from '../services/authService';
+import { clientMock, completedState, loginDto } from '../testHelpers/localApplication';
 import {
   CapabilitiesSummary,
   GoalCreateInput,
   GoalRecord,
   PlatformApiClient,
   PlatformApiError,
+  setActiveLocalSessionToken,
 } from '../services/platformApi';
 
 function makeApi(overrides: Partial<PlatformApiClient> = {}): PlatformApiClient {
@@ -126,5 +130,108 @@ describe('GoalsPage', () => {
       expect(screen.getByText('Education Fund')).toBeInTheDocument();
     });
     expect(screen.getByText('On Track')).toBeInTheDocument();
+  });
+
+  describe('default platformApi path with authenticated session', () => {
+    const originalFetch = globalThis.fetch;
+
+    afterEach(() => {
+      globalThis.fetch = originalFetch;
+      clearActiveAuthSession();
+      setActiveLocalSessionToken(null);
+    });
+
+    test('default GoalsPage sends Authorization Bearer header from realAuthService session', async () => {
+      const fetchMock = jest.fn(async (url: RequestInfo | URL, _init?: RequestInit) => {
+        const target = String(url);
+        if (target.endsWith('/api/v1/auth/login')) {
+          return {
+            ok: true,
+            status: 200,
+            json: async () => ({
+              success: true,
+              data: { access_token: 'real.jwt.token', refresh_token: 'real.refresh.token', token_type: 'bearer' },
+            }),
+          } as Response;
+        }
+        if (target.endsWith('/api/v1/capabilities')) {
+          return {
+            ok: true,
+            status: 200,
+            json: async () => ({ success: true, data: { capabilities: { goals: true } } }),
+          } as Response;
+        }
+        return {
+          ok: true,
+          status: 200,
+          json: async () => ({ success: true, data: [] }),
+        } as Response;
+      });
+      globalThis.fetch = fetchMock as unknown as typeof fetch;
+
+      await realAuthService.login('nilisha@finex.app', 'Password123!');
+      render(<GoalsPage />);
+
+      expect(await screen.findByTestId('goals-empty')).toBeInTheDocument();
+      const goalsCall = fetchMock.mock.calls.find(([url]) => String(url).endsWith('/api/v1/goals'));
+      expect(goalsCall).toBeDefined();
+      expect((goalsCall?.[1] as RequestInit).headers).toEqual(
+        expect.objectContaining({ Authorization: 'Bearer real.jwt.token' })
+      );
+    });
+
+    test('default GoalsPage sends Authorization Bearer header from LocalSessionProvider login', async () => {
+      const fetchMock = jest.fn(async (url: RequestInfo | URL, _init?: RequestInit) => {
+        const target = String(url);
+        if (target.endsWith('/api/v1/capabilities')) {
+          return {
+            ok: true,
+            status: 200,
+            json: async () => ({ success: true, data: { capabilities: { goals: true } } }),
+          } as Response;
+        }
+        return {
+          ok: true,
+          status: 200,
+          json: async () => ({ success: true, data: [] }),
+        } as Response;
+      });
+      globalThis.fetch = fetchMock as unknown as typeof fetch;
+
+      const client = clientMock();
+      const loginData = loginDto('learner-a');
+      client.login.mockResolvedValue(loginData);
+      client.state.mockResolvedValue(completedState());
+
+      function TestHarness() {
+        const { useLocalSession } = require('../context/LocalSessionContext');
+        const session = useLocalSession();
+        return (
+          <>
+            <button type="button" onClick={() => void session.login('learner-a')}>
+              Trigger Local Login
+            </button>
+            {session.user && <GoalsPage />}
+          </>
+        );
+      }
+
+      render(
+        <LocalSessionProvider client={client}>
+          <TestHarness />
+        </LocalSessionProvider>
+      );
+
+      await act(async () => {
+        fireEvent.click(screen.getByRole('button', { name: 'Trigger Local Login' }));
+      });
+
+      expect(await screen.findByTestId('goals-empty')).toBeInTheDocument();
+      const goalsCall = fetchMock.mock.calls.find(([url]) => String(url).endsWith('/api/v1/goals'));
+      expect(goalsCall).toBeDefined();
+      expect((goalsCall?.[1] as RequestInit).headers).toEqual(
+        expect.objectContaining({ Authorization: `Bearer ${loginData.access_token}` })
+      );
+    });
   });
 });
