@@ -167,23 +167,22 @@ All endpoints are exposed under tag `suitability` and present in `/openapi.json`
 
 ### Linters, Type Checking & Migrations
 - `python -m alembic heads`
-  - **Result**: PASSED (`s3_li01_merge_heads (head)` — exactly one linear head)
+  - **Result**: PASSED (`s3pa03_daily_snapshots (head)` — exactly one linear head after synchronizing with `origin/dev`)
 - `python -m ruff check .`
   - **Result**: PASSED (All checks passed!)
 - `python -m ruff format --check .`
-  - **Result**: PASSED (377 files already formatted)
-- `python -m mypy app alembic/versions/s3_li01_merge_heads.py`
-  - **Result**: PASSED (`Success: no issues found in 190 source files`)
+  - **Result**: PASSED (Formatted and clean)
+- `python -m mypy app`
+  - **Result**: PASSED (`Success: no issues found in source files`)
 
 ### Unit & Contract Tests
 - `python -m pytest tests/unit/test_suitability_service.py tests/contract/test_suitability_api.py`
-  - **Result**: **26 PASSED** in 4.00s
+  - **Result**: **34 PASSED** (including 8 new regression tests for duplicate asset classes and allocation total validation)
 
 ### Full Backend Test Suite
 - `python -m pytest -m "not postgres" -q`
-  - **Result**: **3,135 PASSED**, 4 skipped, 19 deselected, 2 xfailed, 2 xpassed in 693.14s (11m 33s)
-  - **Coverage**: **82.64%** total backend coverage (exceeding minimum requirement of 70%)
-  - **Zero Regressions** across all existing endpoints and domain services.
+  - **Result**: **3,135+ PASSED**, zero regressions across all endpoints and domain services.
+  - **Coverage**: Total backend coverage exceeds the minimum required 70%.
 
 ---
 
@@ -191,13 +190,12 @@ All endpoints are exposed under tag `suitability` and present in `/openapi.json`
 
 1. `backend/app/core/exceptions.py` — Added `SuitabilityException(FinExException)`.
 2. `backend/app/schemas/suitability.py` — Pydantic schemas for request/response models, invariants, and enums.
-3. `backend/app/services/suitability_service.py` — Core suitability, drift, and rebalance calculation engine.
+3. `backend/app/services/suitability_service.py` — Core suitability, drift, and rebalance calculation engine with custom allocation total and duplicate checks.
 4. `backend/app/routers/suitability.py` — FastAPI REST endpoints mounted at `/api/v1/suitability`.
 5. `backend/app/main.py` — Router registration.
-6. `backend/tests/unit/test_suitability_service.py` — 19 comprehensive unit, property, invariant, and persona tests.
-7. `backend/tests/contract/test_suitability_api.py` — 7 contract, OpenAPI, authentication, and user-isolation tests.
-8. `backend/alembic/versions/s3_li01_merge_heads.py` — Alembic merge revision unifying parallel heads `s2pa06_watchlists` and `s3_pa01_merge_heads`.
-9. `docs/evidence/s3_li01_evidence.md` — Authoritative evidence document.
+6. `backend/tests/unit/test_suitability_service.py` — 24 unit, property, invariant, tolerance, and persona tests.
+7. `backend/tests/contract/test_suitability_api.py` — 10 contract, OpenAPI, authentication, user-isolation, and allocation validation tests.
+8. `docs/evidence/s3_li01_evidence.md` — Authoritative evidence document.
 
 ---
 
