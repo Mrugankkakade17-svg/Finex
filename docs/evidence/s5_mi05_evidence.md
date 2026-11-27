@@ -383,3 +383,28 @@ To independently verify this task:
 | **Comment 2: Full Backend Verification** | DoD requires full verification suite without skipping coverage. | FinEx DoD & pyproject.toml (70% coverage requirement) | Executed full test suite (`python -m pytest -q`): 2,874 passed with 83.53% coverage (no `--no-cov` bypass). Executed full `ruff check .` (0 errors) and `mypy app` (0 errors in 158 source files). |
 | **Comment 3: Actual FinEx Guardrail Integration** | Ensure harness exercises real safety logic, prompt injection defense, and DataFreshness rules without hardcoding. | Handbook v9.1 p. 17, 25, 29, 37, 38; S2-PA01 contract | Enhanced `INJECTION_SIGNALS` to catch secret exfiltration (`inj-004`) and simulation evasion (`inj-009`); updated `evaluate_injection_case` so `defended = is_injection_attempt or is_advice_bypass` (undetected attacks explicitly fail). Added regression tests in `test_ai_eval.py` for network guard restoration on normal exit and exception paths, and added synchronization tests verifying 0 pattern drift against `ai_service.py` and `DataFreshness` contracts (35 unit tests passed). Verified DataFreshness compliance (zero-price rejection, stale-as-live prohibition). |
 | **Comment 4: Task & Dependency References** | Verify S1-MI01 status, prerequisite, and downstream S6-MI02 task. | Git history (`eaf6283`), Issue #30, Issue #88, Plan p. 19 | Confirmed S1-MI01 is merged into `dev` (commit `eaf6283`). Confirmed PR #144 correctly identifies S1-MI01 as prerequisite. Corrected downstream task S6-MI02 (Issue #88) title from 'Alerts' to authoritative Final Implementation Plan title: 'Scam analyser: rules plus classifier, redaction, false-positive feedback'. Prepared corrected PR description wording. |
+
+---
+
+## 12. CI Pull Request Failure Diagnosis & Resolution
+
+### Root Cause Analysis
+1. **`quality` (Step 13: PostgreSQL migration round-trip):**
+   - Executed `python -m alembic upgrade head`.
+   - On the pull_request merge-ref, historical `dev` diverged with multiple heads (`s2pa06_watchlists` and `s3_pa01_merge_heads`), causing Alembic to abort with `Multiple head revisions are present for given argument 'head'`.
+2. **`Pytest Postgres (pgvector:pg16)` (Step 7: Run Alembic migrations):**
+   - The multiple-head error prevented database migrations from applying against PostgreSQL 16.
+   - The test database remained unmigrated without tables, causing 12 unit tests to fail with `UndefinedTableError: relation "finex.users" does not exist`.
+3. **DataFreshness Enum Synchronization:**
+   - With the merge of Sprint 2 market feeds into `dev`, `DataFreshness` officially includes `STALE`. `test_ai_eval.py` had an outdated negative assertion (`assert "STALE" not in prod_freshness_values`) which was updated to assert alignment (`assert "STALE" in prod_freshness_values`).
+
+### Fix Implementation & Local Verification
+- Merged latest `origin/dev` into `feature/s5-mi05`, unifying the Alembic migration history under single linear head `s3_pa06_merge_heads (head)`.
+- Synchronized `test_ai_eval.py` with the canonical `DataFreshness` schema.
+- Verified:
+  - `python -m alembic heads` -> `s3_pa06_merge_heads (head)` (Single head verified)
+  - `cd ai && python eval/run_eval.py --fake-llm` -> 77/77 cases passed, Threshold Gate: PASSED
+  - `python -m pytest tests/unit/test_ai_eval.py` -> 35 passed in 0.57s
+  - `python -m ruff check .` -> All checks passed!
+  - `python -m ruff format --check .` -> 375 files already formatted
+  - `python -m mypy app ...` -> Success: no issues found in 198 source files

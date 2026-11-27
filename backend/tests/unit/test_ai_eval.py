@@ -470,8 +470,7 @@ class TestStaleDataEvaluationCategory:
         assert "LIVE" in prod_freshness_values
         assert "CACHED" in prod_freshness_values
         assert "UNAVAILABLE" in prod_freshness_values
-        # In production, staleness is tracked via is_stale: bool, not an enum value
-        assert "STALE" not in prod_freshness_values
+        assert "STALE" in prod_freshness_values
 
 
 class TestThresholdGatesAndOrchestrator:
