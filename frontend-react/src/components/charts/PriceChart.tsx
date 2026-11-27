@@ -80,9 +80,9 @@ export function buildPriceChartPoints(
     if (date && Number.isFinite(candle.close)) byDate.set(date, candle);
   });
   const closed = new Set(closedDays.map(dateKey).filter((date): date is string => date !== null));
-  const observedDates = [...byDate.keys()].sort();
+  const observedDates = Array.from(byDate.keys()).sort();
   if (observedDates.length === 0) {
-    return [...closed]
+    return Array.from(closed)
       .sort()
       .map((date) => ({
         date,
@@ -313,3 +313,4 @@ export const PriceChart: React.FC<PriceChartProps> = ({
 };
 
 export default PriceChart;
+
