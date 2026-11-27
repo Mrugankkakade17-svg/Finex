@@ -213,7 +213,7 @@ export const MarketPage: React.FC = () => {
                     background:
                       selectedSecurity?.securityId === security.securityId
                         ? 'rgba(255, 114, 94, 0.08)'
-                        : '#F7FAF8',
+                        : 'var(--color-surface-elevated)',
                     color: 'var(--color-text)',
                     cursor: 'pointer',
                     textAlign: 'left',
