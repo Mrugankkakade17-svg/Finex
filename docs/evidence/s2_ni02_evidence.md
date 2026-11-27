@@ -1,7 +1,9 @@
 # S2-NI02 implementation evidence
 
-**Issue:** [#46 - Price chart with Recharts and a table alternative](https://github.com/Mrugankkakade17-svg/Finex/issues/46)  
-**Branch:** `feature/s2-ni02` (based on `dev`)  
+**Issue:** [#46 - Price chart with Recharts and a table alternative](https://github.com/Mrugankkakade17-svg/Finex/issues/46)
+
+**Branch:** `feature/s2-ni02` (based on `dev`)
+
 **Verification date:** 2026-11-27
 
 ## Implementation
@@ -43,3 +45,4 @@ The Recharts 2 install command was an initial registry probe; the committed mani
 ## Contracts and scope
 
 The chart consumes daily OHLCV bars and optional exchange-calendar closure dates from its caller. It does not fetch market history or change a route; that transport is owned by the dependent S2-NI01 work. No database or frozen local route was changed.
+
