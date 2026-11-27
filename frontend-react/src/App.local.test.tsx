@@ -16,6 +16,47 @@ test('cold root starts signed out with the two approved synthetic personas', () 
   expect(screen.getByRole('button', { name: 'Sign in as learner-b' })).toBeInTheDocument();
 });
 
+test('local persona sign-in remains active when feature flag is explicitly false', () => {
+  const previous = process.env.REACT_APP_ENABLE_REAL_AUTH;
+  process.env.REACT_APP_ENABLE_REAL_AUTH = 'false';
+  try {
+    render(<App />);
+    expect(screen.getByRole('heading', { name: 'Choose a local persona' })).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'FinEx account' })).not.toBeInTheDocument();
+  } finally {
+    if (previous === undefined) delete process.env.REACT_APP_ENABLE_REAL_AUTH;
+    else process.env.REACT_APP_ENABLE_REAL_AUTH = previous;
+  }
+});
+
+test('real-account registration and sign-in UI requires an explicit feature flag', () => {
+  const previous = process.env.REACT_APP_ENABLE_REAL_AUTH;
+  process.env.REACT_APP_ENABLE_REAL_AUTH = 'true';
+  try {
+    render(<App />);
+    expect(screen.getByRole('heading', { name: 'FinEx account' })).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: 'Create account' })).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Choose a local persona' })).not.toBeInTheDocument();
+  } finally {
+    if (previous === undefined) delete process.env.REACT_APP_ENABLE_REAL_AUTH;
+    else process.env.REACT_APP_ENABLE_REAL_AUTH = previous;
+  }
+});
+
+test('real-account flag enabled does not unlock local educational routes without local session', () => {
+  const previous = process.env.REACT_APP_ENABLE_REAL_AUTH;
+  process.env.REACT_APP_ENABLE_REAL_AUTH = 'true';
+  window.history.replaceState({}, '', '/dashboard');
+  try {
+    render(<App />);
+    expect(screen.getByRole('heading', { name: 'FinEx account' })).toBeInTheDocument();
+    expect(screen.queryByText(/Dashboard/i, { selector: 'h1' })).not.toBeInTheDocument();
+  } finally {
+    if (previous === undefined) delete process.env.REACT_APP_ENABLE_REAL_AUTH;
+    else process.env.REACT_APP_ENABLE_REAL_AUTH = previous;
+  }
+});
+
 test('cold full application does not write legacy authentication or owner claims', () => {
   render(<App />);
   expect(localStorage.getItem('finex_is_authenticated')).toBeNull();
@@ -67,3 +108,4 @@ test('invalid full-app origin is a safe configuration error, never a fixture fal
     else process.env.REACT_APP_FINEX_API_BASE_URL = previous;
   }
 });
+

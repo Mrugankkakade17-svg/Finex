@@ -17,6 +17,7 @@ from app.core.handlers import (
     validation_exception_handler,
 )
 from app.core.middleware import CorrelationIdMiddleware, LocalApplicationBoundaryMiddleware
+from app.core.rate_limit import RateLimitMiddleware
 from app.domain.local_application import Clock
 from app.ports.adapters.postgres_local_application import PostgresLocalApplicationStore
 from app.ports.adapters.postgres_local_foundation import PostgresLocalFoundationStore
@@ -112,6 +113,13 @@ def create_app(
         auth_service.user_repository = postgres_user_repository
 
     application.add_middleware(CSVUploadRequestLimitMiddleware)
+    application.add_middleware(
+        RateLimitMiddleware,
+        requests_per_window=active_settings.rate_limit_requests_per_window,
+        window_seconds=active_settings.rate_limit_window_seconds,
+        auth_requests_per_window=active_settings.auth_rate_limit_requests_per_window,
+        auth_window_seconds=active_settings.auth_rate_limit_window_seconds,
+    )
     application.add_middleware(LocalApplicationBoundaryMiddleware)
     application.add_middleware(CorrelationIdMiddleware)
     application.add_middleware(CORSMiddleware, **get_cors_middleware_kwargs(active_settings))
