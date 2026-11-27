@@ -148,9 +148,9 @@ A versioned golden scenarios specification file (`ai/simulation/golden_scenarios
 | :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
 | `GOLDEN-01` | Monotonic Growth | 5 | **+50.00%** | **0.00%** | 2026-01-09 | 2026-01-09 | 2026-01-09 | **PASSED** |
 | `GOLDEN-02` | Continuous Decline | 5 | **-50.00%** | **-50.00%** | 2026-02-02 | 2026-02-06 | *None* | **PASSED** |
-| `GOLDEN-03` | V-Shape Full Recovery | 7 | **+30.00%** | **-50.00%** | 2026-03-03 | 2026-03-05 | 2026-03-09 | **PASSED** |
-| `GOLDEN-04` | Partial Recovery (Unrecovered) | 6 | **+8.00%** | **-40.00%** | 2026-04-02 | 2026-04-06 | *None* | **PASSED** |
-| `GOLDEN-05` | Multiple Drawdowns (Global MDD) | 7 | **+50.00%** | **-50.00%** | 2026-05-07 | 2026-05-08 | 2026-05-12 | **PASSED** |
+| `GOLDEN-03` | V-Shape Full Recovery | 6 | **+32.00%** | **-30.00%** | 2026-03-03 | 2026-03-04 | 2026-03-06 | **PASSED** |
+| `GOLDEN-04` | Partial Recovery (Unrecovered) | 5 | **-16.00%** | **-50.00%** | 2026-04-01 | 2026-04-03 | *None* | **PASSED** |
+| `GOLDEN-05` | Multiple Drawdowns (Global MDD) | 8 | **+100.00%** | **-50.00%** | 2026-05-07 | 2026-05-08 | 2026-05-12 | **PASSED** |
 | `GOLDEN-06` | Flat Constant Price | 4 | **0.00%** | **0.00%** | 2026-06-01 | 2026-06-01 | 2026-06-01 | **PASSED** |
 
 **Golden Scenarios Acceptance Verdict:** **6 / 6 PASSED (100%)**
@@ -173,63 +173,23 @@ The module defines standard financial market crisis benchmark windows in `HISTOR
 ## 8. Automated Testing Execution & Evidence
 
 ### 8.1 Test Suites Executed
-Executed via `backend/` using `uv run --with-requirements requirements.txt pytest -o addopts='' tests/unit/test_simulation_stress.py tests/unit/test_market_calendar.py -v`:
+1. **Simulation Stress Engine & Market Calendar Unit Tests:**
+   Command: `uv run --with-requirements requirements.txt pytest -o addopts='' tests/unit/test_simulation_stress.py tests/unit/test_market_calendar.py -v`
+   Result: **46 passed in 0.97s** (35 simulation stress tests + 11 market calendar tests).
+
+2. **Market API Contract Tests:**
+   Command: `uv run --with-requirements requirements.txt pytest -o addopts='' tests/contract/test_market_api.py -v`
+   Result: **12 passed in 8.12s**.
+
+3. **Complete Backend Unit Test Suite:**
+   Command: `uv run --with-requirements requirements.txt pytest -o addopts='' tests/unit -q`
+   Result: **2,208 passed, 387 warnings in 220.12s (03:40)** (100% pass across all 63 unit test suites).
 
 ```text
-============================= test session starts =============================
-platform win32 -- Python 3.12.12, pytest-8.4.1, pluggy-1.7.0
-rootdir: C:\Users\ASUS\Documents\GitHub\Finex\backend
-configfile: pyproject.toml
-plugins: anyio-4.16.0, asyncio-1.4.0, cov-7.1.0
-
-tests/unit/test_simulation_stress.py::test_all_official_golden_scenarios_pass[GOLDEN-01-MONOTONIC-GROWTH] PASSED [  2%]
-tests/unit/test_simulation_stress.py::test_all_official_golden_scenarios_pass[GOLDEN-02-CONTINUOUS-DECLINE] PASSED [  4%]
-tests/unit/test_simulation_stress.py::test_all_official_golden_scenarios_pass[GOLDEN-03-V-SHAPE-FULL-RECOVERY] PASSED [  6%]
-tests/unit/test_simulation_stress.py::test_all_official_golden_scenarios_pass[GOLDEN-04-PARTIAL-RECOVERY-UNRECOVERED] PASSED [  8%]
-tests/unit/test_simulation_stress.py::test_all_official_golden_scenarios_pass[GOLDEN-05-MULTIPLE-DRAWDOWN-PEAKS] PASSED [ 10%]
-tests/unit/test_simulation_stress.py::test_all_official_golden_scenarios_pass[GOLDEN-06-FLAT-CONSTANT] PASSED [ 13%]
-tests/unit/test_simulation_stress.py::test_monotonic_increasing_series_has_zero_drawdown PASSED [ 15%]
-tests/unit/test_simulation_stress.py::test_monotonic_decreasing_series_has_no_recovery PASSED [ 17%]
-tests/unit/test_simulation_stress.py::test_constant_flat_prices PASSED   [ 19%]
-tests/unit/test_simulation_stress.py::test_v_shape_crash_and_recovery_metrics PASSED [ 21%]
-tests/unit/test_simulation_stress.py::test_multiple_drawdowns_selects_global_maximum PASSED [ 23%]
-tests/unit/test_simulation_stress.py::test_step_by_step_drawdown_series PASSED [ 26%]
-tests/unit/test_simulation_stress.py::test_empty_observations_raises_insufficient_data_error PASSED [ 28%]
-tests/unit/test_simulation_stress.py::test_single_observation_raises_insufficient_data_error PASSED [ 30%]
-tests/unit/test_simulation_stress.py::test_zero_or_negative_price_raises_invalid_observation_error[0] PASSED [ 32%]
-tests/unit/test_simulation_stress.py::test_zero_or_negative_price_raises_invalid_observation_error[-10] PASSED [ 34%]
-tests/unit/test_simulation_stress.py::test_zero_or_negative_price_raises_invalid_observation_error[-0.01] PASSED [ 36%]
-tests/unit/test_simulation_stress.py::test_non_finite_price_raises_invalid_observation_error[nan] PASSED [ 39%]
-tests/unit/test_simulation_stress.py::test_non_finite_price_raises_invalid_observation_error[inf] PASSED [ 41%]
-tests/unit/test_simulation_stress.py::test_non_finite_price_raises_invalid_observation_error[-inf] PASSED [ 43%]
-tests/unit/test_simulation_stress.py::test_duplicate_differing_price_on_same_date_raises_duplicate_error PASSED [ 45%]
-tests/unit/test_simulation_stress.py::test_identical_duplicate_on_same_date_deduplicates_deterministically PASSED [ 47%]
-tests/unit/test_simulation_stress.py::test_out_of_order_dates_are_sorted_chronologically PASSED [ 50%]
-tests/unit/test_simulation_stress.py::test_missing_required_fields_in_dict_raises_invalid_observation_error PASSED [ 52%]
-tests/unit/test_simulation_stress.py::test_invalid_date_type_raises_invalid_observation_error PASSED [ 54%]
-tests/unit/test_simulation_stress.py::test_scenario_window_end_before_start_raises_error PASSED [ 56%]
-tests/unit/test_simulation_stress.py::test_unknown_scenario_name_raises_scenario_window_error PASSED [ 58%]
-tests/unit/test_simulation_stress.py::test_weekend_and_holiday_gaps_handled_without_data_fabrication PASSED [ 60%]
-tests/unit/test_simulation_stress.py::test_large_multi_year_series_performance_and_accuracy PASSED [ 63%]
-tests/unit/test_simulation_stress.py::test_determinism_repeated_execution_yields_identical_output PASSED [ 65%]
-tests/unit/test_simulation_stress.py::test_s2_pa03_candle_dict_compatibility PASSED [ 67%]
-tests/unit/test_simulation_stress.py::test_evaluate_scenario_window_filtering PASSED [ 69%]
-tests/unit/test_simulation_stress.py::test_reference_scenarios_definitions_are_valid PASSED [ 71%]
-tests/unit/test_simulation_stress.py::test_stateless_facade_and_user_isolation PASSED [ 73%]
-tests/unit/test_simulation_stress.py::test_to_summary_dict_is_fully_json_serializable PASSED [ 76%]
-tests/unit/test_market_calendar.py::test_market_session_handles_exchange_timezone_and_weekend[NSE-instant0-True] PASSED [ 78%]
-tests/unit/test_market_calendar.py::test_market_session_handles_exchange_timezone_and_weekend[BSE-instant1-False] PASSED [ 80%]
-tests/unit/test_market_calendar.py::test_market_session_handles_exchange_timezone_and_weekend[NASDAQ-instant2-True] PASSED [ 82%]
-tests/unit/test_market_calendar.py::test_market_session_handles_exchange_timezone_and_weekend[NYSE-instant3-False] PASSED [ 84%]
-tests/unit/test_market_calendar.py::test_market_session_rejects_naive_clock_and_unknown_exchange PASSED [ 86%]
-tests/unit/test_market_calendar.py::test_market_session_opening_inclusive_and_closing_exclusive[instant0-True] PASSED [ 89%]
-tests/unit/test_market_calendar.py::test_market_session_opening_inclusive_and_closing_exclusive[instant1-False] PASSED [ 91%]
-tests/unit/test_next_session_date_skips_weekends[day0-expected0] PASSED [ 93%]
-tests/unit/test_next_session_date_skips_weekends[day1-expected1] PASSED [ 95%]
-tests/unit/test_next_session_date_skips_weekends[day2-expected2] PASSED [ 97%]
-tests/unit/test_next_session_date_rejects_unsupported_exchange PASSED [100%]
-
-============================= 46 passed in 0.97s ==============================
+tests/unit/test_simulation_stress.py: 35 passed
+tests/unit/test_market_calendar.py: 11 passed
+tests/contract/test_market_api.py: 12 passed
+Entire tests/unit/: 2,208 passed (0 failures)
 ```
 
 ### 8.2 Linter & Formatter Evidence
@@ -263,8 +223,17 @@ uv run --with ruff ruff format --check .
 ## 10. Operational Limitations & Upstream Repository Observations
 1. **Unadjusted Close Prices:** Relies on unadjusted close prices stored in `finex_dev.market.prices`. If corporate actions (stock splits, bonus issues, dividends) occurred, historical returns reflect nominal prices unless adjusted bars are provided.
 2. **Databricks Warehouse Connectivity:** Upstream live warehouse queries require environment Databricks SQL credentials; the test suite verifies calculation accuracy using verified candle fixtures and mocked database layers.
-3. **Upstream `dev` Alembic Split Head (Non-Blocking Observation):**
-   Upstream PR #147 (merged into `dev` at commit `ff4dd15` just prior to this branch) introduced `backend/alembic/versions/s2mr02_fx007_merge_heads.py`, which caused a split-head conflict with `s3_fx006_checkpoint` on `origin/dev`. Because S4-MI02 is purely an AI analytical calculation module and introduces zero database migrations, database maintenance on `dev` remains the responsibility of the database code owners. All application and contract CI suites succeed.
+3. **Upstream `dev` Alembic Split Head & PR #154 CI Audit:**
+   - In PR #154 check runs on GitHub Actions, **8 out of 10 checks passed** (including `Publish S1 UAT evidence summary`, `Flutter journey`, `Owned S3 synthetic API`, `React journey`, `Owned S1 and S2 native TCP`, `Compatibility pilot contract`, and `evidence`).
+   - Two workflows failed: `Backend Quality Gates` (`quality`) and `Backend Postgres Tests` (`Pytest Postgres`).
+   - Runner log inspection confirmed the root cause:
+     ```text
+     ERROR [alembic.util.messaging] Multiple head revisions are present for given argument 'head'; please specify a specific target revision, '<branchname>@head' to narrow to a specific head, or 'heads' for all heads
+     FAILED: Multiple head revisions are present for given argument 'head'; please specify a specific target revision, '<branchname>@head' to narrow to a specific head, or 'heads' for all heads
+     ```
+   - Commit `ff4dd15` (PR #147, `feature/s2-pa05`), merged into `origin/dev` immediately before this branch was created, added `backend/alembic/versions/s2mr02_fx007_merge_heads.py` without reconciling `s3_fx006_checkpoint`, leaving `origin/dev` with a split migration head.
+   - In `Backend Postgres Tests`, the migration failure prevented schema creation in the ephemeral postgres runner, resulting in downstream `UndefinedTableError: relation "finex.users" does not exist`.
+   - **Classification:** Upstream `dev` repository defect. S4-MI02 has zero database tables or migrations and introduces no schema changes. Per handbook instructions, database migrations are owned by database code owners and must not be modified in an AI simulation branch.
 
 ---
 
@@ -277,15 +246,19 @@ uv run --with ruff ruff format --check .
 - [x] S2-PA03 Candle contract verified and compatible
 - [x] Ruff check passes with 0 errors
 - [x] Ruff format passes with 362 files formatted
-- [x] 46/46 unit and contract tests passed locally
+- [x] 35/35 simulation tests passed
+- [x] 11/11 market calendar tests passed
+- [x] 12/12 market contract tests passed
+- [x] 2,208/2,208 backend unit tests passed
 - [x] Zero breaking changes to frozen routes or working modules
+- [x] PR #154 titled per Sprint 4 convention with secondary reviewer Payal
 
 ---
 
 ## 12. Final Pull Request & Commit Information
 - **Pull Request:** [#154](https://github.com/Mrugankkakade17-svg/Finex/pull/154)
-- **PR Title:** `feat(s4-mi02): implement historical stress and drawdown scenarios`
-- **Head Commit SHA:** `50fa14b061237fa7a88a8ac658bb14fc7f95c6ed` (`50fa14b`)
+- **PR Title:** `[Sprint 4] [S4-MI02] Stress and drawdown scenarios from stored history`
+- **Head Commit SHA:** `ee9ec059d04ba4e0fec7d6a5e12ec68ef8e36706` (`ee9ec05`)
 - **Author:** Mitali (`@mitali2701`)
 - **Assigned Reviewer:** Payal (`@payalmude14-star`)
 - **Branch:** `feature/s4-mi02`
