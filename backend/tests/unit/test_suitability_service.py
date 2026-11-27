@@ -390,3 +390,149 @@ def test_persona_5_empty_portfolio_handling() -> None:
     for p in res.rebalance_plan:
         assert p.direction == "INCREASE"
         assert p.current_weight == Decimal("0.0")
+
+
+# ==============================================================================
+# C. Custom Allocation Validation & Correctness Tests (Reviewer Finding PR #160)
+# ==============================================================================
+
+
+def test_custom_allocation_duplicate_asset_class_rejected() -> None:
+    """Duplicate asset classes must be rejected with DUPLICATE_ASSET_CLASS."""
+    # Exact duplicate
+    req_exact = SuitabilityRebalanceRequest(
+        risk_category="MODERATE",
+        current_allocation=[
+            CurrentAllocationItem(asset_class="EQUITY", weight=Decimal("0.50")),
+            CurrentAllocationItem(asset_class="EQUITY", weight=Decimal("0.50")),
+        ],
+    )
+    with pytest.raises(SuitabilityException) as exc_info:
+        suitability_service.evaluate_suitability_rebalance(req_exact)
+    assert exc_info.value.error_code == "DUPLICATE_ASSET_CLASS"
+    assert "Duplicate asset class 'EQUITY'" in exc_info.value.message
+
+    # Case-insensitive duplicate (e.g., 'equity' and 'EQUITY')
+    req_case = SuitabilityRebalanceRequest(
+        risk_category="MODERATE",
+        current_allocation=[
+            CurrentAllocationItem(asset_class="equity", weight=Decimal("0.50")),
+            CurrentAllocationItem(asset_class="EQUITY", weight=Decimal("0.50")),
+        ],
+    )
+    with pytest.raises(SuitabilityException) as exc_info_case:
+        suitability_service.evaluate_suitability_rebalance(req_case)
+    assert exc_info_case.value.error_code == "DUPLICATE_ASSET_CLASS"
+
+
+def test_custom_allocation_incomplete_total_rejected_80_percent() -> None:
+    """Custom allocation totaling 80% (0.80) must be rejected with INVALID_ALLOCATION_TOTAL."""
+    # Fractional scale (0.80)
+    req_frac = SuitabilityRebalanceRequest(
+        risk_category="MODERATE",
+        current_allocation=[
+            CurrentAllocationItem(asset_class="EQUITY", weight=Decimal("0.50")),
+            CurrentAllocationItem(asset_class="FIXED_INCOME", weight=Decimal("0.30")),
+        ],
+        portfolio_value=Decimal("100000.00"),
+    )
+    with pytest.raises(SuitabilityException) as exc_frac:
+        suitability_service.evaluate_suitability_rebalance(req_frac)
+    assert exc_frac.value.error_code == "INVALID_ALLOCATION_TOTAL"
+    assert "Total custom allocation weights must sum to 1.0" in exc_frac.value.message
+
+    # Percentage scale (80.0%)
+    req_pct = SuitabilityRebalanceRequest(
+        risk_category="MODERATE",
+        current_allocation=[
+            CurrentAllocationItem(asset_class="EQUITY", weight=Decimal("50.0")),
+            CurrentAllocationItem(asset_class="FIXED_INCOME", weight=Decimal("30.0")),
+        ],
+        portfolio_value=Decimal("100000.00"),
+    )
+    with pytest.raises(SuitabilityException) as exc_pct:
+        suitability_service.evaluate_suitability_rebalance(req_pct)
+    assert exc_pct.value.error_code == "INVALID_ALLOCATION_TOTAL"
+    assert "Total custom allocation percentage must equal 100%" in exc_pct.value.message
+
+
+def test_custom_allocation_excess_total_rejected_120_percent() -> None:
+    """Custom allocation totaling 120% (1.20) must be rejected with INVALID_ALLOCATION_TOTAL."""
+    # Fractional scale (1.20)
+    req_frac = SuitabilityRebalanceRequest(
+        risk_category="CONSERVATIVE",
+        current_allocation=[
+            CurrentAllocationItem(asset_class="EQUITY", weight=Decimal("0.60")),
+            CurrentAllocationItem(asset_class="FIXED_INCOME", weight=Decimal("0.40")),
+            CurrentAllocationItem(asset_class="CASH", weight=Decimal("0.20")),
+        ],
+    )
+    with pytest.raises(SuitabilityException) as exc_frac:
+        suitability_service.evaluate_suitability_rebalance(req_frac)
+    assert exc_frac.value.error_code == "INVALID_ALLOCATION_TOTAL"
+
+    # Percentage scale (120.0%)
+    req_pct = SuitabilityRebalanceRequest(
+        risk_category="CONSERVATIVE",
+        current_allocation=[
+            CurrentAllocationItem(asset_class="EQUITY", weight=Decimal("60.0")),
+            CurrentAllocationItem(asset_class="FIXED_INCOME", weight=Decimal("40.0")),
+            CurrentAllocationItem(asset_class="CASH", weight=Decimal("20.0")),
+        ],
+    )
+    with pytest.raises(SuitabilityException) as exc_pct:
+        suitability_service.evaluate_suitability_rebalance(req_pct)
+    assert exc_pct.value.error_code == "INVALID_ALLOCATION_TOTAL"
+
+
+def test_custom_allocation_tolerance_boundaries() -> None:
+    """Validate 0.1% tolerance boundary: 0.9995 accepted, 0.998 rejected."""
+    # Accepted within tolerance (0.9995 on fractional scale)
+    req_ok = SuitabilityRebalanceRequest(
+        risk_category="MODERATE",
+        current_allocation=[
+            CurrentAllocationItem(asset_class="EQUITY", weight=Decimal("0.4995")),
+            CurrentAllocationItem(asset_class="FIXED_INCOME", weight=Decimal("0.5000")),
+        ],
+    )
+    res_ok = suitability_service.evaluate_suitability_rebalance(req_ok)
+    assert res_ok.risk_category == "MODERATE"
+
+    # Rejected outside tolerance (0.998 on fractional scale)
+    req_bad = SuitabilityRebalanceRequest(
+        risk_category="MODERATE",
+        current_allocation=[
+            CurrentAllocationItem(asset_class="EQUITY", weight=Decimal("0.498")),
+            CurrentAllocationItem(asset_class="FIXED_INCOME", weight=Decimal("0.500")),
+        ],
+    )
+    with pytest.raises(SuitabilityException) as exc_bad:
+        suitability_service.evaluate_suitability_rebalance(req_bad)
+    assert exc_bad.value.error_code == "INVALID_ALLOCATION_TOTAL"
+
+
+def test_custom_allocation_zero_sum_rebalancing_and_value_conservation() -> None:
+    """Verify that validated allocations strictly conserve zero-sum drift and portfolio value."""
+    portfolio_val = Decimal("150000.00")
+    req = SuitabilityRebalanceRequest(
+        risk_category="MODERATE",
+        current_allocation=[
+            CurrentAllocationItem(asset_class="EQUITY", weight=Decimal("0.70")),
+            CurrentAllocationItem(asset_class="FIXED_INCOME", weight=Decimal("0.20")),
+            CurrentAllocationItem(asset_class="CASH", weight=Decimal("0.10")),
+        ],
+        portfolio_value=portfolio_val,
+    )
+    res = suitability_service.evaluate_suitability_rebalance(req)
+
+    # 1. Sum of signed drifts must equal zero
+    drift_sum = sum(item.drift for item in res.drift_summary)
+    assert abs(drift_sum) < Decimal("0.000001")
+
+    # 2. Sum of adjustment weights must equal zero
+    adj_sum = sum(item.adjustment_weight for item in res.rebalance_plan)
+    assert abs(adj_sum) < Decimal("0.000001")
+
+    # 3. Sum of indicative monetary adjustments must equal zero (portfolio value conservation)
+    amt_sum = sum(item.indicative_amount for item in res.rebalance_plan if item.indicative_amount)
+    assert amt_sum == Decimal("0.00")

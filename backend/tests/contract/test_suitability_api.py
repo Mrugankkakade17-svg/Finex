@@ -127,3 +127,65 @@ async def test_rebalance_user_isolation_between_distinct_users(client: TestClien
     )
     assert resp_b.status_code == 404
     assert resp_b.json()["error_code"] == "PORTFOLIO_NOT_FOUND"
+
+
+def test_rebalance_endpoint_duplicate_asset_class_returns_400(client: TestClient) -> None:
+    token = create_access_token({"sub": "user-test", "user_id": "user-test"})
+    response = client.post(
+        "/api/v1/suitability/rebalance",
+        headers={"Authorization": f"Bearer {token}"},
+        json={
+            "risk_category": "MODERATE",
+            "current_allocation": [
+                {"asset_class": "EQUITY", "weight": 0.50},
+                {"asset_class": "EQUITY", "weight": 0.50},
+            ],
+        },
+    )
+    assert response.status_code == 400
+    body = response.json()
+    assert body["error_code"] == "DUPLICATE_ASSET_CLASS"
+    assert "Duplicate asset class 'EQUITY'" in body["message"]
+
+
+def test_rebalance_endpoint_incomplete_allocation_total_returns_400(client: TestClient) -> None:
+    token = create_access_token({"sub": "user-test", "user_id": "user-test"})
+    # Custom allocation totaling 80% (0.80) must be rejected
+    response = client.post(
+        "/api/v1/suitability/rebalance",
+        headers={"Authorization": f"Bearer {token}"},
+        json={
+            "risk_category": "MODERATE",
+            "current_allocation": [
+                {"asset_class": "EQUITY", "weight": 0.50},
+                {"asset_class": "FIXED_INCOME", "weight": 0.30},
+            ],
+            "portfolio_value": 100000.0,
+        },
+    )
+    assert response.status_code == 400
+    body = response.json()
+    assert body["error_code"] == "INVALID_ALLOCATION_TOTAL"
+    assert "must sum to 1.0" in body["message"]
+
+
+def test_rebalance_endpoint_excess_allocation_total_returns_400(client: TestClient) -> None:
+    token = create_access_token({"sub": "user-test", "user_id": "user-test"})
+    # Custom allocation totaling 120% must be rejected
+    response = client.post(
+        "/api/v1/suitability/rebalance",
+        headers={"Authorization": f"Bearer {token}"},
+        json={
+            "risk_category": "MODERATE",
+            "current_allocation": [
+                {"asset_class": "EQUITY", "weight": 60.0},
+                {"asset_class": "FIXED_INCOME", "weight": 40.0},
+                {"asset_class": "CASH", "weight": 20.0},
+            ],
+            "portfolio_value": 100000.0,
+        },
+    )
+    assert response.status_code == 400
+    body = response.json()
+    assert body["error_code"] == "INVALID_ALLOCATION_TOTAL"
+    assert "must equal 100%" in body["message"]

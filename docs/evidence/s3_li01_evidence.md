@@ -203,5 +203,58 @@ All endpoints are exposed under tag `suitability` and present in `/openapi.json`
 
 ## 8. Status and Next Steps
 
-- **Status**: **`READY FOR PAYAL REVIEW`**
-- **Action**: Await independent code owner review and acceptance from `@payalmude14-star`. Do not merge or close issue.
+- **Status**: **`READY FOR REVIEWER RE-VERIFICATION`**
+- **Action**: Await independent code owner re-verification and acceptance from `@Mrugankkakade17-svg` and `@payalmude14-star`. Do not merge or close PR #160.
+
+---
+
+## 9. Reviewer Finding Remediation: Allocation Validation & Zero-Sum Invariant (PR #160)
+
+### 9.1 Reviewer Finding Summary
+- **Reviewer**: `@Mrugankkakade17-svg` (Comment ID: `4721224117` on `backend/app/services/suitability_service.py:494`)
+- **Finding**:
+  > `total_input` is accumulated but never checked against 1.0 (and duplicate asset classes overwrite `current_map` while still contributing multiple times here). For example, a custom allocation totaling 80% is treated as if the missing 20% did not exist, so `sum(adjustment_weight)` is 20% and indicative adjustments no longer conserve portfolio value, despite the documented zero-sum invariant. Please validate/normalize the input total and reject duplicate asset classes (or otherwise define how the unallocated remainder is represented) before calculating drift.
+
+### 9.2 Root Cause Analysis
+1. **Duplicate Asset Classes**:
+   Previous logic assigned `current_map[item.asset_class] = w` inside a loop without checking if `item.asset_class` had already been encountered. Duplicate keys silently overwrote prior dictionary values while both weights contributed to `total_input`.
+2. **Missing Total Unity Validation**:
+   `total_input` was accumulated but only checked with `if total_input <= _ZERO: is_empty = True`. Incomplete custom allocations (e.g. 80%) or excess allocations (e.g. 120%) proceeded to drift calculation against target allocations summing to 1.0. This caused:
+   $$\sum \text{drift} = \sum (w_{\text{curr}} - w_{\text{target}}) = 0.80 - 1.00 = -0.20 \neq 0$$
+   $$\sum \text{adjustment\_weight} = \sum (-\text{drift}) = +0.20 \neq 0$$
+   $$\sum \text{indicative\_amount} = +0.20 \times V_{\text{portfolio}} \neq 0$$
+   This directly broke portfolio value conservation and the documented zero-sum rebalancing invariant.
+
+### 9.3 Corrective Architecture & Implementation
+In `backend/app/services/suitability_service.py`, custom allocations now pass through strict mathematical validation before drift calculation:
+1. **Duplicate Asset Class Rejection**:
+   - Asset class identifiers are normalized (`cat = str(item.asset_class).strip().upper()`).
+   - Any duplicate asset class immediately raises `SuitabilityException` with error code `DUPLICATE_ASSET_CLASS` (HTTP 400).
+2. **Weight Precision & Validity**:
+   - Each weight is parsed as `Decimal`.
+   - Non-finite values (`NaN`, `sNaN`, `+Inf`, `-Inf`) raise `NON_FINITE_WEIGHT` (HTTP 400).
+   - Negative values (`w < 0.0`) raise `NEGATIVE_WEIGHT` (HTTP 400).
+3. **Scale Detection & Documented Tolerance Policy**:
+   - Input scale is automatically identified: percentage scale if any item `> 1.0` or raw sum `> 1.5`, otherwise fractional scale.
+   - **Fractional Scale**: Expected total is $1.000000$ with tolerance $\pm 0.001$ ($0.1\%$).
+   - **Percentage Scale**: Expected total is $100.00\%$ with tolerance $\pm 0.1\%$.
+   - Any deviation exceeding tolerance immediately raises `SuitabilityException` with error code `INVALID_ALLOCATION_TOTAL` (HTTP 400), explicitly reporting the received total and discrepancy.
+4. **Conservation of Invariants**:
+   - Because all custom allocations entering drift computation are guaranteed to sum to $1.0 \pm 0.001$, the zero-sum invariant is mathematically guaranteed:
+     $$\sum_i \text{drift}_i = \sum_i w_{i,\text{curr}} - \sum_i w_{i,\text{target}} = 1.0 - 1.0 = 0.0$$
+     $$\sum_i \text{adjustment\_weight}_i = \sum_i (-\text{drift}_i) = 0.0$$
+     $$\sum_i \text{indicative\_amount}_i = V_{\text{portfolio}} \sum_i \text{adjustment\_weight}_i = \$0.00$$
+5. **Preservation of Empty Portfolio Semantics**:
+   - Empty allocation list `[]` or explicit $0.00 portfolio value continues to produce clean empty portfolio guidance (`is_empty_portfolio = True`) without fake drift.
+
+### 9.4 Regression Test Suite (34/34 Passing)
+8 dedicated tests were added across unit and contract layers:
+- `test_custom_allocation_duplicate_asset_class_rejected`: Validates rejection of duplicate keys including case-insensitive variants (`equity` and `EQUITY`).
+- `test_custom_allocation_incomplete_total_rejected_80_percent`: Validates that 80% allocations (both fractional 0.80 and percentage 80.0%) are rejected with `INVALID_ALLOCATION_TOTAL`.
+- `test_custom_allocation_excess_total_rejected_120_percent`: Validates that 120% allocations are rejected with `INVALID_ALLOCATION_TOTAL`.
+- `test_custom_allocation_tolerance_boundaries`: Validates that 0.9995 is accepted within $\pm 0.001$ tolerance while 0.998 is rejected.
+- `test_custom_allocation_zero_sum_rebalancing_and_value_conservation`: Mathematically asserts $\sum \text{drift} == 0$, $\sum \text{adjustment\_weight} == 0$, and $\sum \text{indicative\_amount} == \$0.00$.
+- `test_rebalance_endpoint_duplicate_asset_class_returns_400`: FastAPI contract test verifying HTTP 400 and `DUPLICATE_ASSET_CLASS` error code.
+- `test_rebalance_endpoint_incomplete_allocation_total_returns_400`: FastAPI contract test verifying HTTP 400 and `INVALID_ALLOCATION_TOTAL` error code for 80% custom allocation.
+- `test_rebalance_endpoint_excess_allocation_total_returns_400`: FastAPI contract test verifying HTTP 400 and `INVALID_ALLOCATION_TOTAL` error code for 120% custom allocation.
+

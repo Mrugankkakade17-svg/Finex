@@ -483,21 +483,77 @@ class SuitabilityService:
                 # S3-PA01 percentage is on 0-100 scale; convert to weight fraction
                 current_map[cat] = (pct / _HUNDRED).quantize(Decimal("0.000001"))
         elif request.current_allocation:
-            # Direct client-supplied allocation
-            total_input = Decimal("0.0")
+            # Direct client-supplied allocation: validate asset uniqueness, finite weights,
+            # and verify total equals 1.0 (or 100%) within documented tolerance for zero-sum drift.
+            seen_classes: set[str] = set()
+            raw_items: List[Tuple[str, Decimal]] = []
+
             for item in request.current_allocation:
+                ac = str(item.asset_class).strip().upper()
+                if not ac:
+                    raise SuitabilityException(
+                        "Asset class identifier cannot be empty.",
+                        error_code="INVALID_ASSET_CLASS",
+                        status_code=400,
+                    )
+                if ac in seen_classes:
+                    raise SuitabilityException(
+                        f"Duplicate asset class '{ac}' detected in custom allocation. "
+                        "Each asset class must appear at most once.",
+                        error_code="DUPLICATE_ASSET_CLASS",
+                        status_code=400,
+                    )
+                seen_classes.add(ac)
+
                 w = Decimal(str(item.weight))
-                # Auto-normalize if passed on a 0-100 scale (> 1.5)
-                if w > Decimal("1.5"):
-                    w = (w / _HUNDRED).quantize(Decimal("0.000001"))
-                current_map[item.asset_class] = w
-                total_input += w
+                if w.is_nan() or w.is_infinite():
+                    raise SuitabilityException(
+                        f"Weight for asset class '{ac}' must be a finite number.",
+                        error_code="NON_FINITE_WEIGHT",
+                        status_code=400,
+                    )
+                if w < _ZERO:
+                    raise SuitabilityException(
+                        f"Weight for asset class '{ac}' cannot be negative ({w}).",
+                        error_code="NEGATIVE_WEIGHT",
+                        status_code=400,
+                    )
+                raw_items.append((ac, w))
+
+            raw_total = sum(w for _, w in raw_items)
+
+            # Determine whether input is on percentage scale (0-100) or fractional scale (0-1)
+            # Scale tolerance: 0.1% for percentage scale, 0.001 (0.1%) for fractional scale
+            is_percentage_scale = any(w > _ONE for _, w in raw_items) or raw_total > Decimal("1.5")
+            if is_percentage_scale:
+                diff = abs(raw_total - _HUNDRED)
+                if diff > Decimal("0.1"):
+                    raise SuitabilityException(
+                        "Total custom allocation percentage must equal 100% (within ±0.1% "
+                        f"tolerance). Got {raw_total:.4f}% (difference {diff:.4f}% exceeds "
+                        "0.1% tolerance).",
+                        error_code="INVALID_ALLOCATION_TOTAL",
+                        status_code=400,
+                    )
+                for ac, w in raw_items:
+                    current_map[ac] = (w / _HUNDRED).quantize(Decimal("0.000001"))
+            else:
+                diff = abs(raw_total - _ONE)
+                if diff > Decimal("0.001"):
+                    raise SuitabilityException(
+                        "Total custom allocation weights must sum to 1.0 (within ±0.001 "
+                        f"tolerance). Got {raw_total:.6f} (difference {diff:.6f} exceeds "
+                        "0.001 tolerance).",
+                        error_code="INVALID_ALLOCATION_TOTAL",
+                        status_code=400,
+                    )
+                for ac, w in raw_items:
+                    current_map[ac] = w.quantize(Decimal("0.000001"))
 
             if request.portfolio_value is not None:
                 total_val = Decimal(str(request.portfolio_value))
-
-            if total_input <= _ZERO or (total_val is not None and total_val <= _ZERO):
-                is_empty = True
+                if total_val <= _ZERO:
+                    is_empty = True
         else:
             # Neither portfolio_id summary nor current_allocation supplied
             is_empty = True
