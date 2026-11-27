@@ -389,6 +389,88 @@ describe('marketService', () => {
         expect.objectContaining({ method: 'DELETE' })
       );
     });
+
+    test('creates a named Default watchlist before adding item when GET /api/v1/watchlists is empty', async () => {
+      const createdWatchlist = {
+        watchlist_id: 'wl-new',
+        name: 'Default',
+        created_at: '2026-11-27T07:00:00Z',
+        updated_at: '2026-11-27T07:00:00Z',
+        item_count: 0,
+      };
+      const items = [
+        {
+          instrument_id: 'AAPL',
+          added_at: '2026-11-27T07:00:01Z',
+        },
+      ];
+
+      const mockFetch = jest
+        .fn()
+        // 1. resolveDefaultWatchlistId -> GET /watchlists -> empty
+        .mockResolvedValueOnce({
+          status: 200,
+          ok: true,
+          json: async () => ({ success: true, data: { items: [], count: 0 } }),
+        })
+        // 2. POST /watchlists with { name: 'Default' }
+        .mockResolvedValueOnce({
+          status: 201,
+          ok: true,
+          json: async () => ({ success: true, data: createdWatchlist }),
+        })
+        // 3. PUT /watchlists/wl-new/items/AAPL
+        .mockResolvedValueOnce({
+          status: 200,
+          ok: true,
+          json: async () => ({ success: true, data: items[0] }),
+        })
+        // 4. getWatchlist -> GET /watchlists -> summary
+        .mockResolvedValueOnce({
+          status: 200,
+          ok: true,
+          json: async () => ({
+            success: true,
+            data: { items: [{ ...createdWatchlist, item_count: 1 }], count: 1 },
+          }),
+        })
+        // 5. getWatchlist -> GET /watchlists/wl-new/items
+        .mockResolvedValueOnce({
+          status: 200,
+          ok: true,
+          json: async () => ({ success: true, data: { items, count: 1 } }),
+        });
+
+      configureMarketService({
+        mode: 'api',
+        apiBaseUrl: 'http://127.0.0.1:8000',
+        fetchImpl: mockFetch as unknown as typeof fetch,
+      });
+
+      const result = await marketService.addToWatchlist({
+        securityId: 'sec_aapl',
+        symbol: 'AAPL',
+        name: 'Apple Inc.',
+        assetType: 'EQUITY',
+        exchange: 'NASDAQ',
+        currency: 'USD',
+      });
+
+      expect(mockFetch).toHaveBeenNthCalledWith(
+        2,
+        'http://127.0.0.1:8000/api/v1/watchlists',
+        expect.objectContaining({
+          method: 'POST',
+          body: JSON.stringify({ name: 'Default' }),
+        })
+      );
+      expect(mockFetch).toHaveBeenNthCalledWith(
+        3,
+        'http://127.0.0.1:8000/api/v1/watchlists/wl-new/items/AAPL',
+        expect.objectContaining({ method: 'PUT' })
+      );
+      expect(result.map((item) => item.symbol)).toEqual(['AAPL']);
+    });
   });
 
   describe('freshness badge metadata', () => {

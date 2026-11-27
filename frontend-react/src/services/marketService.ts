@@ -742,10 +742,9 @@ export const marketService = {
       }
 
       if (flatItems !== null && flatItems.length === 0) {
-        // Attempt nested S2-PA06 watchlist creation first if needed, or flat POST /watchlists
         const createRes = await apiRequest('/api/v1/watchlists', {
           method: 'POST',
-          body: JSON.stringify({ symbol: security.symbol }),
+          body: JSON.stringify({ name: 'Default' }),
         });
         if (!createRes.ok) {
           throw new Error(extractErrorMessage(createRes.payload, 'Unable to add security to watchlist.'));

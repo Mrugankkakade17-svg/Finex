@@ -52,12 +52,12 @@ npm.cmd test -- --watchAll=false --runInBand --testMatch=**/src/**/*.test.{ts,ts
 - **TypeScript (`npx.cmd tsc --noEmit`):** Exited with code `0`.
 - **Production build (`npm.cmd run build`):**
   - `Compiled successfully.`
-  - `build/static/js/main.24bf92b5.js` (`104.86 kB` gzip)
+  - `build/static/js/main.b41a5263.js` (`104.87 kB` gzip)
   - `build/static/css/main.21c9d311.css` (`6.04 kB` gzip)
 - **Full React test suite (`npm.cmd test -- --watchAll=false --runInBand --testMatch=**/src/**/*.test.{ts,tsx}`):**
   - `Test Suites: 28 passed, 28 total`
-  - `Tests: 781 passed, 781 total`
+  - `Tests: 782 passed, 782 total`
   - `Snapshots: 0 total`
-  - `Time: 45.885 s`
+  - `Time: 180.638 s`
 
 *(Note: `--testMatch=**/src/**/*.test.{ts,tsx}` was passed locally because the scratch clone path includes `.gemini`, which Jest's default `<rootDir>` glob skips; `--runInBand` matches the repository's serial React validation runbook to avoid parallel worker timeout contention on `App.s2.journey.test.tsx`.)*
