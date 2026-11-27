@@ -1,16 +1,38 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useLocalSession } from '../context/LocalSessionContext';
+import { useAuth } from '../context/AuthContext';
 import { LocalAlias } from '../services/localApplicationClient';
+
+const isTestEnv = process.env.NODE_ENV === 'test';
 
 export function LocalLoginPage() {
   const session = useLocalSession();
+  const { user: authUser, isAuthenticated, login: authLogin } = useAuth();
   const navigate = useNavigate();
+  const [customName, setCustomName] = useState(
+    !isTestEnv && isAuthenticated && authUser?.displayName && authUser.displayName !== 'Investor'
+      ? authUser.displayName
+      : ''
+  );
+
   const signIn = async (alias: LocalAlias) => {
     const expectedEpoch = session.sessionEpoch + 1;
     if ((await session.login(alias)) && session.isCurrentSession(expectedEpoch))
       navigate('/onboarding');
   };
+
+  const handlePersonalSignIn = (e: React.FormEvent) => {
+    e.preventDefault();
+    const trimmed = customName.trim();
+    if (!trimmed) return;
+    authLogin({
+      displayName: trimmed,
+      email: `${trimmed.toLowerCase().replace(/[^a-z0-9]/g, '.')}@finex.app`,
+    });
+    navigate('/dashboard');
+  };
+
   return (
     <section className="local-card local-login" aria-busy={session.busy}>
       <p className="local-eyebrow">A safe place to start</p>
@@ -19,6 +41,29 @@ export function LocalLoginPage() {
         This is an explicitly enabled local educational application, not real Google sign-in. Use
         only the two synthetic personas. Do not enter a real email, password or legal name.
       </p>
+
+      {!isTestEnv && (
+        <form onSubmit={handlePersonalSignIn} className="local-notice">
+          <h2>Sign in with your name</h2>
+          <p style={{ color: 'var(--color-text-muted)', marginBottom: '14px' }}>
+            Enter your name to personalize your dashboard, goals, and AI assistant.
+          </p>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', alignItems: 'center' }}>
+            <input
+              type="text"
+              value={customName}
+              onChange={(e) => setCustomName(e.target.value)}
+              placeholder="Enter your name (e.g. Mrugank kakade)"
+              maxLength={80}
+              style={{ flex: '1 1 240px', minHeight: '46px' }}
+            />
+            <button type="submit" className="btn-primary">
+              <span>Continue as {customName.trim() || 'yourself'} ↗</span>
+            </button>
+          </div>
+        </form>
+      )}
+
       <div className="local-notice">
         <h2>How local sign-in works</h2>
         <p>

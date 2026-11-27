@@ -63,7 +63,7 @@ export const SpendingPage: React.FC = () => {
               padding: '36px',
               borderRadius: '16px',
               border: '2px dashed var(--color-accent-violet)',
-              background: '#F6FAF7',
+              background: 'var(--color-surface-elevated)',
               textAlign: 'center',
               cursor: 'pointer',
               marginBottom: '20px',
@@ -120,7 +120,7 @@ export const SpendingPage: React.FC = () => {
                   justifyContent: 'space-between',
                   padding: '14px 18px',
                   borderRadius: '14px',
-                  background: '#F6FAF7',
+                  background: 'var(--color-surface-elevated)',
                   border: '1px solid var(--color-surface-divider)',
                 }}
               >

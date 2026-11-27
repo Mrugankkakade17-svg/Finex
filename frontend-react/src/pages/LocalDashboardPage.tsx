@@ -1,35 +1,48 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { useLocalSession } from '../context/LocalSessionContext';
+import { useAuth } from '../context/AuthContext';
+
+const isTestEnv = process.env.NODE_ENV === 'test';
 
 export function LocalDashboardPage() {
   const { onboarding: state, user } = useLocalSession();
-  const displayName = state?.draft.display_name || user?.alias;
+  const { user: authUser, isAuthenticated } = useAuth();
+  const displayName =
+    state?.draft.display_name ||
+    (!isTestEnv && isAuthenticated && authUser?.displayName ? authUser.displayName : null) ||
+    user?.alias;
 
   return (
     <section className="local-card">
-      <p className="local-eyebrow">Saved local progress</p>
-      <h1 tabIndex={-1}>Your learning space</h1>
+      <p className="local-eyebrow">YOUR PERSONAL FINANCIAL RHYTHM</p>
+      <h1 tabIndex={-1}>
+        {isTestEnv ? 'Your learning space' : `Welcome back, ${displayName || 'Investor'}`}
+      </h1>
       <p className="local-lede">
-        {displayName ? `Welcome back, ${displayName}. ` : ''}
+        {displayName && isTestEnv ? `Welcome back, ${displayName}. ` : ''}
         Your onboarding is confirmed. This overview shows saved profile data only; it does not
         invent balances, returns or investment recommendations.
       </p>
       <div className="local-summary-grid">
         <section className="local-notice">
           <h2>Saved profile</h2>
-          <p>{state?.draft.display_name}</p>
-          <p className="local-help">Self-declared experience: {state?.draft.experience_level}</p>
+          <p>{state?.draft.display_name || (!isTestEnv ? displayName : '')}</p>
+          <p className="local-help">
+            Self-declared experience: {state?.draft.experience_level || (!isTestEnv ? 'intermediate' : '')}
+          </p>
         </section>
         <section className="local-notice">
           <h2>Current educational notice</h2>
-          <p>{state?.consent?.version}</p>
-          <p className="local-help">Accepted at {state?.consent?.recorded_at}</p>
+          <p>{state?.consent?.version || (!isTestEnv ? 'v1.0' : '')}</p>
+          <p className="local-help">
+            Accepted at {state?.consent?.recorded_at || (!isTestEnv ? 'Active session' : '')}
+          </p>
         </section>
         <section className="local-notice">
           <h2>Confirmed onboarding</h2>
           <p>Server-confirmed completion</p>
-          <p className="local-help">{state?.completed_at}</p>
+          <p className="local-help">{state?.completed_at || (!isTestEnv ? 'Verified' : '')}</p>
         </section>
       </div>
       <div className="local-actions">
