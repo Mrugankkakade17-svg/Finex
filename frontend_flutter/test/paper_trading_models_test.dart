@@ -9,14 +9,14 @@ void main() {
         exchange: 'NASDAQ',
         side: 'BUY',
         quantity: 15,
-        idempotencyKey: 'idemp-1234567890',
+        idempotencyKey: 'idem-01',
       );
       final json = request.toJson();
       expect(json['instrument_id'], 'AAPL');
       expect(json['exchange'], 'NASDAQ');
       expect(json['side'], 'BUY');
       expect(json['quantity'], 15);
-      expect(json['idempotency_key'], 'idemp-1234567890');
+      expect(json['idempotency_key'], 'idem-01');
     });
 
     test('fromJson deserializes correctly', () {
@@ -25,14 +25,14 @@ void main() {
         'exchange': 'NYSE',
         'side': 'SELL',
         'quantity': 10,
-        'idempotency_key': 'key-abc-123456',
+        'idempotency_key': 'idem-02',
       };
       final request = PaperOrderRequest.fromJson(json);
       expect(request.instrumentId, 'SPY');
       expect(request.exchange, 'NYSE');
       expect(request.side, 'SELL');
       expect(request.quantity, 10);
-      expect(request.idempotencyKey, 'key-abc-123456');
+      expect(request.idempotencyKey, 'idem-02');
     });
   });
 

@@ -158,7 +158,7 @@ void main() {
         exchange: 'NASDAQ',
         side: 'BUY',
         quantity: 10,
-        idempotencyKey: 'key-test-12345678',
+        idempotencyKey: 'idem-01',
       );
       final order = await service.submitOrder(req);
       expect(order.orderId, 'ord-new-1');
@@ -184,7 +184,7 @@ void main() {
         instrumentId: 'AAPL',
         side: 'BUY',
         quantity: 10,
-        idempotencyKey: 'key-test-closed',
+        idempotencyKey: 'idem-02',
       );
 
       expect(
