@@ -51,6 +51,7 @@ from app.routers.risk import router as risk_router
 from app.routers.risk_contract import router as risk_contract_router
 from app.routers.spending import router as spending_router
 from app.routers.users import router as users_router
+from app.routers.watchlists import router as watchlists_router
 from app.services.csv_import_service import CSVUploadRequestLimitMiddleware
 
 
@@ -128,6 +129,7 @@ def create_app(
     application.include_router(local_application_router)
     application.include_router(local_portfolio_router)
     application.include_router(market_router)
+    application.include_router(watchlists_router)
     application.include_router(local_risk_router)
     application.include_router(local_foundation_router)
     application.include_router(portfolio_router)

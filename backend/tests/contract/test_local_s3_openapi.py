@@ -38,3 +38,11 @@ def test_s3_openapi_documents_optional_empty_only_mutation_body(
         schema = specification["components"]["schemas"][schema["$ref"].rsplit("/", 1)[1]]
     assert schema["type"] == "object"
     assert schema["properties"] == {} and schema["additionalProperties"] is False
+
+
+def test_watchlists_api_alias_is_registered_alongside_local_routes(tmp_path: Path) -> None:
+    specification = application(tmp_path / "watchlist-openapi.sqlite3").openapi()
+    assert "/api/v1/watchlists" in specification["paths"]
+    assert "/api/v1/watchlists/{watchlist_id}" in specification["paths"]
+    assert "/api/v1/watchlists/{watchlist_id}/items/{instrument_id}" in specification["paths"]
+    assert "/api/v1/local-watchlists" in specification["paths"]
