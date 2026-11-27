@@ -80,6 +80,10 @@ class Settings(BaseSettings):
     local_session_ttl_minutes: int = Field(default=30, ge=1, le=60, strict=True)
     app_persistence: Literal["sqlite", "postgresql"] = "sqlite"
     app_database_url: str = ""
+    rate_limit_requests_per_window: int = Field(default=1000, ge=1, le=100_000)
+    rate_limit_window_seconds: float = Field(default=60.0, gt=0, le=86_400)
+    auth_rate_limit_requests_per_window: int = Field(default=100, ge=1, le=10_000)
+    auth_rate_limit_window_seconds: float = Field(default=60.0, gt=0, le=86_400)
 
     databricks_host: str = ""
     databricks_token: str = ""
@@ -109,6 +113,12 @@ class Settings(BaseSettings):
 
     market_data_provider: str = "mock"
     market_data_api_key: str = ""
+
+    # Annual effective rate used by deterministic portfolio analytics. The
+    # default is explicitly unconfigured and must not be presented as a quote.
+    analytics_risk_free_rate: float = 0.0
+    analytics_risk_free_rate_source: str = "Unconfigured FinEx default"
+    analytics_risk_free_rate_as_of: str = "UNCONFIGURED"
 
     google_client_id: str = ""
     allow_mock_google_auth: bool | None = None

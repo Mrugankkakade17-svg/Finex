@@ -142,6 +142,7 @@ def application(
     catalogue: ControlledCatalogue | None = None,
     quotes: ControlledQuotes | None = None,
     ttl: int = 30,
+    persistence: str = "sqlite",
 ) -> FastAPI:
     return create_app(
         TestSettings(
@@ -154,6 +155,12 @@ def application(
             local_app_enabled=enabled,
             local_db_path=path,
             local_session_ttl_minutes=ttl,
+            app_persistence=persistence,
+            **(
+                {"app_database_url": "postgresql://finex:finex@127.0.0.1/finex_test"}
+                if persistence == "postgresql"
+                else {}
+            ),
         ),
         local_clock=clock or Clock(),
         local_portfolio_catalogue=catalogue,

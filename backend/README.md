@@ -38,6 +38,32 @@ If your task uses an external provider, put its local values in `backend/.env`
 and never commit that file. See [the full local-development guide](../docs/local-development.md)
 for React, Flutter, verification commands, and troubleshooting.
 
+## Production configuration and request controls
+
+UAT and production startup require a non-placeholder `SECRET_KEY` with at least
+32 characters, explicit HTTPS `API_BASE_URL`, and explicit non-wildcard
+`ALLOWED_ORIGINS`. `OPENAI_API_KEY` is required when
+`LLM_PROVIDER=openai`; `MARKET_DATA_API_KEY` is required when the selected
+market provider is Alpha Vantage or Polygon. PostgreSQL deployments must set
+`APP_PERSISTENCE=postgresql` and `APP_DATABASE_URL` (or `DATABASE_URL`). The
+settings validator rejects missing or unsafe required values before the app
+starts.
+
+The API applies a process-local sliding-window limit to versioned API requests:
+1000 requests per client per 60 seconds by default, with a stricter 100 per 60
+seconds for authentication routes. Adjust `RATE_LIMIT_REQUESTS_PER_WINDOW`,
+`RATE_LIMIT_WINDOW_SECONDS`, `AUTH_RATE_LIMIT_REQUESTS_PER_WINDOW`, and
+`AUTH_RATE_LIMIT_WINDOW_SECONDS` for the deployment. The health endpoints are
+exempt so service probes continue to work during traffic bursts. Authentication
+attempt throttling also retains the existing persistent login tracker.
+
+`app.services.audit_service.write_audit_event` writes one allowlisted JSON
+record to the `finex.audit` application logger. Include the request's
+`correlation_id`; the event deliberately has no arbitrary metadata or request
+body field, so credentials and financial payloads are not copied into audit
+logs. Production deployments should collect and retain this append-only log
+stream in their configured log sink.
+
 ## Project Structure
 
 ```text

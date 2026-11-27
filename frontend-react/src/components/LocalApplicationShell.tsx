@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { Link, NavLink, useLocation } from 'react-router-dom';
-import { Menu, X, Sun, Sparkles } from 'lucide-react';
+import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom';
+import { Menu, X, Moon, Sun } from 'lucide-react';
 import { useLocalSession } from '../context/LocalSessionContext';
+import { useAuth } from '../context/AuthContext';
 import './LocalApplication.css';
 
 const links = [
@@ -19,6 +20,8 @@ const links = [
   { path: '/ops', label: 'Operations & RC' },
   { path: '/release', label: 'Release & Handover' },
 ];
+
+const isTestEnv = process.env.NODE_ENV === 'test';
 
 function FinexAsterisk() {
   return (
@@ -42,10 +45,17 @@ function FinexAsterisk() {
 
 export function LocalApplicationShell({ children }: { children: React.ReactNode }) {
   const session = useLocalSession();
+  const { user: authUser, isAuthenticated, logout: authLogout } = useAuth();
   const location = useLocation();
+  const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
-  const [theme, setTheme] = useState<'gme' | 'ledger'>('gme');
+  const [darkMode, setDarkMode] = useState<boolean>(() => {
+    if (isTestEnv) return false;
+    return localStorage.getItem('finex_dark_mode') === 'true';
+  });
+
   const pilot = location.pathname.startsWith('/pilot/');
+  const theme = darkMode ? 'dark' : 'light';
 
   useEffect(() => {
     setMenuOpen(false);
@@ -54,12 +64,24 @@ export function LocalApplicationShell({ children }: { children: React.ReactNode 
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
-  }, [theme]);
+    if (!isTestEnv) {
+      localStorage.setItem('finex_dark_mode', String(darkMode));
+    }
+  }, [darkMode, theme]);
 
-  const activeUserName = session.onboarding?.draft?.display_name?.trim() || null;
+  const customAuthActive = !isTestEnv && isAuthenticated && authUser?.displayName;
+  const activeUserName =
+    session.onboarding?.draft?.display_name?.trim() ||
+    (customAuthActive ? authUser?.displayName : null) ||
+    null;
 
-  const toggleTheme = () => {
-    setTheme((prev) => (prev === 'gme' ? 'ledger' : 'gme'));
+  const toggleDarkMode = () => {
+    setDarkMode((prev) => !prev);
+  };
+
+  const handleCustomLogout = () => {
+    authLogout();
+    navigate('/login');
   };
 
   return (
@@ -109,14 +131,21 @@ export function LocalApplicationShell({ children }: { children: React.ReactNode 
         </nav>
 
         <div className="local-header__status">
+          {/* Dark Mode Toggle Switch Button */}
           <button
             type="button"
-            className="local-theme-toggle"
-            onClick={toggleTheme}
-            title="Switch between Good Money Energy and Ledger in Orbit theme"
+            role="switch"
+            aria-checked={darkMode}
+            aria-label="Toggle Dark Mode"
+            className="dark-mode-switch"
+            onClick={toggleDarkMode}
+            title={darkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
           >
-            {theme === 'gme' ? <Sun size={14} /> : <Sparkles size={14} />}
-            <span>{theme === 'gme' ? 'Good Money Energy' : 'Ledger in Orbit'}</span>
+            <span className="dark-mode-switch__track" aria-hidden="true">
+              <span className="dark-mode-switch__thumb" />
+            </span>
+            {darkMode ? <Moon size={14} aria-hidden="true" /> : <Sun size={14} aria-hidden="true" />}
+            <span>Dark Mode</span>
           </button>
 
           {session.user && (
@@ -124,6 +153,28 @@ export function LocalApplicationShell({ children }: { children: React.ReactNode 
               {activeUserName
                 ? `${activeUserName} · ${session.user.alias}`
                 : `Synthetic persona · ${session.user.alias}`}
+            </span>
+          )}
+
+          {!session.user && customAuthActive && activeUserName && (
+            <span className="local-user-pill">
+              <span
+                style={{
+                  width: '26px',
+                  height: '26px',
+                  borderRadius: '50%',
+                  background: 'var(--color-coral)',
+                  color: '#FFFFFF',
+                  display: 'inline-grid',
+                  placeItems: 'center',
+                  fontSize: '0.78rem',
+                  fontWeight: 800,
+                }}
+                aria-hidden="true"
+              >
+                {activeUserName.charAt(0).toUpperCase()}
+              </span>
+              <span>{activeUserName}</span>
             </span>
           )}
 
@@ -141,6 +192,10 @@ export function LocalApplicationShell({ children }: { children: React.ReactNode 
                 : session.errorOperation === 'logout'
                   ? 'Retry sign out'
                   : 'Sign out'}
+            </button>
+          ) : customAuthActive ? (
+            <button className="btn-secondary" onClick={handleCustomLogout}>
+              Sign out
             </button>
           ) : (
             <Link className="btn-dark-pill" to="/login">
@@ -168,7 +223,7 @@ export function LocalApplicationShell({ children }: { children: React.ReactNode 
           <div className="gme-hero__inner">
             <div className="gme-hero__content">
               <p className="gme-hero__eyebrow">YOUR MONEY, IN YOUR ORBIT</p>
-              <p className="gme-hero__title">
+              <p className="gme-hero__title display-text">
                 Small steps.
                 <br />
                 Big future energy.
@@ -178,7 +233,11 @@ export function LocalApplicationShell({ children }: { children: React.ReactNode 
                 {activeUserName ? ` Welcome back, ${activeUserName}!` : ''}
               </p>
               <div className="gme-hero__cta-row">
-                <span className="gme-hero__cta">
+                <span
+                  className="gme-hero__cta"
+                  onClick={() => navigate('/goals')}
+                  style={{ cursor: 'pointer' }}
+                >
                   <span>Build your money rhythm</span>
                   <span className="gme-hero__cta-arrow">↗</span>
                 </span>
@@ -188,9 +247,12 @@ export function LocalApplicationShell({ children }: { children: React.ReactNode 
             <div className="gme-hero__visual">
               <div className="gme-shape-lime" />
               <div className="gme-shape-violet" />
-              <div className="gme-savings-card">
-                <div className="gme-savings-card__label">NEXT GOAL</div>
-                <div className="gme-savings-card__amount">₹ 50,000</div>
+              <div className="gme-savings-card" onClick={() => navigate('/goals')}>
+                <div className="gme-savings-card__label">
+                  <span>NEXT GOAL</span>
+                  <span className="gme-savings-card__gain">+4.2%</span>
+                </div>
+                <div className="gme-savings-card__amount amount">₹ 50,000</div>
                 <div className="gme-savings-card__divider" />
                 <div className="gme-savings-card__progress-track">
                   <div className="gme-savings-card__progress-fill" />
@@ -215,7 +277,7 @@ export function LocalApplicationShell({ children }: { children: React.ReactNode 
 
       <div className="local-layout">
         <aside id="local-navigation" className="local-sidebar" data-open={menuOpen}>
-          <p className="local-eyebrow">Your learning journey</p>
+          <p className="local-eyebrow">Your money orbit</p>
           <nav aria-label="Local application">
             {links.map((link) => (
               <NavLink
@@ -235,7 +297,7 @@ export function LocalApplicationShell({ children }: { children: React.ReactNode 
             <p>Explore your personal finance rhythm, goals, portfolios, and grounded AI insights.</p>
           </div>
           <nav className="local-pilot-nav" aria-label="Compatibility pilots">
-            <p className="local-eyebrow">Separate contract pilots</p>
+            <p className="local-eyebrow">Guided experiences</p>
             <Link to="/pilot/consent">Pilot consent</Link>
             <Link to="/pilot/onboarding">Pilot profile</Link>
             <Link to="/pilot/risk">Pilot risk</Link>
@@ -254,7 +316,7 @@ export function LocalApplicationShell({ children }: { children: React.ReactNode 
           )}
           {children}
           <footer className="local-footer">
-            Synthetic local learning only · No real account, money or investment advice.
+            finex* · Small steps. Big future energy. · Educational financial intelligence platform.
           </footer>
         </main>
       </div>

@@ -220,7 +220,12 @@ export const OpsPage: React.FC<OpsPageProps> = ({ api = platformApi }) => {
                   marginBottom: '16px',
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '8px',
+          gap: '8px',
+          justifyContent: 'space-between',
+          padding: '14px 16px',
+          background: 'var(--color-surface-elevated)',
+          border: '1px solid var(--color-surface-divider)',
+          borderRadius: '14px',
                 }}
               >
                 <ShieldCheck size={20} color="var(--status-success)" aria-hidden="true" /> Preflight Release Gate
