@@ -40,7 +40,7 @@ jobs:
           cache-dependency-path: frontend-react/package-lock.json
 
       - name: Install dependencies
-        run: cd "$GITHUB_WORKSPACE/frontend-react" && pwd && ls package-lock.json && npm ci
+        run: cd "$GITHUB_WORKSPACE/frontend-react" && npm ci --package-lock=true
 
       - name: Run tests
         run: cd "$GITHUB_WORKSPACE/frontend-react" && npm test -- --watchAll=false
