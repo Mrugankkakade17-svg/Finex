@@ -91,4 +91,3 @@ def test_runway_rejects_invalid_cash_and_lookback():
         calculate_runway("-1", [], as_of=date(2026, 11, 28))
     with pytest.raises(ValueError, match="positive"):
         calculate_runway("1", [], as_of=date(2026, 11, 28), lookback_days=0)
-
