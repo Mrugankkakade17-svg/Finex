@@ -1,36 +1,16 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useLocalSession } from '../context/LocalSessionContext';
-import { useAuth } from '../context/AuthContext';
 import { LocalAlias } from '../services/localApplicationClient';
-
-const isTestEnv = process.env.NODE_ENV === 'test';
 
 export function LocalLoginPage() {
   const session = useLocalSession();
-  const { user: authUser, isAuthenticated, login: authLogin } = useAuth();
   const navigate = useNavigate();
-  const [customName, setCustomName] = useState(
-    !isTestEnv && isAuthenticated && authUser?.displayName && authUser.displayName !== 'Investor'
-      ? authUser.displayName
-      : ''
-  );
 
   const signIn = async (alias: LocalAlias) => {
     const expectedEpoch = session.sessionEpoch + 1;
     if ((await session.login(alias)) && session.isCurrentSession(expectedEpoch))
       navigate('/onboarding');
-  };
-
-  const handlePersonalSignIn = (e: React.FormEvent) => {
-    e.preventDefault();
-    const trimmed = customName.trim();
-    if (!trimmed) return;
-    authLogin({
-      displayName: trimmed,
-      email: `${trimmed.toLowerCase().replace(/[^a-z0-9]/g, '.')}@finex.app`,
-    });
-    navigate('/dashboard');
   };
 
   return (
@@ -42,28 +22,6 @@ export function LocalLoginPage() {
         only the two synthetic personas. Do not enter a real email, password or legal name.
       </p>
 
-      {!isTestEnv && (
-        <form onSubmit={handlePersonalSignIn} className="local-notice">
-          <h2>Sign in with your name</h2>
-          <p style={{ color: 'var(--color-text-muted)', marginBottom: '14px' }}>
-            Enter your name to personalize your dashboard, goals, and AI assistant.
-          </p>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', alignItems: 'center' }}>
-            <input
-              type="text"
-              value={customName}
-              onChange={(e) => setCustomName(e.target.value)}
-              placeholder="Enter your name (e.g. Mrugank kakade)"
-              maxLength={80}
-              style={{ flex: '1 1 240px', minHeight: '46px' }}
-            />
-            <button type="submit" className="btn-primary">
-              <span>Continue as {customName.trim() || 'yourself'} ↗</span>
-            </button>
-          </div>
-        </form>
-      )}
-
       <div className="local-notice">
         <h2>How local sign-in works</h2>
         <p>
@@ -74,6 +32,7 @@ export function LocalLoginPage() {
           Anyone trusted to use this local machine can select either persona. Do not expose this
           application publicly.
         </p>
+        <p>Use one of the backend-backed synthetic personas below to enter the local application. Set your display label during onboarding.</p>
       </div>
       {session.error && session.errorOperation !== 'logout' && (
         <p role="alert" className="local-error">

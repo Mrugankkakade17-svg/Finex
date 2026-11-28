@@ -1,5 +1,6 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { createLocalApplicationClient, hasCompletedOnboarding, LocalRequestOptions, LocalAlias, LocalApplicationClient, LocalApplicationError, LocalDraftInput, LocalOnboardingState, LocalUser, validateLocalIdentity, validateLocalLogin, validateLocalLogout, validateLocalState, validateLocalSavedDraft, validateLocalConsent, validateLocalCompletion, } from '../services/localApplicationClient';
+import { setActiveLocalSessionToken } from '../services/platformApi';
 import { DomainOutcome, LocalS2Capabilities } from './localS2Capabilities';
 import { checkedS2, confirmedHolding, confirmedPortfolio, LocalS2Api, metricsMeta, nullMeta, portfolioRequest, riskMeta, updatedMeta } from '../services/localS2Client';
 import { cursorS2, decodeCatalog, decodeHolding, decodeHoldingDeletion, decodeHoldingList, decodeMetrics, decodePortfolio, decodePortfolioDeletion, decodePortfolioList, decodeQuestionnaire, decodeRiskDraft, decodeRiskHistory, decodeSavedRisk, HoldingInput, HoldingUpdate, invalidS2, LocalS2Response, PortfolioInput, RiskInput, riskInput, sameRiskInput, uuidS2 } from '../services/localS2Models';
@@ -72,6 +73,7 @@ export function LocalSessionProvider({ children, client: suppliedClient }: {
   const endSession = useCallback((error: LocalApplicationError | null = null) => {
     invalidateWork();
     token.current = null;
+    setActiveLocalSessionToken(null);
     expiry.current = null;
     publish({ user: null, onboarding: null, busy: false, operation: null, error, errorOperation: null,
       sessionEpoch: snapshotRef.current.sessionEpoch + 1 });
@@ -83,6 +85,7 @@ export function LocalSessionProvider({ children, client: suppliedClient }: {
       mounted.current = false;
       invalidateWork();
       token.current = null;
+      setActiveLocalSessionToken(null);
       expiry.current = null;
     };
   }, [configuration, endSession, invalidateWork]);
@@ -134,6 +137,7 @@ export function LocalSessionProvider({ children, client: suppliedClient }: {
     // A new identity attempt always invalidates work, including late 401 responses.
     invalidateWork();
     token.current = null;
+    setActiveLocalSessionToken(null);
     expiry.current = null;
     publish({ user: null, onboarding: null, sessionEpoch: snapshotRef.current.sessionEpoch + 1 });
     const job = start('login');
@@ -152,6 +156,7 @@ export function LocalSessionProvider({ children, client: suppliedClient }: {
         throw new LocalApplicationError('RESPONSE_INVALID');
       }
       token.current = result.access_token;
+      setActiveLocalSessionToken(result.access_token);
       expiry.current = Date.parse(result.expires_at);
       publish({ user: identity.user });
       const state = validateLocalState(await client.state(result.access_token, { signal: job.controller.signal }));
