@@ -6,6 +6,7 @@ from pathlib import Path
 import pytest
 from fastapi.testclient import TestClient
 
+from app.ports.adapters.postgres_local_foundation import PostgresLocalFoundationStore
 from tests.support.local_s3_client import (
     AUTH,
     COMPLETE,
@@ -620,3 +621,28 @@ def test_openapi_exact_twelve_routes_security_and_no_s4_order_mount(client: Test
         operation = specification["paths"][path][method.lower()]
         assert operation["security"] == [{"LocalApplicationBearer": []}]
         assert {"401", "403", "409", "422", "503"} <= set(operation["responses"])
+
+
+def test_local_watchlist_preserves_routes_and_user_isolation(tmp_path: Path) -> None:
+    database = tmp_path / "watchlist-api-alias.sqlite3"
+    client = TestClient(application(database, Clock()))
+    owner = completed(client)
+    other = completed(client, "learner-b")
+
+    created_response = client.post(LISTS, headers=owner, json={"name": "Owned list"})
+    assert created_response.status_code == 201
+    watchlist = data(created_response, status=201)
+    watchlist_id = watchlist["watchlist_id"]
+    local_path = f"{LISTS}/{watchlist_id}"
+
+    assert data(client.get(local_path, headers=owner)) == watchlist
+    assert data(client.get(LISTS, headers=owner))["count"] == 1
+    assert data(client.get(LISTS, headers=other))["count"] == 0
+    error(client.get(local_path, headers=other), 404, "WATCHLIST_NOT_FOUND")
+
+
+def test_postgres_configuration_wires_watchlists_to_postgres_store(tmp_path: Path) -> None:
+    client = TestClient(application(tmp_path / "unused.sqlite3", persistence="postgresql"))
+    assert isinstance(client.app.state.local_foundation_store, PostgresLocalFoundationStore)
+    assert "/api/v1/watchlists" in client.app.openapi()["paths"]
+    assert "/api/v1/local-watchlists" in client.app.openapi()["paths"]

@@ -2,7 +2,7 @@
 
 The active application starts at `/login`. Sprint 1 implements approved synthetic persona sign-in/out, current educational consent, durable partial profiles, draft resume and explicit server-confirmed completion. It runs natively; Docker, cloud credentials and a mobile emulator are not required.
 
-This is a loopback-only educational simulator, not production hosting, Google OAuth or real-person authentication. Anyone trusted to use the machine may deliberately select either `learner-a` or `learner-b`.
+The default is a loopback-only educational simulator. Synthetic persona sign-in is not real-person authentication. Real account registration and email/password sign-in are an opt-in compatibility path to the legacy auth API; it is disabled unless explicitly enabled. Do not treat this local setup as production hosting or verified Google OAuth.
 
 ## Start the native backend
 
@@ -43,6 +43,8 @@ On an 8 GB machine, run the API and only the client you are developing; run test
 
 `REACT_APP_FINEX_API_BASE_URL` is public build-time configuration, never a place for secrets. The persistent client accepts only an HTTP(S) loopback origin (`localhost`, `127.0.0.1`, `[::1]`) without credentials, query, fragment or a path. It rejects unsafe origins before login, omits cookies, forbids redirects and bounds both request and body-decoding time.
 
+To show real account registration/sign-in instead of the local persona selector at `/login`, set `REACT_APP_ENABLE_REAL_AUTH=true` when starting/building the React app. The opt-in screen calls `/api/v1/auth/register` and `/api/v1/auth/login` on the configured API origin. The default remains off, so local persona sign-in and its persistent local-application journey remain unchanged. The returned legacy JWTs are held in memory only; they do not authorize the local-application routes.
+
 All React HTTP calls use the shared `src/services/apiClient.ts` transport for the configured origin. Calls that have a session credential pass it to the transport for a Bearer header; cookies are omitted, redirects are rejected, and responses are not cached. Route-specific services continue to validate their own response contracts. Chat and release remain tokenless because their current backend routes have no documented authentication contract.
 
 ## Use the S1 journey
@@ -77,3 +79,4 @@ npm run build
 ```
 
 Keep the original 65 legacy regressions. New tests cover contract scope/version/nullability, origin/timeout/error safety, memory-only session lifetime, generation races, exact operation confirmation, current server route guards, draft retries, consent lifecycle and pilot separation. Component/mock tests do not replace a real HTTP/browser journey. Record the exact commands, results and tested SHA; see the [delivery contract](../docs/features/local-application/S1-S4-delivery-contract.md) and acceptance evidence for the actual verified boundary and remaining external gates.
+

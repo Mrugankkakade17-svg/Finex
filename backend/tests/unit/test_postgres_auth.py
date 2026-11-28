@@ -121,6 +121,17 @@ class TestFailedLoginThrottling:
         # Advance time by 901 seconds (past the 900s window)
         current_time = time.time()
         monkeypatch.setattr(time, "time", lambda: current_time + 901)
+        repo = auth_service.get_user_repository()
+        if hasattr(repo, "is_postgres_mode") and repo.is_postgres_mode() and repo.is_db_available():
+            with repo._get_sync_conn() as conn:
+                with conn.cursor() as cur:
+                    cur.execute(
+                        "UPDATE finex.failed_logins "
+                        "SET first_attempt_at = NOW() - INTERVAL '901 seconds' "
+                        "WHERE email = %(email)s",
+                        {"email": email.strip().lower()},
+                    )
+                    conn.commit()
 
         # Now attempt should be allowed through to credentials check (returning 401 instead of 429)
         with pytest.raises(UnauthorizedException) as exc_info:

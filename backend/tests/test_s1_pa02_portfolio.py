@@ -60,6 +60,45 @@ def test_cross_user_portfolio_access_is_rejected() -> None:
     assert denied.status_code == 404
 
 
+def test_analytics_endpoint_is_owner_scoped_and_reports_missing_history(monkeypatch) -> None:
+    from app.routers import portfolio as portfolio_router
+
+    monkeypatch.setattr(portfolio_router, "fetch_close_price_history", lambda *args, **kwargs: {})
+    app = create_app()
+    client = TestClient(app)
+    token_a = create_access_token({"sub": "analytics-a", "user_id": "analytics-a"})
+    token_b = create_access_token({"sub": "analytics-b", "user_id": "analytics-b"})
+    headers_a = {"Authorization": f"Bearer {token_a}"}
+    created = client.post(
+        "/api/v1/portfolios",
+        headers=headers_a,
+        json={"name": "Analytics fixture", "currency": "USD"},
+    )
+    assert created.status_code == 201
+    portfolio_id = created.json()["data"]["portfolio_id"]
+    added = client.post(
+        f"/api/v1/portfolios/{portfolio_id}/holdings",
+        headers=headers_a,
+        json={"symbol": "AAPL", "quantity": 1, "avg_buy_price": 100},
+    )
+    assert added.status_code == 201
+
+    analytics = client.get(f"/api/v1/portfolios/{portfolio_id}/analytics", headers=headers_a)
+    assert analytics.status_code == 200
+    body = analytics.json()
+    assert body["success"] is True
+    assert body["meta"]["dataStatus"] == "UNAVAILABLE"
+    assert body["data"]["status"] == "INSUFFICIENT_DATA"
+    assert body["data"]["hhi"] == 1.0
+    assert body["data"]["top_holdings"][0]["symbol"] == "AAPL"
+
+    denied = client.get(
+        f"/api/v1/portfolios/{portfolio_id}/analytics",
+        headers={"Authorization": f"Bearer {token_b}"},
+    )
+    assert denied.status_code == 404
+
+
 @pytest.mark.postgres
 @pytest.mark.asyncio
 async def test_postgres_portfolio_fields_round_trip_through_create_read_update(

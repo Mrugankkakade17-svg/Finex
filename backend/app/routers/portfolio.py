@@ -1,8 +1,10 @@
-from typing import cast
+from datetime import date, timedelta
+from typing import Literal, cast
 
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends, Query, Request
 
 from app.auth.dependencies import get_current_user
+from app.config.settings import get_settings
 from app.core.responses import APIResponse
 from app.schemas.envelope import DataStatus
 from app.schemas.portfolio import (
@@ -10,6 +12,11 @@ from app.schemas.portfolio import (
     HoldingUpdate,
     PortfolioCreate,
     PortfolioUpdate,
+)
+from app.services.portfolio_analytics_service import (
+    align_close_price_history,
+    calculate_portfolio_analytics,
+    fetch_close_price_history,
 )
 from app.services.portfolio_service import portfolio_service
 
@@ -185,4 +192,63 @@ async def get_portfolio_summary(
         data=summary.model_dump(mode="json"),
         correlation_id=request.state.correlation_id,
         data_status=cast(DataStatus, summary.data_status),
+    )
+
+
+@router.get("/{portfolio_id}/analytics")
+async def get_portfolio_analytics(
+    portfolio_id: str,
+    request: Request,
+    user: dict = Depends(get_current_user),
+    benchmark: str = Query(default="SPY", min_length=1, max_length=20),
+    top_n: int = Query(default=5, ge=1, le=100),
+    confidence_level: Literal["0.95", "0.99"] = Query(default="0.95"),
+):
+    """Return current concentration plus history-dependent risk metrics."""
+    portfolio = await portfolio_service.get_portfolio(portfolio_id, user["user_id"])
+    holdings = await portfolio_service.list_holdings(portfolio_id, user["user_id"])
+    settings = get_settings()
+    symbols = [holding.symbol for holding in holdings]
+    price_history: dict[str, list[float]] = {}
+    benchmark_prices: list[float] | None = None
+    if symbols:
+        end_date = date.today()
+        start_date = end_date - timedelta(days=365)
+        try:
+            market_history = fetch_close_price_history(
+                [*symbols, benchmark],
+                currency=portfolio.currency,
+                start_date=start_date,
+                end_date=end_date,
+            )
+            price_history, benchmark_prices = align_close_price_history(
+                market_history, symbols, benchmark
+            )
+        except Exception:
+            # Market history may not be provisioned in local or test environments.
+            price_history, benchmark_prices = {}, None
+    result = calculate_portfolio_analytics(
+        portfolio_id=portfolio_id,
+        holdings=[
+            {
+                "symbol": holding.symbol,
+                "quantity": holding.quantity,
+                "current_value": holding.current_value,
+            }
+            for holding in holdings
+        ],
+        price_history=price_history,
+        benchmark_prices=benchmark_prices,
+        benchmark_symbol=benchmark,
+        confidence_level=float(confidence_level),
+        top_n=top_n,
+        risk_free_rate_annual=settings.analytics_risk_free_rate,
+        risk_free_rate_source=settings.analytics_risk_free_rate_source,
+        risk_free_rate_as_of=settings.analytics_risk_free_rate_as_of,
+    )
+    return APIResponse.success(
+        message="Portfolio analytics calculated successfully",
+        data=result,
+        correlation_id=request.state.correlation_id,
+        data_status="UNAVAILABLE" if result["status"] == "INSUFFICIENT_DATA" else "CACHED",
     )
