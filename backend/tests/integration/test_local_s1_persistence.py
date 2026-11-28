@@ -282,4 +282,3 @@ def test_corrupt_persisted_times_are_safe_storage_failures(
     leaked_path = str(path) in response.text
     assert leaked_token is False
     assert leaked_path is False
-
