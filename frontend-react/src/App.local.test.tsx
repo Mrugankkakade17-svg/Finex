@@ -14,6 +14,14 @@ test('cold root starts signed out with the two approved synthetic personas', () 
   expect(screen.getByRole('heading', { name: 'Choose a local persona' })).toBeInTheDocument();
   expect(screen.getByRole('button', { name: 'Sign in as learner-a' })).toBeInTheDocument();
   expect(screen.getByRole('button', { name: 'Sign in as learner-b' })).toBeInTheDocument();
+  expect(screen.queryByRole('heading', { name: 'Sign in with your name' })).not.toBeInTheDocument();
+});
+
+test('legacy UI-only personal sign-in cannot bypass the backend-backed persona flow', () => {
+  render(<App />);
+  expect(screen.queryByRole('textbox', { name: /enter your name/i })).not.toBeInTheDocument();
+  expect(screen.getByText(/Set your display label during onboarding/i)).toBeInTheDocument();
+  expect(screen.getByRole('button', { name: 'Sign in as learner-a' })).toBeInTheDocument();
 });
 
 test('local persona sign-in remains active when feature flag is explicitly false', () => {
@@ -108,4 +116,3 @@ test('invalid full-app origin is a safe configuration error, never a fixture fal
     else process.env.REACT_APP_FINEX_API_BASE_URL = previous;
   }
 });
-
