@@ -175,3 +175,7 @@ During the deep independent implementation audit, the following findings were id
 7. **Comprehensive Unit Test Expansion (`FIXED AND RE-VERIFIED`)**:
    - *Finding:* Edge cases around portfolio value changes, empty portfolio explanations, and aggressive tier switches lacked targeted tests.
    - *Fix:* Expanded test suite from 10 to 14 tests, verifying all interactive behaviors and edge cases. All 14 tests pass.
+8. **CI In-Band Test Runner Resilience & Chart Element Testability (`FIXED AND RE-VERIFIED`)**:
+   - *Finding:* In CI workflow `S1 UAT Evidence` (`React journey and accessibility proof`), test suite ran with `--runInBand` and timed out on `screen.getByTestId('mock-BarChart')` during async state transitions under runner load. Virtual Recharts mocks between test files also carried inconsistent definitions.
+   - *Fix:* Configured `asyncUtilTimeout: 5000` in `frontend-react/src/setupTests.ts` for robust in-band async resolution. Added `data-testid="suitability-allocation-chart"` to the chart container div in `SuitabilityPage.tsx`. Harmonized Recharts non-virtual mocks between `SuitabilityPage.test.tsx` and `PriceChart.test.tsx`. Verified full 33-suite in-band test run passes locally (832/832 tests).
+

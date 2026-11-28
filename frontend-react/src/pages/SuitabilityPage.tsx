@@ -618,6 +618,7 @@ export const SuitabilityPage: React.FC<SuitabilityPageProps> = ({
               <div
                 role="img"
                 aria-label="Target vs Current Allocation Comparison Bar Chart"
+                data-testid="suitability-allocation-chart"
                 style={{ height: 300, width: '100%' }}
               >
                 <ResponsiveContainer width="100%" height="100%">

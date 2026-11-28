@@ -4,18 +4,24 @@ import PriceChart, { buildPriceChartPoints, PriceBar } from './PriceChart';
 
 jest.mock('recharts', () => {
   const React = require('react');
-  const component = () => ({ children }: { children?: React.ReactNode }) =>
-    React.createElement('div', null, children);
+  const component = (name: string) => ({ children }: { children?: React.ReactNode }) =>
+    React.createElement('div', { 'data-testid': `mock-${name}` }, children);
   return {
-    Area: component(),
-    AreaChart: component(),
-    CartesianGrid: component(),
-    ResponsiveContainer: component(),
-    Tooltip: component(),
-    XAxis: component(),
-    YAxis: component(),
+    Area: component('Area'),
+    AreaChart: component('AreaChart'),
+    Bar: component('Bar'),
+    BarChart: component('BarChart'),
+    CartesianGrid: component('CartesianGrid'),
+    Cell: component('Cell'),
+    Legend: component('Legend'),
+    Pie: component('Pie'),
+    PieChart: component('PieChart'),
+    ResponsiveContainer: component('ResponsiveContainer'),
+    Tooltip: component('Tooltip'),
+    XAxis: component('XAxis'),
+    YAxis: component('YAxis'),
   };
-}, { virtual: true });
+});
 
 const bars: PriceBar[] = [
   { timestamp: '2026-11-23', open: 100, high: 105, low: 99, close: 104, volume: 1200 },

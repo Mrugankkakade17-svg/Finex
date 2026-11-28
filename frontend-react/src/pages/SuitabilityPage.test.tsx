@@ -7,32 +7,30 @@ import {
   TargetAllocationResponse,
 } from '../types/suitability';
 
-jest.mock(
-  'recharts',
-  () => {
-    const React = require('react');
-    const component = (name: string) => ({
-      children,
-    }: {
-      children?: React.ReactNode;
-      [key: string]: unknown;
-    }) => React.createElement('div', { 'data-testid': `mock-${name}` }, children);
-    return {
-      ResponsiveContainer: component('ResponsiveContainer'),
-      BarChart: component('BarChart'),
-      Bar: component('Bar'),
-      XAxis: component('XAxis'),
-      YAxis: component('YAxis'),
-      Tooltip: component('Tooltip'),
-      Legend: component('Legend'),
-      CartesianGrid: component('CartesianGrid'),
-      PieChart: component('PieChart'),
-      Pie: component('Pie'),
-      Cell: component('Cell'),
-    };
-  },
-  { virtual: true },
-);
+jest.mock('recharts', () => {
+  const React = require('react');
+  const component = (name: string) => ({
+    children,
+  }: {
+    children?: React.ReactNode;
+    [key: string]: unknown;
+  }) => React.createElement('div', { 'data-testid': `mock-${name}` }, children);
+  return {
+    ResponsiveContainer: component('ResponsiveContainer'),
+    BarChart: component('BarChart'),
+    Bar: component('Bar'),
+    AreaChart: component('AreaChart'),
+    Area: component('Area'),
+    XAxis: component('XAxis'),
+    YAxis: component('YAxis'),
+    Tooltip: component('Tooltip'),
+    Legend: component('Legend'),
+    CartesianGrid: component('CartesianGrid'),
+    PieChart: component('PieChart'),
+    Pie: component('Pie'),
+    Cell: component('Cell'),
+  };
+});
 
 const mockTargetResponse: TargetAllocationResponse = {
   risk_category: 'MODERATE',
@@ -268,6 +266,7 @@ describe('SuitabilityPage (S3-NI02)', () => {
     render(<SuitabilityPage api={api} />);
 
     await waitFor(() => {
+      expect(screen.getByTestId('suitability-allocation-chart')).toBeInTheDocument();
       expect(screen.getByTestId('mock-BarChart')).toBeInTheDocument();
     });
 
@@ -281,7 +280,10 @@ describe('SuitabilityPage (S3-NI02)', () => {
 
     // Switch back to Chart View
     fireEvent.click(screen.getByRole('button', { name: 'Chart View' }));
-    expect(screen.getByTestId('mock-BarChart')).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByTestId('suitability-allocation-chart')).toBeInTheDocument();
+      expect(screen.getByTestId('mock-BarChart')).toBeInTheDocument();
+    });
   });
 
   it('renders per-asset drift bars with directional indicators', async () => {
