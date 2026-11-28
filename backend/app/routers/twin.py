@@ -52,4 +52,3 @@ async def get_twin(
         correlation_id=getattr(request.state, "correlation_id", str(uuid4())),
         data_status="CACHED",
     )
-
