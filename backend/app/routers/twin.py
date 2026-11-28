@@ -1,9 +1,11 @@
 """Authenticated, owner-scoped digital-twin summary endpoint."""
 
 from datetime import date
+from decimal import Decimal
 from uuid import uuid4
 
 from fastapi import APIRouter, Depends, Query, Request
+from fastapi.encoders import jsonable_encoder
 
 from app.auth.principal import Principal, get_current_principal
 from app.config.settings import get_settings
@@ -48,7 +50,7 @@ async def get_twin(
     data = await service.snapshot(principal.user_id, as_of=as_of_date)
     return APIResponse.success(
         message="Digital twin snapshot retrieved",
-        data=data,
+        data=jsonable_encoder(data, custom_encoder={Decimal: str}),
         correlation_id=getattr(request.state, "correlation_id", str(uuid4())),
         data_status="CACHED",
     )
