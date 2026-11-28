@@ -11,6 +11,8 @@ import '../../features/portfolio/presentation/local_manual_portfolio_page.dart';
 import '../../features/market/presentation/local_market_page.dart';
 import '../../features/market/presentation/local_watchlists_page.dart';
 import '../../features/account/presentation/local_paper_account_page.dart';
+import '../../features/paper_trading/presentation/paper_trading_page.dart';
+import '../../features/goals/presentation/goals_page.dart';
 import '../../shared/widgets/app_shell.dart';
 
 class AppRouter {
@@ -130,21 +132,38 @@ class AppRouter {
               ),
             ),
           ),
-          for (final entry in const {
-            '/paper-trading': ('Simulated paper ledger', 4),
-            '/goals': ('Saved financial goals', 4),
-          }.entries)
-            GoRoute(
-              path: entry.key,
-              builder: (_, _) => LocalFeatureGate(
-                key: ValueKey(entry.key),
-                session: session,
-                child: LocalPendingPage(
-                  title: entry.value.$1,
-                  sprint: entry.value.$2,
-                ),
-              ),
+          GoRoute(
+            path: '/paper-trading',
+            builder: (_, _) => LocalFeatureGate(
+              key: const ValueKey('/paper-trading'),
+              session: session,
+              child: session.isPendingSprint(4)
+                  ? const LocalPendingPage(
+                      title: 'Simulated paper ledger',
+                      sprint: 4,
+                    )
+                  : PaperTradingPage(
+                      key: ValueKey('paper-${session.generation}'),
+                      session: session,
+                    ),
             ),
+          ),
+          GoRoute(
+            path: '/goals',
+            builder: (_, _) => LocalFeatureGate(
+              key: const ValueKey('/goals'),
+              session: session,
+              child: session.isPendingSprint(4)
+                  ? const LocalPendingPage(
+                      title: 'Saved financial goals',
+                      sprint: 4,
+                    )
+                  : GoalsPage(
+                      key: ValueKey('goals-${session.generation}'),
+                      session: session,
+                    ),
+            ),
+          ),
           GoRoute(
             path: '/pilot/consent',
             redirect: (_, _) => '/pilot/onboarding',

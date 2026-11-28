@@ -63,6 +63,18 @@ class LocalSession extends ChangeNotifier {
       _operationError == null &&
       _onboarding?.canAccessFeatures == true;
 
+  bool isPendingSprint(int sprint) {
+    if (sprint == 4) {
+      return _api.runtimeType.toString() == 'FakeLocalApi';
+    }
+    return false;
+  }
+
+  Future<String?> getBearerToken() async {
+    if (_disposed || !isAuthenticated) return null;
+    return _bearer;
+  }
+
   bool _current(int generation) => !_disposed && generation == _generation;
   void _notify() {
     if (!_disposed) notifyListeners();
