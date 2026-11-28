@@ -34,7 +34,7 @@ Before creating the S3-MI01 deliverables, the prerequisite S3-LI01 implementatio
 | **Issue #53 Status** | Closed / Merged | State: `closed` | **PASS** |
 | **PR #160 Status** | Merged into `dev` | State: `closed`, `merged: True` | **PASS** |
 | **PR #160 Merge SHA** | Merge commit on `dev` | Commit `f3aff3db0ad122ceaee735252a990c31a1c12251` | **PASS** |
-| **Presence in `origin/dev`** | At HEAD of `origin/dev` | Present at `origin/dev` HEAD (`f3aff3d`) | **PASS** |
+| **Prerequisite in `origin/dev`** | `f3aff3d` is an ancestor of `origin/dev` | Verified `f3aff3d` is an ancestor of current `origin/dev` HEAD (`f544676`, checked 2026-11-28) | **PASS** |
 | **Implementation Files** | In `origin/dev` tree | `backend/app/services/suitability_service.py` present (blob `d9709e7`) | **PASS** |
 | **Reviewer Findings** | Addressed in PR #160 | Commit `6f296ba` (threshold alignment) and `512c514` (exact normalization) verified | **PASS** |
 | **Evidence Consistency** | `s3_li01_evidence.md` present | Present in `docs/evidence/s3_li01_evidence.md` | **PASS** |
@@ -47,8 +47,8 @@ Every relevant file in the FinEx codebase was thoroughly inspected end-to-end:
 
 | File Path | Component Responsibility | Important Contracts & Invariants | Security Review | Correctness Review | Audit Status |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| `ai/risk/scoring.py` | 10-Question Behavioral Scoring | Normalized dimension scores (0–100), composite formula ($0.5W + 0.5C$), canonical boundary thresholds ($<34, <67, \ge 67$) | No external network calls, zero LLM scoring hallucinations | 100% deterministic, immutable v1 configuration | **PASS** |
-| `backend/app/services/suitability_service.py` | Target Allocations, Drift & Rebalancing | Non-negative weights, unity sum ($1.000000$), strict equity monotonicity, exact 6-decimal normalization, threshold action alignment | Strict Decimal arithmetic, zero-sum rebalance conservation | Rebalance plan action matches drift classification | **PASS** |
+| `ai/risk/scoring.py` | 10-Question Behavioral Scoring | Normalized dimension scores (0–100), composite formula ($0.5W + 0.5C$), canonical boundary thresholds ($<34, <67, \ge 67$) | No external network calls, zero LLM scoring hallucinations | Uses Python `float` arithmetic rounded to 4 decimal places (`round(..., 4)`); 100% deterministic | **PASS** |
+| `backend/app/services/suitability_service.py` | Target Allocations, Drift & Rebalancing | Non-negative weights, unity sum ($1.000000$), strict equity monotonicity, exact 6-decimal normalization, threshold action alignment | `Decimal` / `ROUND_HALF_UP` scoped to allocation, drift, and monetary math; zero-sum rebalance conservation | Rebalance plan action matches drift classification | **PASS** |
 | `backend/app/routers/suitability.py` | FastAPI Endpoints (`/api/v1/suitability`) | `/allocation` (public reference), `/rebalance` (authenticated) | `get_current_user` JWT validation, multi-tenant ownership check | Returns standardized envelope with `educational_disclaimer` | **PASS** |
 | `backend/app/schemas/suitability.py` | Pydantic Request/Response Models | `extra="forbid"`, sanitized asset class names, finite weight validation | Rejects non-finite numbers (`NaN`, `Inf`) and negative weights | Strict schema conformance | **PASS** |
 | `backend/app/core/exceptions.py` | Domain Exceptions | `SuitabilityException(FinExException)` with HTTP 400 status codes | Clean error envelopes, no SQL or stack trace leakage | Standardized error codes | **PASS** |
@@ -84,20 +84,21 @@ $$\text{action}_i = \begin{cases}
 \end{cases}$$
 
 ### 4.4 Rebalance Adjustment & Monetary Capital Conservation
-- **Held Positions ($|\text{drift}_i| \le \tau$):** $\text{direction} = \text{"HOLD"}$, $\text{adjustment\_weight} = \text{Decimal}("0.000000")$, $\text{indicative\_amount} = \text{Decimal}("0.00")$.
+- **Held Positions ($|\text{drift}_i| \le \tau$ in funded portfolio):** $\text{direction} = \text{"HOLD"}$, $\text{adjustment\_weight} = \text{Decimal}("0.000000")$, $\text{indicative\_amount} = \text{Decimal}("0.00")$.
+- **Zero-Value / Empty Portfolios ($V_{\text{portfolio}} \le 0$ or `None`, or no holdings):** $\text{indicative\_amount} = \text{None}$ (Unavailable / Not calculated). No monetary indicative amount is computed when portfolio value is zero.
 - **Actionable Positions ($|\text{drift}_i| > \tau$):** $\text{direction} = \text{action}_i$, $\text{adjustment\_weight} = -\text{drift}_i$, $\text{indicative\_amount} = (\text{adjustment\_weight} \times V_{\text{portfolio}}).\text{quantize}(0.01)$.
 - **Capital Conservation Proof:** When all positions with non-zero drift are actionable, $\sum_i \text{adjustment\_weight}_i = 0.000000$. Cent rounding residuals ($\pm \$0.01$) are reconciled among actionable candidates with the largest absolute amounts:
   $$\sum_i \text{indicative\_amount}_i = \text{Decimal}("0.00")$$
 
 ### 4.5 Five Golden Persona Hand-Calculations Verified
 
-| Persona | Risk Model | Portfolio Value | Current Allocations | Drift ($\text{Eq} / \text{FI} / \text{Cash}$) | Plan Action ($\text{Eq} / \text{FI} / \text{Cash}$) | Net Monetary Cash Flow |
+| Persona | Risk Model | Portfolio Value | Current Allocations | Drift ($\text{Eq} / \text{FI} / \text{Cash}$) | Plan Action ($\text{Eq} / \text{FI} / \text{Cash}$) | Net Monetary Cash Flow / Indicative Amount |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
 | **1. Retired Capital** | `CONSERVATIVE_V1` | $\$100,000$ | $50\% / 30\% / 20\%$ | $+30\% / -40\% / +10\%$ | `TRIM` ($-\$30\text{k}$) / `ADD` ($+\$40\text{k}$) / `TRIM` ($-\$10\text{k}$) | $\$0.00$ (Conserved) |
 | **2. Mid-Career** | `MODERATE_V1` | $\$50,000$ | $50\% / 40\% / 10\%$ | $0\% / 0\% / 0\%$ | `HOLD` ($\$0$) / `HOLD` ($\$0$) / `HOLD` ($\$0$) | $\$0.00$ (Balanced) |
 | **3. Early-Career** | `AGGRESSIVE_V1` | $\$200,000$ | $60\% / 30\% / 10\%$ | $-20\% / +20\% / 0\%$ | `ADD` ($+\$40\text{k}$) / `TRIM` ($-\$40\text{k}$) / `HOLD` ($\$0$) | $\$0.00$ (Conserved) |
 | **4. All-Cash** | `MODERATE_V1` | $\$10,000$ | $0\% / 0\% / 100\%$ | $-50\% / -40\% / +90\%$ | `ADD` ($+\$5\text{k}$) / `ADD` ($+\$4\text{k}$) / `TRIM` ($-\$9\text{k}$) | $\$0.00$ (Conserved) |
-| **5. Empty** | `MODERATE_V1` | $\$0$ | $0\% / 0\% / 0\%$ | $-50\% / -40\% / -10\%$ | `INCREASE` / `INCREASE` / `INCREASE` | $\$0.00$ (Unallocated) |
+| **5. Empty** | `MODERATE_V1` | $\$0$ | $0\% / 0\% / 0\%$ | $-50\% / -40\% / -10\%$ | `INCREASE` / `INCREASE` / `INCREASE` | Unavailable / Not calculated (`None`) |
 
 ---
 
@@ -114,13 +115,13 @@ $$\text{action}_i = \begin{cases}
 
 ## 6. Scalability & Performance Audit
 
-1. **Algorithmic Time Complexity:**
-   - Drift calculation: $O(K \log K)$ where $K$ is the number of asset classes. For $K = 3$, execution time is $< 0.1\text{ ms}$.
+1. **Theoretical Algorithmic Time Complexity:**
+   - Drift calculation: $O(K \log K)$ where $K$ is the number of asset classes ($K = 3$ for canonical models).
    - Rebalance plan generation: $O(K \log K)$ sorting for residual cent allocation.
    - Questionnaire scoring: $O(N)$ where $N = 10$ questions.
-2. **Space Complexity:** $O(K)$ temporary dictionary allocations, resulting in negligible heap allocation and zero GC pressure.
+2. **Theoretical Space Complexity:** $O(K)$ in-memory asset maps and plan lists.
 3. **Database & Market Read Behavior:** When `portfolio_id` is supplied, `portfolio_service.get_portfolio_summary` executes two repository read operations (`get_portfolio_by_id` and `list_holdings`) plus a batch market-quote lookup (`market_provider.get_quotes`) for held symbols. In PostgreSQL local-portfolio mode (`PostgresLocalPortfolioStore`), `finex.local_manual_portfolios` has a `UNIQUE(user_id, portfolio_id)` index, while `finex.local_manual_holdings` uses `holding_id` as its primary key (without a separate composite index on `(user_id, portfolio_id)` in `postgres_local_store.py`). In default in-memory mode, lookups use Python dictionary access.
-4. **Concurrency & Thread Safety:** `SuitabilityService` holds only an immutable `RiskScoringEngine` reference and no mutable per-user state; it is instantiated as a stateless singleton (`suitability_service`). Production-scale throughput and latency have not been benchmarked.
+4. **Concurrency & Benchmarking Boundary:** `SuitabilityService` holds only an immutable `RiskScoringEngine` reference and no mutable per-user state; it is instantiated as a stateless singleton (`suitability_service`). Isolated microbenchmarks and production-scale throughput/latency/GC measurements have **not** been executed; only local test suite execution times are reported in Section 9.
 
 ---
 
@@ -152,7 +153,7 @@ The deliverable `docs/ai/suitability-model-card.md` contains all 16 mandatory se
 | Acceptance Criterion | Authoritative Source / Evidence | Audit Status |
 | :--- | :--- | :--- |
 | **States assumptions** | Documented in Section 8 of `suitability-model-card.md`, separating implementation assumptions (3 canonical asset classes, fixed category boundaries, deterministic tie-breaking) from real-world financial assumptions (frictionless trading, tax neutrality, continuous liquidity). Verified against `suitability_service.py:31-116`. | **PASS** |
-| **No personalised-advice claim** | Documented in Sections 3, 4, 9, and 10 of `suitability-model-card.md`. Codified in `suitability_service.py:108-116` (`EDUCATIONAL_DISCLAIMER`) and returned in every API response. Re-asserts that FinEx is an educational platform and not a licensed financial adviser. | **PASS** |
+| **No personalised-advice claim** | Documented in Sections 3, 4, 9, and 10.1 of `suitability-model-card.md`. The exact shorter runtime `EDUCATIONAL_DISCLAIMER` constant (`suitability_service.py:108-116`, documented verbatim in Section 10.2) is returned in every API response. | **PASS** |
 | **Fees and taxes not modelled** | Explicitly stated in Sections 8.2, 9, and 10 of `suitability-model-card.md`. Codified in `EDUCATIONAL_DISCLAIMER`: *"Trading costs, commissions, management fees, and taxes are not modeled."* | **PASS** |
 
 ### Audit Area Matrix
@@ -219,7 +220,8 @@ cd backend; .\.venv\Scripts\pytest.exe -m "not postgres" -q
 ## 10. Delivery & Reviewer Hand-Off
 
 - **Feature Branch:** `feature/s3-mi01`
-- **Base Branch:** `dev` (`f3aff3d`)
+- **Audited Prerequisite Commit (S3-LI01 / PR #160):** `f3aff3d`
+- **Current `origin/dev` HEAD (verified 2026-11-28):** `f544676`
 - **Deliverables:**
   1. `docs/ai/suitability-model-card.md`
   2. `docs/evidence/s3_mi01_evidence.md`

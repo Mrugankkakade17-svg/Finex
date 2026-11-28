@@ -29,7 +29,7 @@ It serves as a core educational bridge between behavioral risk self-assessment a
 1. **Risk-to-Allocation Mapping:** Translates canonical risk categories (`CONSERVATIVE`, `MODERATE`, `AGGRESSIVE`) derived from the 10-question behavioral questionnaire (`ai.risk.scoring`) or direct selection into standardized educational asset-class target weights (`EQUITY`, `FIXED_INCOME`, `CASH`).
 2. **Allocation Drift Analysis:** Evaluates existing portfolio allocations against target benchmarks, quantifying signed drift ($\text{drift} = w_{\text{current}} - w_{\text{target}}$) and classifying asset positions as `BALANCED`, `OVERWEIGHT`, or `UNDERWEIGHT` based on a configurable threshold ($\tau = 0.01$).
 3. **Illustrative Rebalance Planning:** Computes target-restoring adjustments (`HOLD`, `REDUCE`, `INCREASE`) and indicative monetary amounts ($\text{adjustment\_weight} = -\text{drift}$, $\text{indicative\_amount} = V_{\text{portfolio}} \times \text{adjustment\_weight}$) mapped to simplified synthetic educational benchmark proxies (`SPY`, `AGG`, `CSHX`).
-4. **Deterministic Rule-Based Identity:** The Suitability Engine is **not** a trained machine-learning or predictive model. All risk scoring (`RiskScoringEngine`), allocation mapping, drift computation, rebalance planning, and suitability explanations (`SuitabilityService._build_educational_explanation`) execute 100% deterministically outside Large Language Models (LLMs) using rule-based logic and arbitrary-precision Python `Decimal` arithmetic. (A separate optional LLM explanation path exists only in `ai/risk/explanation.py` for standalone risk-assessment explanations.)
+4. **Deterministic Rule-Based Identity:** The Suitability Engine is **not** a trained machine-learning or predictive model. All risk scoring (`RiskScoringEngine`), allocation mapping, drift computation, rebalance planning, and suitability explanations (`SuitabilityService._build_educational_explanation`) execute 100% deterministically outside Large Language Models (LLMs). `SuitabilityService` uses Python `Decimal` arithmetic (`ROUND_HALF_UP`) for allocation weights, drift, and monetary amounts, while `RiskScoringEngine` uses standard Python `float` arithmetic rounded to 4 decimal places. (A separate optional LLM explanation path exists only in `ai/risk/explanation.py` for standalone risk-assessment explanations.)
 
 ---
 
@@ -106,19 +106,21 @@ Every allocation profile strictly satisfies four structural invariants:
 
 ## 7. Mathematical Methodology
 
-All calculations are performed using Python `Decimal` objects with `ROUND_HALF_UP` quantization. Floating-point arithmetic (`float`) is strictly prohibited in the quantitative engine.
+Numerical precision is scoped by module responsibility:
+- **Allocation, Drift, Rebalance & Monetary Calculations (`SuitabilityService`):** All target/current weight normalization, signed drift calculations, adjustment weights, and indicative monetary amounts are computed using Python `Decimal` objects with `ROUND_HALF_UP` quantization (6 decimal places for weights, 2 decimal places for currency).
+- **Behavioral Risk Scoring (`RiskScoringEngine`):** Dimension normalization and composite score calculations in `ai/risk/scoring.py` use standard Python `float` arithmetic and round normalized willingness, capacity, and composite scores to **4 decimal places** via `round(..., 4)`.
 
 ### 7.1 Risk Scoring Evaluation
-When questionnaire answers are supplied, `RiskScoringEngine` processes 10 questions across two dimensions:
+When questionnaire answers are supplied, `RiskScoringEngine` processes 10 questions across two dimensions using `float` arithmetic:
 - **Willingness to Take Risk ($W$, Questions W1–W5):** Measures self-reported psychological risk tolerance.
 - **Financial Risk Capacity ($C$, Questions C1–C5):** Measures self-reported financial ability to absorb losses.
 
 Each answer maps to an integer score $s \in [1, 5]$. Raw dimension score:
 $$\text{raw\_score} = \sum_{j=1}^{5} s_j \quad (\min = 5, \max = 25)$$
-Normalized dimension score:
-$$\text{normalized\_score} = \left(\frac{\text{raw\_score} - 5}{25 - 5}\right) \times 100.0$$
-Composite score (equally weighted combination):
-$$\text{composite\_score} = (0.5 \times \text{normalized\_willingness}) + (0.5 \times \text{normalized\_capacity})$$
+Normalized dimension score (rounded to 4 decimal places):
+$$\text{normalized\_score} = \text{round}\left(\left(\frac{\text{raw\_score} - 5}{25 - 5}\right) \times 100.0,\ 4\right)$$
+Composite score (equally weighted combination, rounded to 4 decimal places):
+$$\text{composite\_score} = \text{round}\left((0.5 \times \text{normalized\_willingness}) + (0.5 \times \text{normalized\_capacity}),\ 4\right)$$
 Category mapping:
 $$\text{Category} = \begin{cases}
 \text{CONSERVATIVE} & \text{if } \text{composite\_score} < 34.0 \\
@@ -162,10 +164,13 @@ $$\text{status}_i = \begin{cases}
 \end{cases}$$
 
 ### 7.5 Rebalance Adjustment & Monetary Capital Conservation
-- **Held Positions ($|\text{drift}_i| \le \tau$):**
+- **Held Positions ($|\text{drift}_i| \le \tau$ in funded portfolio):**
   $$\text{direction} = \text{"HOLD"}$$
   $$\text{adjustment\_weight}_i = \text{Decimal}("0.000000")$$
   $$\text{indicative\_amount}_i = \text{Decimal}("0.00") \quad (\text{if } V_{\text{portfolio}} > 0)$$
+- **Zero-Value / Empty Portfolios ($V_{\text{portfolio}} \le 0$ or `None`, or no holdings):**
+  $$\text{indicative\_amount}_i = \text{None} \quad (\text{Unavailable / Not calculated})$$
+  No monetary indicative amount is calculated when portfolio value is zero or unprovided; this is distinct from a genuine calculated `Decimal("0.00")` on a `HOLD` position in a funded portfolio.
 - **Actionable Positions ($|\text{drift}_i| > \tau$):**
   $$\text{direction} = \text{action}_i \in \{\text{"REDUCE"}, \text{"INCREASE"}\}$$
   $$\text{adjustment\_weight}_i = w_{i,\text{target}} - w_{i,\text{current}} = -\text{drift}_i$$
@@ -215,11 +220,15 @@ The following limitations must be prominently disclosed across all consuming app
 
 ## 10. Educational Disclaimer
 
-The following disclaimer is mandatory, permanently codified in `EDUCATIONAL_DISCLAIMER` (`backend/app/services/suitability_service.py`), and emitted in suitability API response envelopes (`TargetAllocationResponse` and `SuitabilityRebalanceResponse`):
-
+### 10.1 Full Model-Card Educational Disclosure
 > **FinEx suitability outputs are educational and illustrative only. They are not personalised investment advice and do not constitute a recommendation to buy, sell or hold any financial instrument. Users remain responsible for their own financial decisions. Actual investment outcomes may differ from illustrative calculations. Fees and taxes are not modelled.**
 > 
 > *FinEx is an educational software platform, not a registered investment adviser, broker-dealer, financial planner, or wealth management institution. Past performance is no guarantee of future returns. Reference allocation models illustrate hypothetical distributions based on generalized risk profiles; generalized risk categories do not establish an individual's complete financial suitability, liquidity needs, tax situation, or capacity for loss. Consult a licensed financial professional before making real-world financial commitments.*
+
+### 10.2 Exact Runtime API Disclaimer (`EDUCATIONAL_DISCLAIMER`)
+The following shorter runtime string is codified verbatim in `EDUCATIONAL_DISCLAIMER` (`backend/app/services/suitability_service.py:108-116`) and emitted in every `TargetAllocationResponse` and `SuitabilityRebalanceResponse` envelope:
+
+> *"Educational suitability and allocation demonstration only. Not regulated personal financial, investment, legal, or tax advice. Reference models illustrate hypothetical asset distributions based on general risk profiles. Past performance is no guarantee of future returns. Trading costs, commissions, management fees, and taxes are not modeled. Investors must independently assess their own objectives and consult a licensed financial professional before making investment decisions."*
 
 ---
 
@@ -261,9 +270,10 @@ The Suitability Engine is subjected to comprehensive automated verification acro
 
 ## 13. Scalability and Performance Considerations
 
-1. **Algorithmic Complexity:**
-   - Drift and rebalance evaluation operates in $O(K \log K)$ time, where $K$ is the number of distinct asset classes. Because $K \le 10$ in practice (typically $K = 3$), calculation execution completes in under 1 millisecond.
-   - Space complexity is $O(K)$, creating minimal garbage collection overhead.
+1. **Theoretical Algorithmic Complexity:**
+   - Drift and rebalance evaluation operates in $O(K \log K)$ time, where $K$ is the number of distinct asset classes (for the 3 canonical asset classes, $K = 3$).
+   - Space complexity is $O(K)$ for in-memory asset maps and plan lists.
+   - Note: Theoretical complexity does not imply a measured latency SLA; isolated microbenchmarks have not been run.
 2. **Database & Market Lookup Behavior:**
    - When `portfolio_id` is provided, `portfolio_service.get_portfolio_summary` executes two repository read operations (`get_portfolio_by_id` and `list_holdings`) plus a batch market-quote lookup (`market_provider.get_quotes`) for held symbols.
    - In PostgreSQL local-portfolio mode (`PostgresLocalPortfolioStore`), `finex.local_manual_portfolios` carries a `UNIQUE(user_id, portfolio_id)` index, while `finex.local_manual_holdings` relies on its `holding_id` primary key (without a separate composite index on `(user_id, portfolio_id)` in `postgres_local_store.py`), and `PostgresTransactionStore._connect` runs `SCHEMA_STATEMENTS` per transaction context. In default in-memory mode, lookups use Python dictionary access.
