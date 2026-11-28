@@ -149,17 +149,24 @@ class FxSeries:
 
         if direct_rate is None and inverse_rate is None:
             raise LookupError(f"No {source}/{target} FX rate is available on or before {on}.")
-        inverted = inverse_rate is not None and (
-            direct_rate is None or inverse_rate.as_of > direct_rate.as_of
-        )
-        if inverted:
+
+        if direct_rate is None:
+            # The missing-both guard above guarantees an inverse candidate here.
+            assert inverse_rate is not None
             rate_record = inverse_rate
+            inverted = True
             conversion_rate = Decimal("1") / rate_record.rate
             converted_amount = value / rate_record.rate
-        else:
+        elif inverse_rate is None or direct_rate.as_of >= inverse_rate.as_of:
             rate_record = direct_rate
+            inverted = False
             conversion_rate = rate_record.rate
             converted_amount = value * rate_record.rate
+        else:
+            rate_record = inverse_rate
+            inverted = True
+            conversion_rate = Decimal("1") / rate_record.rate
+            converted_amount = value / rate_record.rate
 
         return FxConversion(
             amount=converted_amount,
