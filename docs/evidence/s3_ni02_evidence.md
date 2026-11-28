@@ -22,7 +22,7 @@
    - Text: `"EDUCATIONAL ONLY — FinEx provides simulated portfolio analysis and educational suitability information. It is not investment advice, a brokerage service, or a guarantee of returns. Review all information independently."`
    - Explicit `data-testid="suitability-educational-banner"` with `role="status"` accessibility attributes.
 2. **Suitability Summary & Risk Tiering:**
-   - Dynamic selection across canonical risk tiers: `CONSERVATIVE` (20/50/10), `MODERATE` (60/30/10), and `AGGRESSIVE` (85/10/5).
+   - Dynamic selection across canonical risk tiers: `CONSERVATIVE` (20/70/10), `MODERATE` (50/40/10), and `AGGRESSIVE` (80/10/10).
    - Displays model name, description, maximum portfolio drift percentage, and rebalance recommendation status badge (`REBALANCE SUGGESTED`, `BALANCED WITHIN TOLERANCE`, or `EMPTY PORTFOLIO`).
 3. **Target Allocation Chart & Accessible Table Alternative:**
    - Visual comparison using Recharts `<ResponsiveContainer>` and `<BarChart>` comparing `Target Weight (%)` and `Current Weight (%)` across `EQUITY`, `FIXED_INCOME`, and `CASH`.
@@ -35,7 +35,7 @@
 5. **Rebalance Recommendation Table:**
    - Semantic HTML table displaying per-asset rebalance actions (`INCREASE`, `REDUCE`, `HOLD`).
    - Indicative monetary rebalance amounts that conserve estimated portfolio value and satisfy the zero-sum invariant.
-   - Displays proxy benchmark instruments (`VTI`, `BND`, `SHV`) and educational rationales provided by the engine.
+   - Displays proxy benchmark instruments (`SPY`, `AGG`, `CSHX`) and educational rationales provided by the engine.
    - Clear empty/balanced state handling.
 6. **Data Context & Legal Guardrails:**
    - Displays model code, drift threshold (1.0% / 0.01 tolerance), mathematical invariant verification (`invariants_satisfied: true`), and engine disclaimer.
@@ -58,77 +58,54 @@ The frontend strictly interfaces with the authoritative endpoints implemented in
 
 ---
 
-## 3. Test Evidence
+## 3. Verification Evidence
 
-### Frontend Unit & Component Tests
-Executed command:
+### A. Local CLI Verification
+
+#### TypeScript Type Check
 ```bash
-cd frontend-react && npm test -- --watchAll=false SuitabilityPage
+cd frontend-react && npx tsc --noEmit
 ```
-Output:
-```text
-PASS src/pages/SuitabilityPage.test.tsx (8.214 s)
-  SuitabilityPage (S3-NI02)
-    √ renders the mandatory permanent EDUCATIONAL banner at all times (373 ms)
-    √ keeps the EDUCATIONAL banner visible during loading state (102 ms)
-    √ keeps the EDUCATIONAL banner visible when API error occurs and allows retry (251 ms)
-    √ keeps the EDUCATIONAL banner visible with empty data state (49 ms)
-    √ displays suitability metrics, max drift, and rebalance status (169 ms)
-    √ toggles between chart view and accessible table view (396 ms)
-    √ renders per-asset drift bars with directional indicators (192 ms)
-    √ renders the detailed rebalance recommendation table with zero-sum invariant notice (157 ms)
-    √ handles risk category selection change and triggers re-fetch (188 ms)
-    √ handles portfolio ID lookup in portfolio mode (466 ms)
-    √ handles portfolio value input changes and triggers re-fetch with custom capital amount (160 ms)
-    √ displays initial allocation notice when is_empty_portfolio is true with plan items (99 ms)
-    √ renders explicit positive sign for positive indicative amounts and negative sign for negative amounts (85 ms)
-    √ handles selection of Aggressive risk tier and verifies model request (201 ms)
+- Exit code: `0` (zero errors).
 
-Test Suites: 1 passed, 1 total
-Tests:       14 passed, 14 total
-Snapshots:   0 total
-Time:        11.325 s, estimated 16 s
-Ran all test suites matching /SuitabilityPage/i.
-```
-
-### Full Frontend Test Suite
-Executed command:
+#### Focused Suitability & Chart Unit Tests
 ```bash
-cd frontend-react && npm test -- --watchAll=false
+cd frontend-react && npm test -- --watchAll=false --runInBand src/pages/SuitabilityPage.test.tsx src/components/charts/PriceChart.test.tsx
 ```
-Output:
-```text
-Test Suites: 33 passed, 33 total
-Tests:       832 passed, 832 total
-Snapshots:   0 total
-Time:        69.704 s, estimated 70 s
-Ran all test suites.
-```
+- `SuitabilityPage.test.tsx`: **17 passed, 17 total** (covers permanent EDUCATIONAL banner across loading/error/empty/retry states, canonical risk tiers, chart/table toggle, drift bars, rebalance table + zero-sum/empty-portfolio notices, signed indicative amounts, portfolio UUID lookup, `0` portfolio value, negative portfolio value inline validation, `BALANCED`/`HOLD` state, and `REQUEST_CANCELLED` abort handling).
+- `PriceChart.test.tsx`: **5 passed, 5 total**.
+- Combined: **2 suites passed, 22 tests passed**.
 
-### Frontend Production Build
-Executed command:
+#### Full Frontend Test Suite (CI Mode, In-Band)
+```bash
+cd frontend-react && CI=true npm test -- --watchAll=false --runInBand
+```
+- Output: `Test Suites: 33 passed, 33 total | Tests: 835 passed, 835 total | Snapshots: 0 total`
+
+#### Frontend Production Build
 ```bash
 cd frontend-react && npm run build
 ```
-Output:
-```text
-Creating an optimized production build...
-Compiled successfully.
+- Output: `Compiled successfully.` (`227.69 kB build\static\js\main.be21b601.js`, `6.61 kB build\static\css\main.7783a283.css`)
 
-File sizes after gzip:
-  227.42 kB  build\static\js\main.8ffab288.js
-  6.61 kB    build\static\css\main.7783a283.css
-```
-
-### Backend Suitability Contract & Unit Tests
-Executed command:
+#### Backend Ruff & Suitability Contract/Unit Tests
 ```bash
-cd backend && .\.venv\Scripts\pytest.exe -q tests/contract/test_suitability_api.py tests/unit/test_suitability_service.py --no-cov
+backend\.venv\Scripts\python.exe -m ruff check backend/app/routers/suitability.py backend/app/services/suitability_service.py backend/app/schemas/suitability.py
+backend\.venv\Scripts\pytest.exe -q --no-cov backend/tests/contract/test_suitability_api.py backend/tests/unit/test_suitability_service.py
 ```
-Output:
-```text
-47 passed, 68 warnings in 6.18s
-```
+- Ruff: `All checks passed!` (exit code `0`)
+- Pytest: `47 passed, 68 warnings` (exit code `0`)
+
+### B. GitHub CI Verification
+- Commit `30bf31a`: 14/18 passed, 2 skipped, 2 failed (`React journey and accessibility proof` timed out at default 1000ms `asyncUtilTimeout` under `--runInBand` load).
+- Commit `824d553`: 14/18 passed, 2 skipped, 2 failed (same `SuitabilityPage.test.tsx` in-band timeout).
+- Commit `0d98e46`: **18/18 check runs passed** across all 8 workflow runs (`React Quality Gates`, `React E2E Tests`, `R0-S2 Release Evidence`, `S1 UAT Evidence` on both `push` and `pull_request`).
+- Latest audit remediation commit: verified via GitHub Actions on push to `feature/s3-ni02`.
+
+### C. Security & Ownership Verification
+- `/suitability` route in `frontend-react/src/App.tsx` is wrapped in `<LocalApplicationGuard>`.
+- `suitabilityService.ts` resolves JWT bearer token via `getActiveAuthSession()?.access_token ?? readSessionStorageToken()` and passes it to `finexApiClient.request`.
+- Backend `POST /api/v1/suitability/rebalance` requires `Depends(get_current_user)` and calls `await portfolio_service.get_portfolio_summary(data.portfolio_id, user_id)`, returning `404 PORTFOLIO_NOT_FOUND` on cross-user access attempts (verified by `test_rebalance_user_isolation_between_distinct_users`).
 
 ---
 
@@ -178,4 +155,6 @@ During the deep independent implementation audit, the following findings were id
 8. **CI In-Band Test Runner Resilience & Chart Element Testability (`FIXED AND RE-VERIFIED`)**:
    - *Finding:* In CI workflow `S1 UAT Evidence` (`React journey and accessibility proof`), test suite ran with `--runInBand` and timed out on `screen.getByTestId('mock-BarChart')` during async state transitions under runner load. Virtual Recharts mocks between test files also carried inconsistent definitions.
    - *Fix:* Configured `asyncUtilTimeout: 5000` in `frontend-react/src/setupTests.ts` for robust in-band async resolution. Added `data-testid="suitability-allocation-chart"` to the chart container div in `SuitabilityPage.tsx`. Harmonized Recharts non-virtual mocks between `SuitabilityPage.test.tsx` and `PriceChart.test.tsx`. Verified full 33-suite in-band test run passes locally (832/832 tests).
-
+9. **Independent Re-Audit Remediation (`FIXED AND RE-VERIFIED`)**:
+   - *Finding:* `suitabilityService.ts` misclassified caller `AbortSignal` cancellations as `TIMEOUT`; `SuitabilityPage.tsx` dropped `portfolio_value=0` via `|| undefined`, sent negative values to the API, had an unused `isHold` variable, and hardcoded `Invariants Satisfied: True`; `s3_ni02_evidence.md` listed stale weights (`20/50/10`, `60/30/10`, `85/10/5`) and mock symbols (`VTI`, `BND`, `SHV`) instead of canonical `20/70/10`, `50/40/10`, `80/10/10` and `SPY`, `AGG`, `CSHX`.
+   - *Fix:* Added `timedOut` tracking in `suitabilityService.ts`; added explicit non-negative numeric validation and `REQUEST_CANCELLED` handling in `SuitabilityPage.tsx`; removed unused `isHold`; bound `invariants_satisfied` from response; added 3 regression tests (17 tests total in `SuitabilityPage.test.tsx`); corrected evidence summary.

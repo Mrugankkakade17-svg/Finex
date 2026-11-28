@@ -440,4 +440,88 @@ describe('SuitabilityPage (S3-NI02)', () => {
       expect(api.getTargetAllocation).toHaveBeenCalledWith('AGGRESSIVE', expect.any(Object));
     });
   });
+
+  it('sends explicit 0 when portfolio value is 0 and blocks negative portfolio values with inline validation', async () => {
+    const api = createMockApi();
+    render(<SuitabilityPage api={api} />);
+
+    const valInput = await screen.findByLabelText(/Simulated Portfolio Value in USD/i);
+
+    fireEvent.change(valInput, { target: { value: '0' } });
+    await waitFor(() => {
+      expect(api.evaluateRebalancePlan).toHaveBeenCalledWith(
+        expect.objectContaining({ portfolio_value: 0 }),
+        expect.any(Object),
+      );
+    });
+
+    const callCountBeforeInvalid = (api.evaluateRebalancePlan as jest.Mock).mock.calls.length;
+    fireEvent.change(valInput, { target: { value: '-500' } });
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(/non-negative number/i);
+    expect(valInput).toHaveAttribute('aria-invalid', 'true');
+    expect((api.evaluateRebalancePlan as jest.Mock).mock.calls.length).toBe(callCountBeforeInvalid);
+  });
+
+  it('renders BALANCED WITHIN TOLERANCE and HOLD actions when drift is within threshold', async () => {
+    const balancedRebalance: SuitabilityRebalanceResponse = {
+      ...mockRebalanceResponse,
+      max_drift: 0.005,
+      rebalance_required: false,
+      drift_summary: [
+        {
+          asset_class: 'EQUITY',
+          current_weight: 0.505,
+          current_pct: 50.5,
+          target_weight: 0.5,
+          target_pct: 50.0,
+          drift: 0.005,
+          drift_pct: 0.5,
+          status: 'BALANCED',
+          action: 'HOLD',
+        },
+      ],
+      rebalance_plan: [
+        {
+          asset_class: 'EQUITY',
+          current_weight: 0.505,
+          target_weight: 0.5,
+          drift: 0.005,
+          adjustment_weight: 0,
+          direction: 'HOLD',
+          indicative_amount: 0,
+          benchmark_symbol: 'SPY',
+          benchmark_name: 'Synthetic S&P 500 ETF proxy',
+          explanation: 'Within tolerance threshold.',
+        },
+      ],
+    };
+    const api = createMockApi({
+      evaluateRebalancePlan: jest.fn().mockResolvedValue(balancedRebalance),
+    });
+
+    render(<SuitabilityPage api={api} />);
+
+    expect(await screen.findByText('BALANCED WITHIN TOLERANCE')).toBeInTheDocument();
+    expect(screen.getByText('Hold')).toBeInTheDocument();
+    expect(screen.getByText('HOLD')).toBeInTheDocument();
+    expect(screen.getByText('SPY')).toBeInTheDocument();
+    expect(screen.getByText('$0')).toBeInTheDocument();
+  });
+
+  it('ignores REQUEST_CANCELLED errors without displaying an error banner', async () => {
+    const api = createMockApi({
+      getTargetAllocation: jest
+        .fn()
+        .mockRejectedValue(new SuitabilityApiError('The request was cancelled.', 'REQUEST_CANCELLED')),
+    });
+
+    render(<SuitabilityPage api={api} />);
+
+    await waitFor(() => {
+      expect(screen.queryByTestId('suitability-loading')).not.toBeInTheDocument();
+    });
+    expect(screen.queryByTestId('suitability-error')).not.toBeInTheDocument();
+    expect(screen.getByTestId('suitability-educational-banner')).toBeInTheDocument();
+  });
 });

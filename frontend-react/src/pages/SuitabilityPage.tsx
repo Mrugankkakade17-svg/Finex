@@ -72,24 +72,44 @@ export const SuitabilityPage: React.FC<SuitabilityPageProps> = ({
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
+  const parsedPortfolioValue = useMemo(() => {
+    const trimmed = portfolioValueInput.trim();
+    if (trimmed === '') {
+      return { value: undefined as number | undefined, error: null as string | null };
+    }
+    const num = Number(trimmed);
+    if (!Number.isFinite(num) || num < 0) {
+      return {
+        value: undefined as number | undefined,
+        error: 'Portfolio value must be a non-negative number ($0 or greater).',
+      };
+    }
+    return { value: num, error: null as string | null };
+  }, [portfolioValueInput]);
+
   const loadSuitability = useCallback(
     async (signal?: AbortSignal) => {
+      if (parsedPortfolioValue.error) {
+        return;
+      }
       setLoading(true);
       setError(null);
       try {
         if (allocationMode === 'model') {
           // 1. Fetch Target Allocation Model
           const target = await service.getTargetAllocation(riskCategory, signal);
+          if (signal?.aborted) return;
           setTargetData(target);
 
           // 2. Fetch baseline rebalance response (model with zero drift / baseline)
           const rebal = await service.evaluateRebalancePlan(
             {
               risk_category: riskCategory,
-              portfolio_value: Number(portfolioValueInput) || undefined,
+              portfolio_value: parsedPortfolioValue.value,
             },
             signal,
           );
+          if (signal?.aborted) return;
           setRebalanceData(rebal);
         } else {
           // Portfolio evaluation mode
@@ -97,17 +117,22 @@ export const SuitabilityPage: React.FC<SuitabilityPageProps> = ({
             {
               risk_category: riskCategory,
               portfolio_id: activePortfolioId.trim() || undefined,
-              portfolio_value: Number(portfolioValueInput) || undefined,
+              portfolio_value: parsedPortfolioValue.value,
             },
             signal,
           );
+          if (signal?.aborted) return;
           setRebalanceData(rebal);
 
           // Also get target metadata for description
           const target = await service.getTargetAllocation(riskCategory, signal);
+          if (signal?.aborted) return;
           setTargetData(target);
         }
       } catch (err) {
+        if (signal?.aborted || (err instanceof SuitabilityApiError && err.code === 'REQUEST_CANCELLED')) {
+          return;
+        }
         if (err instanceof SuitabilityApiError) {
           setError(err.message);
         } else if (err instanceof Error) {
@@ -116,10 +141,12 @@ export const SuitabilityPage: React.FC<SuitabilityPageProps> = ({
           setError('Failed to evaluate portfolio suitability.');
         }
       } finally {
-        setLoading(false);
+        if (!signal?.aborted) {
+          setLoading(false);
+        }
       }
     },
-    [service, riskCategory, allocationMode, activePortfolioId, portfolioValueInput],
+    [service, riskCategory, allocationMode, activePortfolioId, parsedPortfolioValue],
   );
 
   useEffect(() => {
@@ -355,15 +382,28 @@ export const SuitabilityPage: React.FC<SuitabilityPageProps> = ({
                   step="1000"
                   value={portfolioValueInput}
                   onChange={(e) => setPortfolioValueInput(e.target.value)}
+                  aria-invalid={parsedPortfolioValue.error ? 'true' : 'false'}
+                  aria-describedby={parsedPortfolioValue.error ? 'portfolio-value-error' : undefined}
                   style={{
                     padding: '6px 10px',
                     borderRadius: '8px',
-                    border: '1px solid var(--color-surface-divider, #ccc)',
+                    border: parsedPortfolioValue.error
+                      ? '1.5px solid #B42318'
+                      : '1px solid var(--color-surface-divider, #ccc)',
                     fontSize: '0.85rem',
                     width: '120px',
                   }}
                   aria-label="Simulated Portfolio Value in USD"
                 />
+                {parsedPortfolioValue.error && (
+                  <span
+                    id="portfolio-value-error"
+                    role="alert"
+                    style={{ fontSize: '0.78rem', color: '#B42318', fontWeight: 600 }}
+                  >
+                    {parsedPortfolioValue.error}
+                  </span>
+                )}
               </div>
 
               {allocationMode === 'portfolio' && (
@@ -1034,7 +1074,8 @@ export const SuitabilityPage: React.FC<SuitabilityPageProps> = ({
                   {rebalanceData.rebalance_plan.map((item) => {
                     const isReduce = item.direction === 'REDUCE';
                     const isIncrease = item.direction === 'INCREASE';
-                    const isHold = item.direction === 'HOLD';
+                    const rawAmt = item.indicative_amount != null ? Number(item.indicative_amount) : null;
+                    const amt = rawAmt !== null && Number.isFinite(rawAmt) ? rawAmt : null;
 
                     return (
                       <tr key={item.asset_class}>
@@ -1094,16 +1135,16 @@ export const SuitabilityPage: React.FC<SuitabilityPageProps> = ({
                             borderBottom: '1px solid var(--color-surface-divider, #E6E8E7)',
                             fontWeight: 600,
                             color:
-                              item.indicative_amount && item.indicative_amount > 0
+                              amt !== null && amt > 0
                                 ? '#026AA2'
-                                : item.indicative_amount && item.indicative_amount < 0
+                                : amt !== null && amt < 0
                                   ? '#B42318'
                                   : 'inherit',
                           }}
                         >
-                          {item.indicative_amount != null
-                            ? (item.indicative_amount > 0 ? '+' : '') +
-                              Number(item.indicative_amount).toLocaleString(undefined, {
+                          {amt !== null
+                            ? (amt > 0 ? '+' : '') +
+                              amt.toLocaleString(undefined, {
                                 style: 'currency',
                                 currency: 'USD',
                                 maximumFractionDigits: 0,
@@ -1187,7 +1228,8 @@ export const SuitabilityPage: React.FC<SuitabilityPageProps> = ({
                 <strong>Drift Tolerance:</strong> 1.0% (0.01 threshold)
               </span>
               <span>
-                <strong>Invariants Satisfied:</strong> True (Sum of Weights = 1.0)
+                <strong>Invariants Satisfied:</strong>{' '}
+                {targetData?.invariants_satisfied === false ? 'False' : 'True (Sum of Weights = 1.0)'}
               </span>
             </div>
             <p style={{ marginTop: '10px', marginBottom: 0, lineHeight: 1.5 }}>

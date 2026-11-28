@@ -78,9 +78,11 @@ export function createSuitabilityApi(config: SuitabilityApiConfig = {}): Suitabi
     }
 
     const controller = new AbortController();
+    let timedOut = false;
     const onCallerAbort = () => controller.abort();
     signal?.addEventListener('abort', onCallerAbort, { once: true });
     const timer = setTimeout(() => {
+      timedOut = true;
       controller.abort();
     }, timeoutMs);
 
@@ -134,6 +136,11 @@ export function createSuitabilityApi(config: SuitabilityApiConfig = {}): Suitabi
     } catch (err) {
       if (err instanceof SuitabilityApiError) {
         throw err;
+      }
+      if (signal?.aborted && !timedOut) {
+        throw new SuitabilityApiError('The request was cancelled.', 'REQUEST_CANCELLED', {
+          retryable: true,
+        });
       }
       if (controller.signal.aborted) {
         throw new SuitabilityApiError('Request timed out. Please retry.', 'TIMEOUT', {

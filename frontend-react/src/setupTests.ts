@@ -7,4 +7,3 @@ import { configure } from '@testing-library/react';
 
 // Configure async utility timeout to 5000ms for resilient in-band and CI execution
 configure({ asyncUtilTimeout: 5000 });
-
