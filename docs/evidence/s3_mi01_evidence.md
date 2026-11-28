@@ -10,7 +10,7 @@
 - **Feature Branch:** `feature/s3-mi01`
 - **Prerequisite:** `S3-LI01` (Issue [#53](https://github.com/Mrugankkakade17-svg/Finex/issues/53), PR [#160](https://github.com/Mrugankkakade17-svg/Finex/pull/160))
 - **Date:** 2026-11-28
-- **Status:** COMPLETED & VERIFIED
+- **Status:** PR #169 OPEN — PENDING INDEPENDENT REVIEW (`@payalmude14-star`)
 
 ---
 
@@ -53,8 +53,8 @@ Every relevant file in the FinEx codebase was thoroughly inspected end-to-end:
 | `backend/app/schemas/suitability.py` | Pydantic Request/Response Models | `extra="forbid"`, sanitized asset class names, finite weight validation | Rejects non-finite numbers (`NaN`, `Inf`) and negative weights | Strict schema conformance | **PASS** |
 | `backend/app/core/exceptions.py` | Domain Exceptions | `SuitabilityException(FinExException)` with HTTP 400 status codes | Clean error envelopes, no SQL or stack trace leakage | Standardized error codes | **PASS** |
 | `backend/app/services/portfolio_service.py` | Portfolio Data Provider | `get_portfolio_summary(portfolio_id, user_id)` | Scopes database query to authenticated `user_id`; raises 404 on cross-user access | Accurate valuation and asset breakdown | **PASS** |
-| `backend/tests/unit/test_suitability_service.py` | Unit & Property Test Suite | 36 test cases covering invariants, personas, tolerance boundaries, and exact normalization | Multi-tenant isolation and negative weight protection tested | 100% pass rate | **PASS** |
-| `backend/tests/contract/test_suitability_api.py` | API Contract Tests | 11 test cases validating OpenAPI schema, auth enforcement, and HTTP responses | 401 on missing token, 404 on cross-tenant access verified | 100% pass rate | **PASS** |
+| `backend/tests/unit/test_suitability_service.py` | Unit & Property Test Suite | 32 unit test functions (34 parameterized cases) covering invariants, personas, tolerance boundaries, and exact normalization | Multi-tenant isolation and negative weight protection tested | 100% pass rate | **PASS** |
+| `backend/tests/contract/test_suitability_api.py` | API Contract Tests | 12 test functions (13 parameterized cases) validating OpenAPI schema, auth enforcement, and HTTP responses | 401 on missing token, 404 on cross-tenant access verified | 100% pass rate | **PASS** |
 
 ---
 
@@ -107,7 +107,7 @@ $$\text{action}_i = \begin{cases}
 2. **Tenant Isolation:** User identity is extracted exclusively from the decoded JWT claims (`user["user_id"]`). Caller-supplied user identifiers are never accepted.
 3. **IDOR Prevention:** Verified via `test_rebalance_user_isolation_between_distinct_users`: User B requesting User A's `portfolio_id` receives HTTP `404 Not Found` with `error_code="PORTFOLIO_NOT_FOUND"`, completely preventing enumeration or data disclosure.
 4. **Input Hardening:** Pydantic schemas enforce `extra="forbid"`. Non-finite weights (`NaN`, `Inf`) and negative weights are rejected before processing. Duplicate asset classes are rejected with HTTP 400 `DUPLICATE_ASSET_CLASS`.
-5. **Data Privacy:** Calculations log zero personally identifiable information (PII). No access tokens, email addresses, or unmasked user data are logged.
+5. **Data Privacy & Logging:** While FinEx persists user accounts, portfolios, and holdings in its database (`local_users`, `local_manual_portfolios`, `local_manual_holdings`), `suitability_service.py` and `routers/suitability.py` do not write new records and contain zero logger calls emitting user PII or bearer tokens. `CorrelationIdMiddleware` redacts bearer credentials from `X-Correlation-ID` headers, and exception handlers return structured error envelopes without SQL or stack traces.
 6. **Database Integrity:** Suitability evaluation is a read-only analytical domain service that performs zero database mutations.
 
 ---
@@ -119,8 +119,8 @@ $$\text{action}_i = \begin{cases}
    - Rebalance plan generation: $O(K \log K)$ sorting for residual cent allocation.
    - Questionnaire scoring: $O(N)$ where $N = 10$ questions.
 2. **Space Complexity:** $O(K)$ temporary dictionary allocations, resulting in negligible heap allocation and zero GC pressure.
-3. **Database Read Efficiency:** Evaluates portfolio holdings via two indexed queries (`get_portfolio_by_id` and `list_holdings`). Zero N+1 query patterns.
-4. **Concurrency & Thread Safety:** The service is stateless and instantiated as a singleton (`suitability_service`). It is thread-safe across concurrent asynchronous ASGI worker processes.
+3. **Database & Market Read Behavior:** When `portfolio_id` is supplied, `portfolio_service.get_portfolio_summary` executes two repository read operations (`get_portfolio_by_id` and `list_holdings`) plus a batch market-quote lookup (`market_provider.get_quotes`) for held symbols. In PostgreSQL local-portfolio mode (`PostgresLocalPortfolioStore`), `finex.local_manual_portfolios` has a `UNIQUE(user_id, portfolio_id)` index, while `finex.local_manual_holdings` uses `holding_id` as its primary key (without a separate composite index on `(user_id, portfolio_id)` in `postgres_local_store.py`). In default in-memory mode, lookups use Python dictionary access.
+4. **Concurrency & Thread Safety:** `SuitabilityService` holds only an immutable `RiskScoringEngine` reference and no mutable per-user state; it is instantiated as a stateless singleton (`suitability_service`). Production-scale throughput and latency have not been benchmarked.
 
 ---
 
@@ -163,9 +163,9 @@ The deliverable `docs/ai/suitability-model-card.md` contains all 16 mandatory se
 | **Authentication** | `backend/app/routers/suitability.py`, `backend/app/auth/dependencies.py` | `/rebalance` enforces JWT Bearer authentication; returns 401 on missing/invalid token. Public endpoints accept zero user data. | **PASS** |
 | **Tenant Isolation** | `backend/app/routers/suitability.py`, `backend/app/services/portfolio_service.py` | `user_id` extracted from JWT claims; cross-user portfolio access rejected with 404 `PORTFOLIO_NOT_FOUND`. | **PASS** |
 | **Input Validation** | `backend/app/schemas/suitability.py`, `backend/app/core/exceptions.py` | Pydantic `extra="forbid"`, non-finite/negative weights rejected, duplicate asset classes rejected, invalid totals rejected. | **PASS** |
-| **Data Privacy** | `backend/app/services/suitability_service.py`, `ai/risk/scoring.py` | Zero PII logged or stored; error responses return structured envelopes without SQL or stack trace leakage. | **PASS** |
-| **Database Integrity** | `backend/app/repositories/portfolio_repo.py`, `backend/alembic/` | Read-only analytics; zero database writes during suitability computation. Single linear Alembic head maintained. | **PASS** |
-| **Scalability** | `backend/app/services/suitability_service.py` | $O(K \log K)$ algorithmic time, $O(K)$ space, 2 indexed read queries, stateless singleton architecture. | **PASS** |
+| **Data Privacy** | `backend/app/services/suitability_service.py`, `backend/app/core/middleware.py`, `backend/app/core/handlers.py` | Suitability router/service do not write PII or emit logger calls; `CorrelationIdMiddleware` redacts bearer credentials; exception handlers omit SQL/stack traces. | **PASS** |
+| **Database Integrity** | `backend/app/repositories/portfolio_repository.py`, `backend/app/ports/adapters/postgres_local_store.py`, `backend/alembic/` | Read-only analytics; zero database writes during suitability computation. Single linear Alembic head (`s3li02_goal_contributions`) verified. | **PASS** |
+| **Scalability** | `backend/app/services/suitability_service.py`, `backend/app/services/portfolio_service.py` | $O(K \log K)$ algorithmic time, $O(K)$ space, 2 repository reads + market quote lookup, stateless singleton. Production throughput unbenchmarked. | **PASS** |
 | **Documentation Consistency** | `docs/ai/suitability-model-card.md`, `docs/evidence/s3_li01_evidence.md` | Models, weights, benchmark proxies, disclaimers, and invariants match source code and S3-MR01 reference data exactly. | **PASS** |
 
 ---
@@ -177,36 +177,42 @@ The deliverable `docs/ai/suitability-model-card.md` contains all 16 mandatory se
   ```powershell
   cd backend; .\.venv\Scripts\ruff.exe check .
   ```
-  *Result:* **All checks passed!** (0 linting errors)
+  *Exit Code:* `0` | *Result:* **All checks passed!** (0 linting errors)
 - **Ruff Format Check:**
   ```powershell
   cd backend; .\.venv\Scripts\ruff.exe format --check .
   ```
-  *Result:* **387 files already formatted** (Clean)
+  *Exit Code:* `0` | *Result:* **392 files already formatted** (Clean)
 - **Type Checker (Mypy):**
   ```powershell
   cd backend; .\.venv\Scripts\mypy.exe app/services/suitability_service.py app/schemas/suitability.py app/routers/suitability.py tests/unit/test_suitability_service.py tests/contract/test_suitability_api.py --platform win32 --python-version 3.13
   ```
-  *Result:* **Success: no issues found in 5 source files**
+  *Exit Code:* `0` | *Result:* **Success: no issues found in 5 source files**
+- **Alembic Heads:**
+  ```powershell
+  cd backend; .\.venv\Scripts\alembic.exe heads
+  ```
+  *Exit Code:* `0` | *Result:* **`s3li02_goal_contributions (head)`**
 
 ### 9.2 Targeted Suitability Tests
 ```powershell
-cd backend; .\.venv\Scripts\pytest.exe -v --no-cov tests/unit/test_suitability_service.py tests/contract/test_suitability_api.py
+cd backend; .\.venv\Scripts\pytest.exe -q --no-cov tests/unit/test_suitability_service.py tests/contract/test_suitability_api.py
 ```
-*Result:* **47 passed, 68 warnings in 14.42s** (100% PASS)
+*Exit Code:* `0` | *Result:* **47 passed, 68 warnings in 4.90s** (100% PASS)
 
 ### 9.3 Risk Scoring Engine Tests
 ```powershell
-cd backend; .\.venv\Scripts\pytest.exe -v --no-cov ../ai/risk/test_scoring.py ../ai/risk/test_explanation.py
+$env:PYTHONPATH="."; backend\.venv\Scripts\pytest.exe -q --no-cov ai/risk/test_scoring.py ai/risk/test_explanation.py
 ```
-*Result:* **43 passed in 0.68s** (100% PASS)
+*Exit Code:* `0` | *Result:* **43 passed in 0.57s** (100% PASS)
 
-### 9.4 Full Backend Test Suite
+### 9.4 Full Non-PostgreSQL Backend Test Suite
 ```powershell
-cd backend; .\.venv\Scripts\pytest.exe -q -m "not postgres"
+cd backend; .\.venv\Scripts\pytest.exe -m "not postgres" -q
 ```
-*Result:* **3,155 passed**, 4 skipped, 22 deselected, 2 xfailed, 2 xpassed in 685s.
-*Total Coverage:* **82.38%** (exceeds the 70% threshold).
+*Exit Code:* `0` | *Result:* **3,202 passed, 4 skipped, 22 deselected, 2 xfailed, 2 xpassed in 705.46s**.
+*Total Coverage:* **82.77%** (exceeds the 70% threshold).
+*(Note: PostgreSQL-marked tests `-m postgres` were not executed locally as no live PostgreSQL instance is configured in this environment; they were verified in GitHub Actions CI on PR #160.)*
 
 ---
 

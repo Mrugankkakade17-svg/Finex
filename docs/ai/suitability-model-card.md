@@ -7,7 +7,7 @@
 - **Model Name:** FinEx Educational Suitability, Asset Allocation & Portfolio Drift Engine
 - **Task ID:** `S3-MI01`
 - **GitHub Issue:** [#54](https://github.com/Mrugankkakade17-svg/Finex/issues/54)
-- **Model Version:** `v1.0.0` (Deterministic Rule-Based)
+- **Model Version:** `v1.0.0` (Deterministic Rule-Based, Non-ML / Non-LLM)
 - **Implementation Modules:**
   - `backend/app/services/suitability_service.py`
   - `backend/app/routers/suitability.py`
@@ -16,8 +16,8 @@
 - **Author / Owner:** Mitali (`@mitali2701`)
 - **Secondary Reviewer:** Payal (`@payalmude14-star`)
 - **Date:** 2026-11-28
-- **Classification:** Educational AI / Deterministic Quantitative Engine
-- **Status:** APPROVED & AUDITED
+- **Classification:** Deterministic Rule-Based Quantitative Engine (Non-ML, Non-LLM)
+- **Status:** OPEN FOR INDEPENDENT REVIEW
 
 ---
 
@@ -28,8 +28,8 @@ The FinEx Suitability Engine is a deterministic quantitative framework that prov
 It serves as a core educational bridge between behavioral risk self-assessment and practical portfolio construction:
 1. **Risk-to-Allocation Mapping:** Translates canonical risk categories (`CONSERVATIVE`, `MODERATE`, `AGGRESSIVE`) derived from the 10-question behavioral questionnaire (`ai.risk.scoring`) or direct selection into standardized educational asset-class target weights (`EQUITY`, `FIXED_INCOME`, `CASH`).
 2. **Allocation Drift Analysis:** Evaluates existing portfolio allocations against target benchmarks, quantifying signed drift ($\text{drift} = w_{\text{current}} - w_{\text{target}}$) and classifying asset positions as `BALANCED`, `OVERWEIGHT`, or `UNDERWEIGHT` based on a configurable threshold ($\tau = 0.01$).
-3. **Illustrative Rebalance Planning:** Computes target-restoring adjustments (`HOLD`, `REDUCE`, `INCREASE`) and indicative monetary amounts ($\text{adjustment\_weight} = -\text{drift}$, $\text{indicative\_amount} = V_{\text{portfolio}} \times \text{adjustment\_weight}$) mapped to approved synthetic benchmark ETF proxies (`SPY`, `AGG`, `CSHX`).
-4. **Deterministic Guarantee:** The engine executes 100% outside Large Language Models (LLMs) using arbitrary-precision Python `Decimal` arithmetic, guaranteeing zero numerical hallucination, mathematical invariant conservation, and full auditability.
+3. **Illustrative Rebalance Planning:** Computes target-restoring adjustments (`HOLD`, `REDUCE`, `INCREASE`) and indicative monetary amounts ($\text{adjustment\_weight} = -\text{drift}$, $\text{indicative\_amount} = V_{\text{portfolio}} \times \text{adjustment\_weight}$) mapped to simplified synthetic educational benchmark proxies (`SPY`, `AGG`, `CSHX`).
+4. **Deterministic Rule-Based Identity:** The Suitability Engine is **not** a trained machine-learning or predictive model. All risk scoring (`RiskScoringEngine`), allocation mapping, drift computation, rebalance planning, and suitability explanations (`SuitabilityService._build_educational_explanation`) execute 100% deterministically outside Large Language Models (LLMs) using rule-based logic and arbitrary-precision Python `Decimal` arithmetic. (A separate optional LLM explanation path exists only in `ai/risk/explanation.py` for standalone risk-assessment explanations.)
 
 ---
 
@@ -39,7 +39,7 @@ The FinEx Suitability Engine is strictly intended for:
 - **Educational Demonstration:** Demonstrating how modern portfolio theory concepts (risk profiling, asset allocation, drift monitoring, and periodic rebalancing) operate quantitatively.
 - **Self-Directed Financial Literacy:** Allowing users to explore hypothetical asset distribution models and understand the impact of market movements on asset class diversification.
 - **Simulated Paper Trading Context:** Guiding users within the FinEx simulated environment on how portfolio drift can be reconciled toward a benchmark profile.
-- **Consistent Multi-Platform Presentation:** Providing identical deterministic calculations across React web and Flutter mobile applications.
+- **Consistent API Contract:** Providing identical deterministic calculations and `educational_disclaimer` fields in `/api/v1/suitability` responses for consuming web and mobile clients. (Note: The dedicated React `SuitabilityPage.tsx` UI in S3-NI02 is a separate downstream task not yet merged into `dev`.)
 
 ---
 
@@ -71,7 +71,7 @@ Every allocation profile strictly satisfies four structural invariants:
 2. **Completeness (Unity Sum):** $\sum_{i} w_i = 1.000000 \quad (\pm 10^{-5})$.
 3. **Strict Equity Monotonicity:** Equity exposure increases monotonically with risk tolerance:
    $$w_{\text{equity}}(\text{CONSERVATIVE}) < w_{\text{equity}}(\text{MODERATE}) < w_{\text{equity}}(\text{AGGRESSIVE}) \implies 0.20 < 0.50 < 0.80$$
-4. **Liquidity Buffer Baseline:** All models maintain an identical $10.0\%$ cash liquidity baseline (`CSHX`).
+4. **Cash Allocation Proxy Baseline:** All models include an identical $10.0\%$ target weight mapped to the synthetic short-term cash proxy identifier `CSHX` (a simplified educational proxy, not a real-world ETF ticker or an insured bank deposit).
 
 ---
 
@@ -215,11 +215,11 @@ The following limitations must be prominently disclosed across all consuming app
 
 ## 10. Educational Disclaimer
 
-The following disclaimer is mandatory, permanently codified in `EDUCATIONAL_DISCLAIMER`, and emitted in every API response envelope:
+The following disclaimer is mandatory, permanently codified in `EDUCATIONAL_DISCLAIMER` (`backend/app/services/suitability_service.py`), and emitted in suitability API response envelopes (`TargetAllocationResponse` and `SuitabilityRebalanceResponse`):
 
 > **FinEx suitability outputs are educational and illustrative only. They are not personalised investment advice and do not constitute a recommendation to buy, sell or hold any financial instrument. Users remain responsible for their own financial decisions. Actual investment outcomes may differ from illustrative calculations. Fees and taxes are not modelled.**
 > 
-> *FinEx is an educational software platform, not a registered investment adviser, broker-dealer, financial planner, or wealth management institution. Past performance is no guarantee of future returns. Reference allocation models illustrate hypothetical distributions based on generalized risk profiles. Consult a licensed financial professional before making real-world financial commitments.*
+> *FinEx is an educational software platform, not a registered investment adviser, broker-dealer, financial planner, or wealth management institution. Past performance is no guarantee of future returns. Reference allocation models illustrate hypothetical distributions based on generalized risk profiles; generalized risk categories do not establish an individual's complete financial suitability, liquidity needs, tax situation, or capacity for loss. Consult a licensed financial professional before making real-world financial commitments.*
 
 ---
 
@@ -228,14 +228,14 @@ The following disclaimer is mandatory, permanently codified in `EDUCATIONAL_DISC
 The Suitability Engine is subjected to comprehensive automated verification across unit, integration, contract, and property-based test suites:
 
 ### 11.1 Test Coverage Summary
-- `backend/tests/unit/test_suitability_service.py` (36 unit & property tests):
+- `backend/tests/unit/test_suitability_service.py` (32 unit test functions / 34 parameterized test cases):
   - Invariant validation: weight non-negativity, exact unity sum, and equity monotonicity across all categories.
   - Scale tolerance verification: acceptance of $\pm 0.1\%$ percentage and $\pm 0.001$ fractional inputs; strict rejection of $80\%$ and $120\%$ totals.
   - Exact 6-decimal normalization: residual tie-breaking to Cash and mathematical conservation.
   - Cent rounding conservation: zero-sum dollar rebalancing across fractional-cent portfolio valuations ($150,000.55, $100,000.01, $99.99, $0.01).
   - Drift threshold behavior: verification of 0.5% drift held at 0.00 adjustments under 1.0% threshold, inclusive boundary behavior, and custom thresholds ($0.002$).
   - Five golden persona hand-calculated scenarios (Retired Capital Preservation, Mid-Career Balanced, Early-Career Growth, All-Cash, Empty Portfolio).
-- `backend/tests/contract/test_suitability_api.py` (11 API contract tests):
+- `backend/tests/contract/test_suitability_api.py` (12 API contract test functions / 13 parameterized test cases):
   - OpenAPI schema presence and response structure validation.
   - Public access to `/allocation` and `/allocation/{category}`.
   - Authentication enforcement on `/rebalance` (401 on missing token).
@@ -243,10 +243,10 @@ The Suitability Engine is subjected to comprehensive automated verification acro
   - Validation error handling (400 on duplicate asset classes, non-finite weights, invalid totals).
 
 ### 11.2 Verification Results
-- **Unit & Contract Suite:** 47 / 47 PASSED in 5.34s.
-- **Risk Scoring Suite:** 43 / 43 PASSED in 0.68s.
-- **Static Analysis:** `ruff check .` (0 errors), `ruff format --check .` (clean), `mypy` (0 type issues).
-- **GitHub Actions CI:** 18 / 18 automated check runs succeeded on PR #160 (`f3aff3d`).
+- **Unit & Contract Suite:** 47 / 47 PASSED in 4.90s (`pytest -q --no-cov tests/unit/test_suitability_service.py tests/contract/test_suitability_api.py`).
+- **Risk Scoring Suite:** 43 / 43 PASSED in 0.57s (`PYTHONPATH=. backend/.venv/Scripts/pytest.exe -q --no-cov ai/risk/test_scoring.py ai/risk/test_explanation.py`).
+- **Full Non-PostgreSQL Suite:** 3,202 PASSED (4 skipped, 22 deselected, 2 xfailed, 2 xpassed; 82.77% coverage).
+- **Static Analysis:** `ruff check .` (0 errors), `ruff format --check .` (392 files formatted), `mypy` on 5 suitability files (0 type issues).
 
 ---
 
@@ -255,7 +255,7 @@ The Suitability Engine is subjected to comprehensive automated verification acro
 1. **Authentication & Authorization:** All personalized endpoints (`POST /api/v1/suitability/rebalance`) enforce strict bearer JWT authentication via `Depends(get_current_user)`. Unauthenticated requests are rejected with HTTP 401.
 2. **Multi-Tenant User Isolation:** When `portfolio_id` is supplied, the engine resolves holdings via `portfolio_service.get_portfolio_summary(portfolio_id, user_id)`. The user identity is extracted strictly from the cryptographic JWT claims, never from caller-controlled request bodies. Cross-tenant access attempts return HTTP 404 `PORTFOLIO_NOT_FOUND`, preventing resource enumeration and data leakage.
 3. **Injection & Input Hardening:** Pydantic models enforce `extra="forbid"`. Asset class identifiers are sanitized and normalized (`strip().upper()`). Non-finite numeric payloads (`NaN`, `sNaN`, `+Inf`, `-Inf`) are rejected immediately before arithmetic processing.
-4. **Zero PII Exposure:** Suitability calculations consume and emit purely quantitative asset weights, categories, and amounts. No personally identifiable information (PII) is stored or logged. Error responses return structured FinEx error envelopes without database queries or stack traces.
+4. **Logging & Data Privacy Boundaries:** While FinEx persists user accounts, portfolios, and holdings in its database (`local_users`, `local_manual_portfolios`, `local_manual_holdings`), the suitability service and router (`suitability_service.py`, `suitability.py`) do not write new records to persistence and do not emit application log statements containing user PII or bearer credentials. `CorrelationIdMiddleware` explicitly redacts bearer credentials from `X-Correlation-ID` headers, and global exception handlers (`backend/app/core/handlers.py`) return structured FinEx error envelopes without SQL statements or stack traces.
 
 ---
 
@@ -264,13 +264,14 @@ The Suitability Engine is subjected to comprehensive automated verification acro
 1. **Algorithmic Complexity:**
    - Drift and rebalance evaluation operates in $O(K \log K)$ time, where $K$ is the number of distinct asset classes. Because $K \le 10$ in practice (typically $K = 3$), calculation execution completes in under 1 millisecond.
    - Space complexity is $O(K)$, creating minimal garbage collection overhead.
-2. **Database Access Efficiency:**
-   - Live portfolio evaluations perform exactly two read queries (`get_portfolio_by_id` and `list_holdings`), avoiding N+1 query patterns.
-   - Suitability evaluations perform zero database write operations, eliminating transaction lock contention.
-3. **Asynchronous & Stateless Architecture:**
-   - The engine is instantiated as a stateless singleton (`suitability_service`). It is thread-safe and capable of handling high-concurrency requests across ASGI worker processes.
+2. **Database & Market Lookup Behavior:**
+   - When `portfolio_id` is provided, `portfolio_service.get_portfolio_summary` executes two repository read operations (`get_portfolio_by_id` and `list_holdings`) plus a batch market-quote lookup (`market_provider.get_quotes`) for held symbols.
+   - In PostgreSQL local-portfolio mode (`PostgresLocalPortfolioStore`), `finex.local_manual_portfolios` carries a `UNIQUE(user_id, portfolio_id)` index, while `finex.local_manual_holdings` relies on its `holding_id` primary key (without a separate composite index on `(user_id, portfolio_id)` in `postgres_local_store.py`), and `PostgresTransactionStore._connect` runs `SCHEMA_STATEMENTS` per transaction context. In default in-memory mode, lookups use Python dictionary access.
+   - Suitability evaluations perform zero database write operations, avoiding write lock contention.
+3. **Stateless Service Design:**
+   - `SuitabilityService` holds only its immutable `RiskScoringEngine` reference and no mutable per-user state; it is instantiated as a module-level singleton (`suitability_service`).
 4. **Production Benchmarking Note:**
-   - While algorithmic complexity is asymptotically minimal and verified locally, large-scale concurrent load testing (> 10,000 requests/sec) has not been benchmarked in staging environments.
+   - Production-scale latency, throughput, and concurrent-user capacity have not been benchmarked.
 
 ---
 
