@@ -243,3 +243,19 @@ class SymbolNotFoundException(NotFoundException):
             message=f"Market symbol '{symbol}' was not found.",
             error_code="MARKET_SYMBOL_NOT_FOUND",
         )
+
+
+class SuitabilityException(FinExException):
+    """Raised when suitability, drift, or rebalance validation/computation fails."""
+
+    def __init__(
+        self,
+        message: str = "Suitability error",
+        error_code: str = "SUITABILITY_ERROR",
+        status_code: int = 400,
+    ):
+        super().__init__(
+            message=message,
+            error_code=error_code,
+            status_code=status_code,
+        )

@@ -51,6 +51,7 @@ from app.routers.release_handover import router as release_handover_router
 from app.routers.risk import router as risk_router
 from app.routers.risk_contract import router as risk_contract_router
 from app.routers.spending import router as spending_router
+from app.routers.suitability import router as suitability_router
 from app.routers.users import router as users_router
 from app.routers.watchlists import router as watchlists_router
 from app.services.csv_import_service import CSVUploadRequestLimitMiddleware
@@ -149,6 +150,7 @@ def create_app(
     application.include_router(alerts_router)
     application.include_router(ops_hardening_router)
     application.include_router(release_handover_router)
+    application.include_router(suitability_router)
 
     @application.get("/", include_in_schema=False)
     def root():
