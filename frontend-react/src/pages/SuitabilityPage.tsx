@@ -1,23 +1,16 @@
-import React, { useCallback, useEffect, useId, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   AlertTriangle,
-  ArrowDownRight,
-  ArrowUpRight,
   CheckCircle2,
-  PieChart as PieIcon,
   RefreshCw,
   Scale,
   ShieldAlert,
-  Sliders,
 } from 'lucide-react';
 import {
   Bar,
   BarChart,
   CartesianGrid,
-  Cell,
   Legend,
-  Pie,
-  PieChart,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -45,32 +38,25 @@ const RISK_CATEGORIES: Array<{ value: RiskCategory; label: string; description: 
   {
     value: 'CONSERVATIVE',
     label: 'Conservative',
-    description: 'Capital preservation focus: 20% Equity, 50% Fixed Income, 30% Cash',
+    description: 'Capital preservation focus: 20% Equity, 70% Fixed Income, 10% Cash',
   },
   {
     value: 'MODERATE',
     label: 'Moderate',
-    description: 'Balanced growth focus: 60% Equity, 30% Fixed Income, 10% Cash',
+    description: 'Balanced growth focus: 50% Equity, 40% Fixed Income, 10% Cash',
   },
   {
     value: 'AGGRESSIVE',
     label: 'Aggressive',
-    description: 'Long-term equity appreciation focus: 85% Equity, 10% Fixed Income, 5% Cash',
+    description: 'Capital appreciation focus: 80% Equity, 10% Fixed Income, 10% Cash',
   },
 ];
-
-const ASSET_COLORS: Record<string, string> = {
-  EQUITY: '#2F6B5F', // Deep Forest / Teal
-  FIXED_INCOME: '#4A6984', // Slate Blue
-  CASH: '#D4A373', // Warm Sand
-};
 
 export const SuitabilityPage: React.FC<SuitabilityPageProps> = ({
   api,
   initialRiskCategory = 'MODERATE',
 }) => {
   const service = useMemo(() => api ?? suitabilityService, [api]);
-  const chartId = useId().replace(/[^a-zA-Z0-9_-]/g, '');
 
   // State
   const [riskCategory, setRiskCategory] = useState<RiskCategory>(initialRiskCategory);
@@ -152,27 +138,20 @@ export const SuitabilityPage: React.FC<SuitabilityPageProps> = ({
     if (!rebalanceData || !rebalanceData.drift_summary) {
       return [];
     }
-    return rebalanceData.drift_summary.map((item) => ({
-      asset_class: item.asset_class,
-      target_pct: Number((Number(item.target_pct) || item.target_weight * 100).toFixed(2)),
-      current_pct: Number((Number(item.current_pct) || item.current_weight * 100).toFixed(2)),
-      drift_pct: Number((Number(item.drift_pct) || item.drift * 100).toFixed(2)),
-      status: item.status,
-      action: item.action,
-    }));
+    return rebalanceData.drift_summary.map((item) => {
+      const targetPct = item.target_pct != null ? Number(item.target_pct) : item.target_weight * 100;
+      const currentPct = item.current_pct != null ? Number(item.current_pct) : item.current_weight * 100;
+      const driftPct = item.drift_pct != null ? Number(item.drift_pct) : item.drift * 100;
+      return {
+        asset_class: item.asset_class,
+        target_pct: Number(targetPct.toFixed(2)),
+        current_pct: Number(currentPct.toFixed(2)),
+        drift_pct: Number(driftPct.toFixed(2)),
+        status: item.status,
+        action: item.action,
+      };
+    });
   }, [rebalanceData]);
-
-  // Pie chart data for target allocation
-  const targetPieData = useMemo(() => {
-    if (!targetData || !targetData.allocations) {
-      return [];
-    }
-    return targetData.allocations.map((a) => ({
-      name: a.asset_class.replace('_', ' '),
-      value: Number(a.target_pct),
-      asset_class: a.asset_class,
-    }));
-  }, [targetData]);
 
   return (
     <div className="suitability-page" style={{ maxWidth: 1200, margin: '0 auto', padding: '24px 16px' }}>
@@ -361,30 +340,57 @@ export const SuitabilityPage: React.FC<SuitabilityPageProps> = ({
               </button>
             </div>
 
-            {allocationMode === 'portfolio' && (
-              <form
-                onSubmit={handleApplyPortfolioId}
-                style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}
-              >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <label
+                  htmlFor="portfolio-value-input"
+                  style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--color-text-muted)' }}
+                >
+                  Portfolio Value ($):
+                </label>
                 <input
-                  type="text"
-                  placeholder="Enter Portfolio UUID..."
-                  value={portfolioIdInput}
-                  onChange={(e) => setPortfolioIdInput(e.target.value)}
+                  id="portfolio-value-input"
+                  type="number"
+                  min="0"
+                  step="1000"
+                  value={portfolioValueInput}
+                  onChange={(e) => setPortfolioValueInput(e.target.value)}
                   style={{
-                    padding: '6px 12px',
+                    padding: '6px 10px',
                     borderRadius: '8px',
                     border: '1px solid var(--color-surface-divider, #ccc)',
                     fontSize: '0.85rem',
-                    minWidth: '240px',
+                    width: '120px',
                   }}
-                  aria-label="Portfolio UUID"
+                  aria-label="Simulated Portfolio Value in USD"
                 />
-                <button type="submit" className="btn-secondary" style={{ padding: '6px 12px', fontSize: '0.85rem' }}>
-                  Load Portfolio
-                </button>
-              </form>
-            )}
+              </div>
+
+              {allocationMode === 'portfolio' && (
+                <form
+                  onSubmit={handleApplyPortfolioId}
+                  style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}
+                >
+                  <input
+                    type="text"
+                    placeholder="Enter Portfolio UUID..."
+                    value={portfolioIdInput}
+                    onChange={(e) => setPortfolioIdInput(e.target.value.trim())}
+                    style={{
+                      padding: '6px 12px',
+                      borderRadius: '8px',
+                      border: '1px solid var(--color-surface-divider, #ccc)',
+                      fontSize: '0.85rem',
+                      minWidth: '240px',
+                    }}
+                    aria-label="Portfolio UUID"
+                  />
+                  <button type="submit" className="btn-secondary" style={{ padding: '6px 12px', fontSize: '0.85rem' }}>
+                    Load Portfolio
+                  </button>
+                </form>
+              )}
+            </div>
           </div>
         </div>
       </div>
@@ -1086,10 +1092,17 @@ export const SuitabilityPage: React.FC<SuitabilityPageProps> = ({
                             padding: '12px 10px',
                             borderBottom: '1px solid var(--color-surface-divider, #E6E8E7)',
                             fontWeight: 600,
+                            color:
+                              item.indicative_amount && item.indicative_amount > 0
+                                ? '#026AA2'
+                                : item.indicative_amount && item.indicative_amount < 0
+                                  ? '#B42318'
+                                  : 'inherit',
                           }}
                         >
                           {item.indicative_amount != null
-                            ? Number(item.indicative_amount).toLocaleString(undefined, {
+                            ? (item.indicative_amount > 0 ? '+' : '') +
+                              Number(item.indicative_amount).toLocaleString(undefined, {
                                 style: 'currency',
                                 currency: 'USD',
                                 maximumFractionDigits: 0,
@@ -1146,8 +1159,9 @@ export const SuitabilityPage: React.FC<SuitabilityPageProps> = ({
             >
               <CheckCircle2 size={16} style={{ color: '#027A48' }} />
               <span>
-                Zero-sum invariant verified: sum of indicative adjustments equals zero, conserving estimated portfolio
-                capital.
+                {rebalanceData.is_empty_portfolio
+                  ? 'Initial allocation plan: establishes target distribution for unallocated portfolio capital.'
+                  : 'Zero-sum invariant verified: sum of indicative adjustments equals zero, conserving estimated portfolio capital.'}
               </span>
             </div>
           </section>

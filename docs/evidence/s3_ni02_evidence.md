@@ -67,23 +67,27 @@ cd frontend-react && npm test -- --watchAll=false SuitabilityPage
 ```
 Output:
 ```text
-PASS src/pages/SuitabilityPage.test.tsx (7.984 s)
+PASS src/pages/SuitabilityPage.test.tsx (8.214 s)
   SuitabilityPage (S3-NI02)
-    √ renders the mandatory permanent EDUCATIONAL banner at all times (422 ms)
-    √ keeps the EDUCATIONAL banner visible during loading state (153 ms)
-    √ keeps the EDUCATIONAL banner visible when API error occurs and allows retry (341 ms)
-    √ keeps the EDUCATIONAL banner visible with empty data state (73 ms)
-    √ displays suitability metrics, max drift, and rebalance status (158 ms)
-    √ toggles between chart view and accessible table view (548 ms)
-    √ renders per-asset drift bars with directional indicators (271 ms)
-    √ renders the detailed rebalance recommendation table with zero-sum invariant notice (391 ms)
-    √ handles risk category selection change and triggers re-fetch (396 ms)
-    √ handles portfolio ID lookup in portfolio mode (686 ms)
+    √ renders the mandatory permanent EDUCATIONAL banner at all times (373 ms)
+    √ keeps the EDUCATIONAL banner visible during loading state (102 ms)
+    √ keeps the EDUCATIONAL banner visible when API error occurs and allows retry (251 ms)
+    √ keeps the EDUCATIONAL banner visible with empty data state (49 ms)
+    √ displays suitability metrics, max drift, and rebalance status (169 ms)
+    √ toggles between chart view and accessible table view (396 ms)
+    √ renders per-asset drift bars with directional indicators (192 ms)
+    √ renders the detailed rebalance recommendation table with zero-sum invariant notice (157 ms)
+    √ handles risk category selection change and triggers re-fetch (188 ms)
+    √ handles portfolio ID lookup in portfolio mode (466 ms)
+    √ handles portfolio value input changes and triggers re-fetch with custom capital amount (160 ms)
+    √ displays initial allocation notice when is_empty_portfolio is true with plan items (99 ms)
+    √ renders explicit positive sign for positive indicative amounts and negative sign for negative amounts (85 ms)
+    √ handles selection of Aggressive risk tier and verifies model request (201 ms)
 
 Test Suites: 1 passed, 1 total
-Tests:       10 passed, 10 total
+Tests:       14 passed, 14 total
 Snapshots:   0 total
-Time:        11.604 s
+Time:        11.325 s, estimated 16 s
 Ran all test suites matching /SuitabilityPage/i.
 ```
 
@@ -95,9 +99,9 @@ cd frontend-react && npm test -- --watchAll=false
 Output:
 ```text
 Test Suites: 33 passed, 33 total
-Tests:       828 passed, 828 total
+Tests:       832 passed, 832 total
 Snapshots:   0 total
-Time:        75.961 s
+Time:        69.704 s, estimated 70 s
 Ran all test suites.
 ```
 
@@ -112,8 +116,8 @@ Creating an optimized production build...
 Compiled successfully.
 
 File sizes after gzip:
-  227.3 kB  build\static\js\main.d8f10979.js
-  6.61 kB   build\static\css\main.7783a283.css
+  227.42 kB  build\static\js\main.8ffab288.js
+  6.61 kB    build\static\css\main.7783a283.css
 ```
 
 ### Backend Suitability Contract & Unit Tests
@@ -123,7 +127,7 @@ cd backend && .\.venv\Scripts\pytest.exe -q tests/contract/test_suitability_api.
 ```
 Output:
 ```text
-47 passed, 68 warnings in 9.28s
+47 passed, 68 warnings in 6.18s
 ```
 
 ---
@@ -142,4 +146,32 @@ Output:
 | User Isolation | Backend verifies portfolio ownership with JWT token | **PASS** |
 | Responsive | Works across desktop, tablet, and mobile layouts | **PASS** |
 | Accessibility | Semantic headings, aria attributes, keyboard operable | **PASS** |
-| Build & Tests | 33/33 suites (828 tests) passing; production build clean | **PASS** |
+| Build & Tests | 33/33 suites (832 tests) passing; production build clean | **PASS** |
+
+---
+
+## 5. Independent Audit Findings & Defect Remediation
+
+During the deep independent implementation audit, the following findings were identified and resolved:
+
+1. **Risk Category Weight Description Consistency (`FIXED AND RE-VERIFIED`)**:
+   - *Finding:* Hardcoded category card descriptions displayed `20/50/30`, `60/30/10`, `85/10/5` which diverged from the canonical S3-MR01/S3-LI01 reference models (`20/70/10`, `50/40/10`, `80/10/10`).
+   - *Fix:* Aligned category card descriptions with the true model targets (`Conservative: 20/70/10`, `Moderate: 50/40/10`, `Aggressive: 80/10/10`).
+2. **Dead Code & Unused Imports Cleanup (`FIXED AND RE-VERIFIED`)**:
+   - *Finding:* `useId`, `PieIcon`, `Sliders`, `Cell`, `Pie`, `PieChart`, `targetPieData`, and `ASSET_COLORS` were defined/imported but never rendered in the UI.
+   - *Fix:* Cleaned up unused imports and unrendered memoized data structures.
+3. **Number Coercion in Comparison Data (`FIXED AND RE-VERIFIED`)**:
+   - *Finding:* Coercion via `Number(val) || fallback` caused zero values (`0%`) to evaluate falsy and incorrectly trigger fallback calculations.
+   - *Fix:* Replaced with explicit null checks `val != null ? Number(val) : fallback`.
+4. **Portfolio Value Simulation Input (`FIXED AND RE-VERIFIED`)**:
+   - *Finding:* The backend accepted `portfolio_value` to calculate dollar indicative amounts, but the UI had no input control for the user to adjust the simulated value.
+   - *Fix:* Added an accessible numeric input control for `Portfolio Value ($)` in the top control bar with debounce and sanitization.
+5. **Signed Indicative Amount Display (`FIXED AND RE-VERIFIED`)**:
+   - *Finding:* Indicative dollar amounts displayed without explicit positive sign (`+$10,000`), making capital conservation less visually apparent.
+   - *Fix:* Added explicit `+` prefix for positive amounts and distinct color coding (`#026AA2` for increase, `#B42318` for reduce).
+6. **Zero-Sum Notice Semantic Precision (`FIXED AND RE-VERIFIED`)**:
+   - *Finding:* For empty portfolios (`is_empty_portfolio: true`), adjustments represent initial funding rather than zero-sum conservation.
+   - *Fix:* Dynamically displays initial allocation notice when empty, and zero-sum conservation notice when rebalancing existing holdings.
+7. **Comprehensive Unit Test Expansion (`FIXED AND RE-VERIFIED`)**:
+   - *Finding:* Edge cases around portfolio value changes, empty portfolio explanations, and aggressive tier switches lacked targeted tests.
+   - *Fix:* Expanded test suite from 10 to 14 tests, verifying all interactive behaviors and edge cases. All 14 tests pass.

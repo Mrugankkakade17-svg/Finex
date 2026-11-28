@@ -343,7 +343,7 @@ describe('SuitabilityPage (S3-NI02)', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Evaluate Portfolio ID' }));
 
     const input = screen.getByLabelText('Portfolio UUID');
-    fireEvent.change(input, { target: { value: '11111111-2222-3333-4444-555555555555' } });
+    fireEvent.change(input, { target: { value: '  11111111-2222-3333-4444-555555555555  ' } });
     fireEvent.click(screen.getByRole('button', { name: 'Load Portfolio' }));
 
     await waitFor(() => {
@@ -353,6 +353,89 @@ describe('SuitabilityPage (S3-NI02)', () => {
         }),
         expect.any(Object),
       );
+    });
+  });
+
+  it('handles portfolio value input changes and triggers re-fetch with custom capital amount', async () => {
+    const api = createMockApi();
+    render(<SuitabilityPage api={api} />);
+
+    await waitFor(() => {
+      expect(screen.getByLabelText(/Simulated Portfolio Value in USD/i)).toBeInTheDocument();
+    });
+
+    const valInput = screen.getByLabelText(/Simulated Portfolio Value in USD/i);
+    fireEvent.change(valInput, { target: { value: '250000' } });
+
+    await waitFor(() => {
+      expect(api.evaluateRebalancePlan).toHaveBeenCalledWith(
+        expect.objectContaining({
+          portfolio_value: 250000,
+        }),
+        expect.any(Object),
+      );
+    });
+  });
+
+  it('displays initial allocation notice when is_empty_portfolio is true with plan items', async () => {
+    const emptyWithPlan: SuitabilityRebalanceResponse = {
+      ...mockRebalanceResponse,
+      is_empty_portfolio: true,
+      max_drift: 1.0,
+      rebalance_plan: [
+        {
+          asset_class: 'EQUITY',
+          current_weight: 0,
+          target_weight: 0.6,
+          drift: -0.6,
+          adjustment_weight: 0.6,
+          direction: 'INCREASE',
+          indicative_amount: 60000,
+          benchmark_symbol: 'VTI',
+          benchmark_name: 'Vanguard Total Stock Market ETF',
+          explanation: 'Portfolio is unallocated; allocate initial target.',
+        },
+      ],
+    };
+    const api = createMockApi({
+      evaluateRebalancePlan: jest.fn().mockResolvedValue(emptyWithPlan),
+    });
+
+    render(<SuitabilityPage api={api} />);
+
+    await waitFor(() => {
+      expect(screen.getByText('EMPTY PORTFOLIO')).toBeInTheDocument();
+    });
+
+    expect(
+      screen.getByText(/Initial allocation plan: establishes target distribution for unallocated portfolio capital/i),
+    ).toBeInTheDocument();
+  });
+
+  it('renders explicit positive sign for positive indicative amounts and negative sign for negative amounts', async () => {
+    const api = createMockApi();
+    render(<SuitabilityPage api={api} />);
+
+    await waitFor(() => {
+      expect(screen.getByText('-$12,000')).toBeInTheDocument();
+    });
+
+    expect(screen.getByText('+$10,000')).toBeInTheDocument();
+    expect(screen.getByText('+$2,000')).toBeInTheDocument();
+  });
+
+  it('handles selection of Aggressive risk tier and verifies model request', async () => {
+    const api = createMockApi();
+    render(<SuitabilityPage api={api} />);
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /aggressive/i })).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: /aggressive/i }));
+
+    await waitFor(() => {
+      expect(api.getTargetAllocation).toHaveBeenCalledWith('AGGRESSIVE', expect.any(Object));
     });
   });
 });
