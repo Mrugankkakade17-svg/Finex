@@ -1,10 +1,23 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useLocalSession } from '../context/LocalSessionContext';
 import { DomainOutcome } from '../context/localS2Capabilities';
+import { PortfolioAnalyticsPanel } from '../components/PortfolioAnalyticsPanel';
+import {
+  createLocalPortfolioApi,
+  PortfolioApi,
+  PortfolioHoldingRecord,
+  PortfolioRecord,
+  resolvePortfolioApi,
+} from '../services/portfolioApi';
 import { portfolioRequest } from '../services/localS2Client';
 import { useLocalS2Tasks } from '../hooks/useLocalS2Tasks';
 import { Catalog, decimalInput, Holding, HoldingList, LocalS2Response, Portfolio, PortfolioInput, PortfolioList, PortfolioMetrics } from '../services/localS2Models';
 import './LocalS2.css';
+
+export interface LocalPortfolioPageProps {
+  resolveApi?: typeof resolvePortfolioApi;
+}
+
 interface PortfolioSnapshot {
   p: Portfolio;
   h: DomainOutcome<LocalS2Response<HoldingList>>;
@@ -17,11 +30,34 @@ type RemovalSnapshot = {
   detail: null;
   list: DomainOutcome<LocalS2Response<PortfolioList>>;
 };
-export function LocalPortfolioPage() {
-  const { domain } = useLocalSession(), tasks = useLocalS2Tasks();
+export function LocalPortfolioPage({ resolveApi = resolvePortfolioApi }: LocalPortfolioPageProps = {}) {
+  const { domain, user: localUser } = useLocalSession(), tasks = useLocalS2Tasks();
   const [catalog, setCatalog] = useState<Catalog | null>(null), [list, setList] = useState<PortfolioList | null>(null);
   const [selected, setSelected] = useState<Portfolio | null>(null), [holdings, setHoldings] = useState<HoldingList | null>(null);
   const [metrics, setMetrics] = useState<LocalS2Response<PortfolioMetrics> | null>(null);
+  const metricsRef = useRef<LocalS2Response<PortfolioMetrics> | null>(null);
+  metricsRef.current = metrics;
+
+  const [pgApi, setPgApi] = useState<PortfolioApi | null>(null);
+  const [pgModeError, setPgModeError] = useState<string | null>(null);
+  const [pgLocalNotice, setPgLocalNotice] = useState<string | null>(null);
+  const [pgLoading, setPgLoading] = useState(false);
+  const [pgList, setPgList] = useState<PortfolioRecord[]>([]);
+  const [pgSelected, setPgSelected] = useState<PortfolioRecord | null>(null);
+  const [pgHoldings, setPgHoldings] = useState<PortfolioHoldingRecord[]>([]);
+  const [pgHoldingsLoading, setPgHoldingsLoading] = useState(false);
+  const [pgRefreshTick, setPgRefreshTick] = useState(0);
+
+  const localPortfolioApi = useMemo(
+    () =>
+      createLocalPortfolioApi(domain, {
+        getSnapshotMetrics: (id) =>
+          metricsRef.current && metricsRef.current.data.portfolio_id === id
+            ? metricsRef.current
+            : null,
+      }),
+    [domain],
+  );
   const [name, setName] = useState(''), [description, setDescription] = useState(''), [nullDescription, setNullDescription] = useState(true);
   const [editPortfolio, setEditPortfolio] = useState(false), [editHolding, setEditHolding] = useState<Holding | null>(null);
   const selectionIntent = useRef({ selected, editPortfolio });
@@ -102,7 +138,85 @@ export function LocalPortfolioPage() {
         tasks.fail(c.error);
     });
   }, [applyOwnedList, domain, tasks.run]);
-  useEffect(load, [load]);
+
+  const loadPostgresMode = useCallback(async (signal?: AbortSignal) => {
+    setPgLoading(true);
+    setPgModeError(null);
+    setPgLocalNotice(null);
+    try {
+      const { api, capabilities } = await resolveApi(
+        { localDomain: domain, hasLocalSession: false },
+        signal,
+      );
+      if (signal?.aborted)
+        return;
+      if (capabilities.mode === 'local') {
+        setPgApi(null);
+        setPgLocalNotice(
+          'Local SQLite portfolio mode is active. Sign in with an approved local persona on /login to access manual portfolios.',
+        );
+        return;
+      }
+      setPgApi(api);
+      const items = await api.listPortfolios(signal);
+      if (signal?.aborted)
+        return;
+      setPgList(items);
+      setPgSelected((current) => {
+        if (!current)
+          return items[0] ?? null;
+        return items.find((item) => item.portfolio_id === current.portfolio_id) ?? items[0] ?? null;
+      });
+      setPgRefreshTick((tick) => tick + 1);
+    }
+    catch (err) {
+      if (signal?.aborted)
+        return;
+      setPgModeError(err instanceof Error ? err.message : 'Unable to load portfolios.');
+    }
+    finally {
+      if (!signal?.aborted)
+        setPgLoading(false);
+    }
+  }, [domain, resolveApi]);
+
+  const openPostgresPortfolio = useCallback((portfolio: PortfolioRecord) => {
+    setPgSelected(portfolio);
+  }, []);
+
+  useEffect(() => {
+    if (localUser !== null) {
+      load();
+      return;
+    }
+    const controller = new AbortController();
+    void loadPostgresMode(controller.signal);
+    return () => controller.abort();
+  }, [load, loadPostgresMode, localUser]);
+
+  useEffect(() => {
+    if (localUser !== null || !pgApi || !pgSelected)
+      return;
+    const controller = new AbortController();
+    setPgHoldingsLoading(true);
+    void pgApi
+      .listHoldings(pgSelected.portfolio_id, controller.signal)
+      .then((items) => {
+        if (!controller.signal.aborted)
+          setPgHoldings(items);
+      })
+      .catch((err) => {
+        if (!controller.signal.aborted) {
+          setPgHoldings([]);
+          setPgModeError(err instanceof Error ? err.message : 'Unable to load holdings.');
+        }
+      })
+      .finally(() => {
+        if (!controller.signal.aborted)
+          setPgHoldingsLoading(false);
+      });
+    return () => controller.abort();
+  }, [localUser, pgApi, pgSelected]);
   async function snapshot(id: string, signal: AbortSignal): Promise<DomainOutcome<PortfolioSnapshot>> {
     const p = await domain.portfolio(id, { signal });
     if (p.status !== 'success')
@@ -286,6 +400,117 @@ export function LocalPortfolioPage() {
       setNotice(target.entity === 'holding' ? v.detail?.m.status === 'success' ? 'Holding deletion confirmed. Valuation refreshed.' : 'Holding deletion confirmed. Valuation remains unconfirmed; retry the read.' : 'Portfolio and its manual holdings deletion confirmed.');
     });
   };
+  if (localUser === null) {
+    return (
+      <section className="local-card local-s2">
+        <p className="local-eyebrow">ANALYTICAL · PORTFOLIO INTELLIGENCE</p>
+        <h1 tabIndex={-1}>Your portfolios</h1>
+        <p className="local-lede">
+          Portfolio mode is selected from server capabilities. Analytics metrics are educational
+          only and never personalized investment advice.
+        </p>
+
+        {pgLoading && (
+          <p role="status" data-testid="pg-portfolios-loading">
+            Loading portfolios and analytics capabilities…
+          </p>
+        )}
+
+        {pgModeError && (
+          <div className="local-error" role="alert" data-testid="pg-portfolios-error">
+            {pgModeError}
+          </div>
+        )}
+
+        {pgLocalNotice && (
+          <div className="local-notice" role="status" data-testid="pg-local-mode-notice">
+            {pgLocalNotice}
+          </div>
+        )}
+
+        {pgApi && (
+          <>
+            <div className="local-actions">
+              <button
+                type="button"
+                className="btn-secondary"
+                disabled={pgLoading}
+                onClick={() => {
+                  void loadPostgresMode();
+                }}
+              >
+                Refresh portfolios
+              </button>
+            </div>
+
+            <section className="local-s2-section">
+              <h2>Your portfolios</h2>
+              {!pgList.length && !pgLoading ? (
+                <p data-testid="pg-portfolios-empty">No portfolios saved yet.</p>
+              ) : (
+                <ul>
+                  {pgList.map((item) => (
+                    <li key={item.portfolio_id}>
+                      <button
+                        type="button"
+                        className={
+                          pgSelected?.portfolio_id === item.portfolio_id
+                            ? 'btn-primary'
+                            : 'btn-secondary'
+                        }
+                        onClick={() => {
+                          openPostgresPortfolio(item);
+                        }}
+                      >
+                        Open {item.name}
+                      </button>
+                      <p className="local-help">
+                        {item.portfolio_type} · {item.currency}
+                        {item.holdings_count !== null ? ` · ${item.holdings_count} holdings` : ''}
+                      </p>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </section>
+
+            {pgSelected && (
+              <section className="local-s2-section">
+                <h2 tabIndex={-1}>{pgSelected.name}</h2>
+                <p>{pgSelected.description ?? 'No saved description.'}</p>
+
+                <h3>Holdings</h3>
+                {pgHoldingsLoading ? (
+                  <p role="status">Loading holdings…</p>
+                ) : !pgHoldings.length ? (
+                  <p>No holdings saved in this portfolio.</p>
+                ) : (
+                  pgHoldings.map((h) => (
+                    <article className="local-s2-row" key={h.holding_id}>
+                      <h4>{h.symbol}</h4>
+                      <p>
+                        {h.quantity} units · avg buy {pgSelected.currency} {h.average_cost} ·{' '}
+                        {h.asset_class} / {h.sector}
+                      </p>
+                    </article>
+                  ))
+                )}
+
+                <PortfolioAnalyticsPanel
+                  portfolioId={pgSelected.portfolio_id}
+                  portfolioName={pgSelected.name}
+                  currency={pgSelected.currency}
+                  api={pgApi}
+                  refreshTrigger={pgRefreshTick}
+                />
+              </section>
+            )}
+          </>
+        )}
+      </section>
+    );
+  }
+
   return <section className="local-card local-s2"><p className="local-eyebrow">Owned manual practice</p><h1 tabIndex={-1}>Your manual portfolios</h1>
  <p className="local-lede">Manual records, USD only. Quotes are invented training fixtures, not market data. No broker positions, trades or suitability recommendation.</p>
  {tasks.busy && <p role="status">Confirming the portfolio operation on the local backend…</p>}
@@ -347,6 +572,14 @@ export function LocalPortfolioPage() {
       }}>Edit {h.display_name}</button>
   <button className="btn-secondary" disabled={tasks.busy || holdingMutationUnavailable} onClick={() => setConfirm({ entity: 'holding', id: h.holding_id })}>Delete {h.display_name}</button></div></article>))}
  <section className="local-s2-section"><h3>Backend valuation snapshot</h3>{metrics ? <MetricsView response={metrics}/> : <p>No current valuation has been confirmed. Saved holding records remain available; retry the valuation.</p>}</section>
+ <PortfolioAnalyticsPanel
+   portfolioId={selected.portfolio_id}
+   portfolioName={selected.name}
+   currency={selected.currency}
+   api={localPortfolioApi}
+   refreshTrigger={metrics}
+   hasParentValuationError={metrics === null}
+ />
  </section>}
 </section>;
 }
