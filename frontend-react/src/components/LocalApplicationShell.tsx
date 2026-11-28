@@ -13,6 +13,7 @@ const links = [
   { path: '/market', label: 'Market Data' },
   { path: '/watchlist', label: 'Watchlist' },
   { path: '/paper-trading', label: 'Paper Trading' },
+  { path: '/suitability', label: 'Suitability' },
   { path: '/goals', label: 'Goal Planning' },
   { path: '/spending', label: 'Spending Trends' },
   { path: '/chat', label: 'AI Assistant' },

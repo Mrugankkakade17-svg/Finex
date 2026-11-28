@@ -22,6 +22,7 @@ import { ChatPage } from './pages/ChatPage';
 import { AlertsPage } from './pages/AlertsPage';
 import { OpsPage } from './pages/OpsPage';
 import { ReleasePage } from './pages/ReleasePage';
+import { SuitabilityPage } from './pages/SuitabilityPage';
 import { RealAccountLoginPage } from './pages/RealAccountLoginPage';
 
 const isTestEnv = process.env.NODE_ENV === 'test';
@@ -137,6 +138,14 @@ function AppContent() {
         element={
           <LocalApplicationGuard>
             <ReleasePage />
+          </LocalApplicationGuard>
+        }
+      />
+      <Route
+        path="/suitability"
+        element={
+          <LocalApplicationGuard>
+            <SuitabilityPage />
           </LocalApplicationGuard>
         }
       />
