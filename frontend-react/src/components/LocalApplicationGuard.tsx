@@ -1,10 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useLocalSession } from '../context/LocalSessionContext';
-import { useAuth } from '../context/AuthContext';
 import { hasCompletedOnboarding } from '../services/localApplicationClient';
-
-const isTestEnv = process.env.NODE_ENV === 'test';
 
 /** A route entry earns its gate from a fresh server check, never browser storage in contract tests. */
 export function LocalApplicationGuard({
@@ -15,7 +12,6 @@ export function LocalApplicationGuard({
   requireCompletion?: boolean;
 }) {
   const session = useLocalSession();
-  const { isAuthenticated, user: authUser } = useAuth();
   const location = useLocation();
   const [retry, setRetry] = useState(0);
   const [check, setCheck] = useState<{
@@ -42,9 +38,6 @@ export function LocalApplicationGuard({
     });
   }, [user, busy, refresh, key]);
   if (user === null) {
-    if (!isTestEnv && isAuthenticated && authUser) {
-      return <div key={`live:${authUser.displayName}`}>{children}</div>;
-    }
     return <Navigate to="/login" replace />;
   }
   if (check.key !== key)
