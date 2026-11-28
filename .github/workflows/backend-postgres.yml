@@ -77,8 +77,7 @@ jobs:
           "
 
       - name: Run Alembic migrations (if present)
-        run: |
-          python -m alembic upgrade head || echo "No migrations to apply or skipped"
+        run: python -m alembic upgrade head
 
       - name: Run @pytest.mark.postgres tests
         run: |
