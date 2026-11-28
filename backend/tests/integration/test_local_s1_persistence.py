@@ -65,6 +65,22 @@ def test_restart_preserves_identity_profile_consent_and_revocation(tmp_path: Pat
     assert state(third, other)["draft"]["display_name"] is None
 
 
+def test_default_local_login_token_authenticates_protected_goals_endpoint(tmp_path: Path) -> None:
+    """The default persona sign-in token is a supported principal on Goals routes."""
+    client = application_client(tmp_path / "default-login-goals.sqlite3", TestClock())
+
+    login_response = client.post(f"{AUTH}/mock-login", json={"alias": "learner-a"})
+    assert login_response.status_code == 200
+    token = login_response.json()["data"]["access_token"]
+    headers = {"Authorization": f"Bearer {token}"}
+
+    goals_response = client.get("/api/v1/goals", headers=headers)
+
+    assert goals_response.status_code == 200
+    assert goals_response.json()["success"] is True
+    assert goals_response.json()["data"] == []
+
+
 def test_only_session_digest_is_persisted_and_consent_order_is_monotonic(tmp_path: Path) -> None:
     path = tmp_path / "digest.sqlite3"
     client = application_client(path, TestClock())
@@ -266,3 +282,4 @@ def test_corrupt_persisted_times_are_safe_storage_failures(
     leaked_path = str(path) in response.text
     assert leaked_token is False
     assert leaked_path is False
+
